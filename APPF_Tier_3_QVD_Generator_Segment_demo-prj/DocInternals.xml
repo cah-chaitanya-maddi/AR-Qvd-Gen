@@ -1,0 +1,346 @@
+﻿<DocInternals>
+  <AlwaysLoose></AlwaysLoose>
+  <FieldSrcTables></FieldSrcTables>
+  <TableViewData>
+    <Pos></Pos>
+    <CtlInfo>
+      <InternalView>
+        <Tables>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>1172</Left>
+              <Top>609</Top>
+              <Width>100</Width>
+              <Height>64</Height>
+            </Pos>
+            <Caption>product_map</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>505</Left>
+              <Top>182</Top>
+              <Width>100</Width>
+              <Height>64</Height>
+            </Pos>
+            <Caption>account_map</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>1172</Left>
+              <Top>182</Top>
+              <Width>100</Width>
+              <Height>64</Height>
+            </Pos>
+            <Caption>dc_map</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>546</Left>
+              <Top>414</Top>
+              <Width>335</Width>
+              <Height>262</Height>
+            </Pos>
+            <Caption>account_product_price_fact</Caption>
+          </TableViewTableWinSaveInfo>
+        </Tables>
+        <BroomPoints></BroomPoints>
+        <ConnectionPoints></ConnectionPoints>
+        <ZoomFactor>3FF0000000000000</ZoomFactor>
+      </InternalView>
+      <SourceView></SourceView>
+    </CtlInfo>
+    <Mode>0</Mode>
+  </TableViewData>
+  <Bookmarks></Bookmarks>
+  <SavedByVersion>12.20.21000.0</SavedByVersion>
+  <ForceBackEndMacroExecution>false</ForceBackEndMacroExecution>
+  <FieldTags>
+    <ScriptBased>
+      <FieldTagData>
+        <Tag>$hidden</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$system</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>Pricing Key</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>Pricing Key</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>SELL_PRICE_DLR</String>
+          <String>RETAIL_SELL_PRICE_DLR</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>CNTRCT_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+    </ScriptBased>
+    <Interactive>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>END_DTE_KEY_NUM</String>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>ROW_ADD_STP</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>hdp_xfm_dte_part</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$date</Tag>
+        <FieldNames>
+          <String>END_DTE_KEY_NUM</String>
+          <String>hdp_xfm_dte_part</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>LoadDuration</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>FLG_KEY_NUM</String>
+          <String>START_DTE_KEY_NUM</String>
+          <String>END_DTE_KEY_NUM</String>
+          <String>SELL_PRICE_DLR</String>
+          <String>RETAIL_SELL_PRICE_DLR</String>
+          <String>ROW_ADD_STP</String>
+          <String>CNTRCT_PRICE_DL</String>
+          <String>REBATE_PRICE_DLR</String>
+          <String>UNIT_H_CDE</String>
+          <String>Total Doses-hist</String>
+          <String>AHFS #-hist</String>
+          <String>CIN</String>
+          <String>DEA Schedule #-hist</String>
+          <String>Fineline #-hist</String>
+          <String>NDC-hist</String>
+          <String>NDC Code-hist</String>
+          <String>Package Qty-hist</String>
+          <String>Purchase Product Type Code-hist</String>
+          <String>Total Doses</String>
+          <String>AHFS #</String>
+          <String>Generic Indicator Code</String>
+          <String>Drug Category</String>
+          <String>Federal Upper Limit</String>
+          <String>Fineline #</String>
+          <String>NDC</String>
+          <String>Package Qty</String>
+          <String>Product Type</String>
+          <String>Mfr #</String>
+          <String>UPC</String>
+          <String>DEA Base Code</String>
+          <String>CURR_SR_NUM</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>CLASS_CDE</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>Accounting Code</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>Account Zip Code</String>
+          <String>Store Numbers</String>
+          <String>Status</String>
+          <String>Account Phone</String>
+          <String>Shipping Contact Phone</String>
+          <String>Billing Contact Phone</String>
+          <String>State Pharmacy Other Expiration Date</String>
+          <String>State Pharmacy Other Extension Date</String>
+          <String>Current AR Balance</String>
+          <String>Last Payment Amount</String>
+          <String>Last Payment Date</String>
+          <String>Credit Limit</String>
+          <String>COD Add on Amount</String>
+          <String>Discount %</String>
+          <String>Discount Paid Days</String>
+          <String>COD Code</String>
+          <String>PRE_PAY_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+          <String>hdp_xfm_dte_part</String>
+          <String>acct_key_num</String>
+          <String>prod_key_num</String>
+          <String>flg_key_num</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>FLG_KEY_NUM</String>
+          <String>START_DTE_KEY_NUM</String>
+          <String>END_DTE_KEY_NUM</String>
+          <String>UNIT_H_CDE</String>
+          <String>Total Doses-hist</String>
+          <String>AHFS #-hist</String>
+          <String>CIN</String>
+          <String>DEA Schedule #-hist</String>
+          <String>Fineline #-hist</String>
+          <String>NDC-hist</String>
+          <String>NDC Code-hist</String>
+          <String>Package Qty-hist</String>
+          <String>Purchase Product Type Code-hist</String>
+          <String>Total Doses</String>
+          <String>AHFS #</String>
+          <String>Generic Indicator Code</String>
+          <String>Drug Category</String>
+          <String>Federal Upper Limit</String>
+          <String>Fineline #</String>
+          <String>NDC</String>
+          <String>Package Qty</String>
+          <String>Product Type</String>
+          <String>Mfr #</String>
+          <String>UPC</String>
+          <String>DEA Base Code</String>
+          <String>CURR_SR_NUM</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>CLASS_CDE</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>Accounting Code</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>Account Zip Code</String>
+          <String>Store Numbers</String>
+          <String>Status</String>
+          <String>Account Phone</String>
+          <String>Shipping Contact Phone</String>
+          <String>Billing Contact Phone</String>
+          <String>State Pharmacy Other Expiration Date</String>
+          <String>State Pharmacy Other Extension Date</String>
+          <String>Last Payment Date</String>
+          <String>Discount %</String>
+          <String>Discount Paid Days</String>
+          <String>COD Code</String>
+          <String>PRE_PAY_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+          <String>hdp_xfm_dte_part</String>
+          <String>acct_key_num</String>
+          <String>prod_key_num</String>
+          <String>flg_key_num</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>Pricing Key</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>acct_key_num</String>
+          <String>prod_key_num</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>flg_key_num</String>
+          <String>SELL_PRICE_DLR</String>
+          <String>RETAIL_SELL_PRICE_DLR</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>Pricing Key</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>acct_key_num</String>
+          <String>prod_key_num</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>flg_key_num</String>
+          <String>SELL_PRICE_DLR</String>
+          <String>RETAIL_SELL_PRICE_DLR</String>
+        </FieldNames>
+      </FieldTagData>
+    </Interactive>
+  </FieldTags>
+  <FieldComments></FieldComments>
+  <TableComments></TableComments>
+  <CreatePrjFolder>false</CreatePrjFolder>
+  <LinkedTables></LinkedTables>
+  <AppObjectEntries></AppObjectEntries>
+  <GenericDimensions></GenericDimensions>
+  <GenericMeasures></GenericMeasures>
+  <GenericBookmarks></GenericBookmarks>
+  <ConnectionInfo></ConnectionInfo>
+  <GenericDerivedDefinitions></GenericDerivedDefinitions>
+  <GenericDerivedFields></GenericDerivedFields>
+  <BnfOff>false</BnfOff>
+  <CreatedAfterSingleQuoteExactSearch>false</CreatedAfterSingleQuoteExactSearch>
+</DocInternals>

@@ -1,0 +1,174 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ACCOUNTS_AVERAGE_USAGE information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Account_Average_Usage.qvd
+ ******************************************************************************
+ * Overview:
+ *   This is a Delta QVD generator for ACCOUNTS_AVERAGE_USAGE information.
+ *   Loads User Accounts information from the Teradata based on ROW_UPDATE_STP
+ * 
+ * Sources:
+ *   ACCOUNTS_AVERAGE_USAGE-Caret.txt
+ *
+ * Outputs:
+ *   ACCOUNTS_AVERAGE_USAGE.qvd
+ ******************************************************************************
+ * Revision History:
+ * 
+ * 10/27/2015 Rajdeep Biswas
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Account_Average_Usage
+/*********************************************************************************
+Update Account_Average_Usage.qvd with new records.
+
+Changelog:
+- 10.27.2015 rajdeep.biswas
+ Initial creation
+*********************************************************************************/
+
+
+///********************************************
+// * Set Statistics Variables
+// ********************************************/
+//let vTimeStamp = Now();
+//let vStart = Now();
+//set vTableName = 'Account_Average_Usage';
+//
+///********************************************
+// * Get Last Time QVD was Generated and Current Time
+// ********************************************/
+//let vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+//
+///********************************************
+// * Get List of Dates
+// ********************************************/
+//temp:
+//load
+//  ROW_UPDATE_STP as Date
+//from
+//  '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd'
+//(qvd);
+//
+///********************************************
+// * Get Max Date
+// ********************************************/
+//Max_Date:
+//load
+//  min(Date) as min_date,
+//  max(Date) as max_date;
+//load
+//  FieldValue('Date',IterNo()) as Date
+//autogenerate(1)
+//while not IsNull(FieldValue('Date',Iterno()));
+//
+//drop table temp;
+//
+//let vLastExecTime = Date(Peek('max_date',0,'Max_Date'), 'YYYY-MM-DD hh:mm:ss');
+//
+//drop table Max_Date; 
+
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Account_Average_Usage:
+LOAD 
+	AMU_CALC_TYPE_CDE
+	,AVG_MTH_USAGE_QTY
+	,AVG_WEEK_USAGE_QTY
+	,CORP_ITEM_NUM
+	,CURR_SHIP_TO_CUSTOMER_NUM
+	,CURR_SHIP_TO_LOCATION_NUM
+	,RANK_CDE
+	,RANK_DLR_NUM
+	,ROW_ADD_STP
+	,ROW_ADD_USER_ID
+	,ROW_NUM
+	,ROW_UPDATE_STP
+	,ROW_UPDATE_USER_ID
+	,START_MTH_NUM
+	,START_WEEK_NUM
+	,SUGG_ORDER_QTY
+	FROM
+'$(vExtractFileLocation)ACCOUNT_AVERAGE_USAGE-Caret.txt'
+(txt, codepage is 1252, embedded labels, delimiter is '^', no quotes, no eof);
+
+//where  
+//  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp)) 
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+//let vDeltaRecords = NoOfRows('$(vTableName)');
+//
+//if $(vDeltaRecords) > 0 then
+//
+//	trace "**************************** Adding New Records to Account_Average_Usage";
+//	
+//	/********************************************
+//	 * Concatenate Records where not exists in
+//	 * the query above
+//	 ********************************************/
+//	concatenate
+//	load
+//	 CORP_ITEM_NUM & '-' & CURR_SHIP_TO_CUSTOMER_NUM & '-' & CURR_SHIP_TO_LOCATION_NUM as PRIMARY_KEY
+//	,AMU_CALC_TYPE_CDE
+//	,AVG_MTH_USAGE_QTY
+//	,AVG_WEEK_USAGE_QTY
+//	,CORP_ITEM_NUM
+//	,CURR_SHIP_TO_CUSTOMER_NUM
+//	,CURR_SHIP_TO_LOCATION_NUM
+//	,RANK_CDE
+//	,RANK_DLR_NUM
+//	,ROW_ADD_STP
+//	,ROW_ADD_USER_ID
+//	,ROW_NUM
+//	,ROW_UPDATE_STP
+//	,ROW_UPDATE_USER_ID
+//	,START_MTH_NUM
+//	,START_WEEK_NUM
+//	,SUGG_ORDER_QTY
+//	from
+//	  '$(vRootFileLocation)$(vQVDs)Account_Average_Usage.qvd' (qvd)
+//	where
+//	  not exists(PRIMARY_KEY, CORP_ITEM_NUM & '-' & CURR_SHIP_TO_CUSTOMER_NUM & '-' & CURR_SHIP_TO_LOCATION_NUM)
+//	;
+//	
+//	//Since Primary Key was composite key need to drop the field
+//	drop field PRIMARY_KEY;
+	
+	/********************************************
+	* Store New QVD
+	********************************************/
+	store Account_Average_Usage into '$(vRootFileLocation)$(vQVDs)Account_Average_Usage.qvd';	   
+//	let vLastExecTime = '$(vThisExecTime)'; 
+	 
+//endif;  
+/********************************************
+* Drop Table from Memory
+********************************************/
+drop table Account_Average_Usage;
+
+

@@ -1,0 +1,288 @@
+﻿///$tab Document
+/*
+ ******************************************************************************
+ * Overview:
+ * This QVW is being rewritten to not use the Invoice_Line count method of 
+ * assigning categories. Instead, the Hadoop user- segment # assignments will be 
+ * used to group the users into user documents. The user-account assignments will 
+ * continue to come from QVDs, not from Hadoop.  
+ * The QVW will load user information based on the 4 requirements above. This is 
+ * currently being done in QV. Reports will only be loaded for users that are in 
+ * both the Hadoop file and Account Categories – Loop.qvw. No provision is being 
+ * made to add new users into some designated segment. This is why the two systems 
+ * need to be in sync with SDW updates. 
+ * It may be needed to create a larger number of segments. This QVW should be able 
+ * to create user_categories QVDs even when there are no users for the segment or report. 
+ * This QVW builds user_categories QVDs for:
+	•	Invoice_Line segments
+	•	Assigned documents – PurchasesReview, InvoiceReview, ContractsReview, etc.
+	•	Acute Landing Page
+	•	Retail Landing Page 
+	•	Demo documents
+
+ ******************************************************************************
+ *
+ * Revision History:
+ *
+ * 10.01.2014 Warren Lea
+ * Initial Creation
+ *
+ * 4.11.2016 Rajdeep Biswas
+ * this will not run if any segment has more than 1500 users
+ *
+ *
+ */
+///$tab Defaults
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+///$tab Setup
+
+
+let v_today = date(floor(today()),'MM/DD/YYYY');
+
+//Let v_total_segments = 17; 
+//Let v_SuperUser_segments = 35;
+///$tab Segments
+/**********************************************************
+Load the user-report-segments-account data needed for the Advanced 
+Reports and to create the Reporting_Users.qvd file. 
+The user_categories table created here is used on the Adv Reports tab.
+
+Changelog:
+10.09.2014 warren.lea 
+The segments.csv file also contains ACCT_KEY_NUM and invoice_line counts
+for troubleshooting purposes; not to be used in the user_categories processing.
+**********************************************************/
+
+Trace Load non-expired user-report rows;
+// Begin with the list of reporting users non-expired reports
+// User_Report_Rlt.qvd is loaded prior to running this QVW. 
+// user_reports will be saved as Reporting_Users.qvd and used in Section Access.
+//    In SectionAccess, it can't read the field [Report Name], it has to be RPT_NAM
+//    The Report Name field is changed back for the user_categories QVDs.
+users_reports:
+Load Distinct
+     [Mercury ID] as MRCRY_USER_ID
+     ,[Report ID]       
+     ,[Report Name] as RPT_NAM
+     ,[Report Assignment End Date] as END_DTE
+From
+	'$(vRootFileLocation)$(vQVDs)User_Report_Rlt.qvd' (qvd)
+Where [Is Assignment Active] = 'Yes'
+and [Report ID]='16' 
+;
+
+Let v_temp = Num(NoOfRows('users_reports'),'#,##0');
+Trace Number of user-reports rows: $(v_temp);
+
+
+// Current reporting users must be assigned the LDAP Advanced Reporting group
+// Some users have 2 or more user_type_nam records, e.g. Standard and Premium
+// This logic will pick up the first 2 USER_TYPE_NAMs (alphabetically) and store them
+// in the USER_TYPE_NAM field. 
+ldap_user_appl_tmp:
+Load Distinct
+	MRCRY_USER_ID
+	,USER_TYPE_NAM	
+From
+   '$(vRootFileLocation)$(vQVDs)Ldap_User_Appl.qvd'(qvd)
+Where APPL_NAM = 'ORDER_EXPRESS_REPORTING'   
+;
+
+ldap_user_appl_sorted:
+Load *
+	 ,RecNo() as recno
+;
+NoConcatenate
+Load *
+Resident ldap_user_appl_tmp
+Order By MRCRY_USER_ID, USER_TYPE_NAM 
+;
+Drop Table ldap_user_appl_tmp;
+
+
+Inner Join (users_reports)
+Load MRCRY_USER_ID
+	,FirstSortedValue(USER_TYPE_NAM,recno,1)& 
+	   If(isnull(FirstSortedValue(USER_TYPE_NAM,recno,2)), '',', '& FirstSortedValue(USER_TYPE_NAM,recno,2)) 
+	      as USER_TYPE_NAM
+Resident ldap_user_appl_sorted
+Group By MRCRY_USER_ID
+;
+Drop Table ldap_user_appl_sorted;
+
+
+// Current reporting users must be Active users
+// Add other fields that will be used by Reporting_Users.qvd
+// Note: The internal/external flag is not loaded into the mercury_user QVD
+Inner Join (users_reports)
+Load MRCRY_USER_ID, 
+     MRCRY_USER_NAM as USER_NAME,
+     USER_ID, 
+     USER_ID_ACTIVE_FLG
+From
+	'$(vRootFileLocation)$(vQVDs)MERCURY_USER.qvd'
+(qvd)
+Where USER_ID_ACTIVE_FLG = 'Y'
+;
+Let v_temp = Num(NoOfRows('users_reports'),'#,##0');
+Trace Active LDAP users, user-reports rows: $(v_temp);
+
+// Display number of unique users in QV
+unique_qv_users:
+Load distinct
+   MRCRY_USER_ID
+Resident users_reports
+;
+Let v_qv_users = Num(NoOfRows('unique_qv_users'),'#,##0');
+Trace Number of unique QV users: $(v_qv_users);
+Drop Table unique_qv_users;
+
+Store users_reports into '$(vRootFileLocation)$(vQVDs)QVReporting_Users_GPO.qvd';
+
+// Get records for user_categories table
+user_categories:
+Load Distinct
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME,
+     '1' as [Segment #],
+     RPT_NAM as [Report Name]
+Resident users_reports
+;
+
+
+// Store off this part of user_categories to be used as Reporting_Users.qvd
+Store users_reports into '$(vRootFileLocation)$(vQVDs)Reporting_Users_GPO.qvd';
+Drop Table users_reports;
+
+
+//*****************************************************************
+Trace "*************** GET ACCT_KEY_NUM PER USER";
+//*****************************************************************
+// Get ACCT_KEY_NUM for the user
+// Resident table user_categories is the only table open w/ MRCRY_USER_ID to filter on
+mrcry_acct_keys_tmp:
+load distinct
+	ACCT_KEY_NUM 
+    ,MRCRY_USER_ID
+from
+ 	'$(vRootFileLocation)$(vQVDs)ACCOUNT_USER_RLT.qvd'
+(qvd)
+Where Exists(MRCRY_USER_ID)
+;
+//
+//// Get Account Groups for the User
+mrcry_groups_tmp:
+load distinct
+	MRCRY_USER_ID 
+    ,[Account Group #] as USER_ACCT_GROUP_NUM
+from
+	'$(vRootFileLocation)$(vQVDs)GROUP_USER_RLT.qvd'
+(qvd)
+Where Exists(MRCRY_USER_ID)
+;
+
+// Get ACCT_KEY_NUMs for the Users' Account Groups
+left join (mrcry_groups_tmp)
+LOAD distinct
+     USER_ACCT_GROUP_NUM 
+     ,ACCT_KEY_NUM
+FROM
+	'$(vRootFileLocation)$(vQVDs)ACCOUNT_GROUP_RLT.qvd'
+(qvd)
+;
+
+
+Concatenate (mrcry_acct_keys_tmp)
+Load 
+   MRCRY_USER_ID 
+   ,ACCT_KEY_NUM
+Resident mrcry_groups_tmp
+;
+Drop Table mrcry_groups_tmp;
+
+
+// Load account data joining with ACCT_KEY_NUM
+// The user must have account data to get advanced reports
+Inner Join (user_categories)
+Load Distinct
+     ACCT_KEY_NUM, 
+     MRCRY_USER_ID
+Resident
+     mrcry_acct_keys_tmp
+;
+Drop Table mrcry_acct_keys_tmp;
+
+
+trace "**************** Add DC/Account info to user_categories ";
+// Join on ACCT_KEY_NUM to load DC/Account infor
+Inner Join (user_categories)
+LOAD Distinct
+    ACCT_KEY_NUM    
+	,[Account #] 
+    ,[DC #]
+	,[DC #] & '-' & [Account #] as [AccountSelector]
+FROM
+	'$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd' (qvd)
+;
+Let v_temp = Num(NoOfRows('user_categories'),'#,##0');
+Trace Number of user_categories rows with ACCT_KEY_NUM data : $(v_temp);
+
+// Store the full list of Adv Reporting users to a QVD
+Store user_categories into $(vRootFileLocation)$(vQVDs)user_categories_PurchaseReviewGPO_1.qvd;
+
+DROP Table user_categories;
+///$tab Concatenate Reporting Users
+
+NoConcatenate
+
+Reporting_Users:
+LOAD MRCRY_USER_ID, 
+     [Report ID], 
+     RPT_NAM, 
+     END_DTE, 
+     USER_TYPE_NAM, 
+     USER_NAME, 
+     USER_ID, 
+     USER_ID_ACTIVE_FLG, 
+     Acute_User, 
+     Retail_User, 
+     invoice_lines, 
+     [Segment #]
+FROM
+'$(vRootFileLocation)$(vQVDs)Reporting_Users.qvd'
+(qvd);
+
+Concatenate
+
+LOAD MRCRY_USER_ID, 
+     [Report ID], 
+     RPT_NAM, 
+     END_DTE, 
+     USER_TYPE_NAM, 
+     USER_NAME, 
+     USER_ID, 
+     USER_ID_ACTIVE_FLG,
+     '1' as Acute_User, 
+     '1' as Retail_User, 
+     '1' as invoice_lines, 
+     '1' as [Segment #]
+FROM
+'$(vRootFileLocation)$(vQVDs)Reporting_Users_GPO.qvd'
+(qvd);
+
+
+
+Store Reporting_Users into '$(vRootFileLocation)$(vQVDs)Reporting_Users.qvd' (qvd);
+	
+	
+DROP Table Reporting_Users;

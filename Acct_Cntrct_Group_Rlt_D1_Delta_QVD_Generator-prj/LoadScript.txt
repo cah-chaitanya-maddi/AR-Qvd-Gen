@@ -1,0 +1,365 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ACCT_CNTRCT_GROUP_RLT_D1 Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Acct_Cntrct_Group_Rlt_D1.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/15/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO '$(vSalesDataWarehouseConnectionStg)';
+//ODBC CONNECT TO PD_SDW_Stg;
+///$tab Ship to Limiter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM as SHIP_TO_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Acct_Cntrct_Group_Rlt_D1_Full
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+ 
+SET vTableName = 'Acct_Cntrct_Group_Rlt_D1';
+
+Acct_Cntrct_Group_Rlt_D1:
+LOAD
+  SHIP_TO_CUSTOMER_NUM & '-' & CNTRCT_GROUP_NUM & '-' &  SHIP_TO_LOCATION_NUM as [PRIMARY_KEY]
+ ,CNTRCT_GROUP_NUM                                                            as [CNTRCT_GROUP_NUM]
+ ,SHIP_TO_LOCATION_NUM                                                        as [SHIP_TO_LOCATION_NUM]
+ ,SHIP_TO_CUSTOMER_NUM                                                        as [SHIP_TO_CUSTOMER_NUM]
+ ,START_DTE                                                                   as [START_DTE]
+ ,END_DTE                                                                     as [END_DTE]
+ ,GROUP_PRTY_RANK_NUM                                                         as [Cardinal Priority Rank]
+ ,CUSTOMER_MARKUP_PCT                                                         as [CUSTOMER_MARKUP_PCT]
+ ,ROW_ADD_STP                                                                 as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                                                             as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                                                              as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID                                                          as [ROW_UPDATE_USER_ID]
+ ,CNTRCT_ALIAS_NAM															  as [Contract Alias Name]
+ ,SAP_BUY_GROUP_ID
+;
+
+SELECT  
+
+  ACG1.CNTRCT_GROUP_NUM
+ ,ACG1.SHIP_TO_LOCATION_NUM
+ ,ACG1.SHIP_TO_CUSTOMER_NUM
+ ,ACG1.START_DTE
+ ,ACG1.END_DTE
+ ,ACG1.GROUP_PRTY_RANK_NUM
+ ,ACG1.CUSTOMER_MARKUP_PCT
+ ,ACG1.ROW_ADD_STP
+ ,ACG1.ROW_ADD_USER_ID
+ ,ACG1.ROW_UPDATE_STP
+ ,ACG1.ROW_UPDATE_USER_ID
+ ,ACG1.CNTRCT_ALIAS_NAM
+ ,ACG1.SAP_BUY_GROUP_ID
+
+FROM
+
+(
+SELECT
+ 
+  CNTRCT_GROUP_NUM
+ ,SHIP_TO_LOCATION_NUM
+ ,SHIP_TO_CUSTOMER_NUM
+ ,START_DTE
+ ,END_DTE
+ ,GROUP_PRTY_RANK_NUM
+ ,CUSTOMER_MARKUP_PCT
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,CNTRCT_ALIAS_NAM
+ ,SAP_BUY_GROUP_ID
+ 
+FROM
+  VIEWS.ACCT_CNTRCT_GROUP_RLT_D1      //Changes by Sumit 11/06/2020 ARR 262-264
+  ) as ACG1
+;
+   
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	//*****************************************************************
+	trace "************************** DEV LOAD: Creating Dev version of Acct_Cntrct_Group_Rlt_D1";
+	//*****************************************************************
+	NoConcatenate
+	Acct_Cntrct_Group_Rlt_D1_dev:
+	load 
+		* 
+	resident
+		Acct_Cntrct_Group_Rlt_D1
+	where exists(SHIP_TO_FILTER, SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM)
+	;
+
+	store Acct_Cntrct_Group_Rlt_D1_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Acct_Cntrct_Group_Rlt_D1.qvd';
+	drop table Acct_Cntrct_Group_Rlt_D1_dev;
+	
+endif; 
+
+    STORE
+      Acct_Cntrct_Group_Rlt_D1
+    INTO
+      '$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd';
+
+
+DROP TABLE Acct_Cntrct_Group_Rlt_D1;
+///$tab Acct_Cntrct_Group_Rlt_D1
+///********************************************
+// * Set Statistics Variables
+// ********************************************/
+//LET vTimeStamp = Now();
+//LET vStart = Now();
+//SET vTableName = 'Acct_Cntrct_Group_Rlt_D1';
+//
+///********************************************
+// * Get Last Time QVD was Generated and Current Time
+// ********************************************/
+//LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+//
+///********************************************
+// * Get List of Dates
+// ********************************************/
+//temp:
+//LOAD
+//  ROW_UPDATE_STP as Date
+//FROM
+//  '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd'
+//(qvd);
+//
+///********************************************
+// * Get Max Date
+// ********************************************/
+//Max_Date:
+//Load
+//  min(Date) as min_date,
+//  max(Date) as max_date;
+//Load
+//  FieldValue('Date',IterNo()) as Date
+//autogenerate(1)
+//while not IsNull(FieldValue('Date',Iterno()));
+//
+///********************************************
+// * Drop Table
+// ********************************************/
+//Drop Table temp;
+//
+///********************************************
+// * Set vLastExecTime
+// ********************************************/
+//LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+//
+///********************************************
+// * Drop Table
+// ********************************************/
+//DROP TABLE Max_Date; 
+//
+///********************************************
+// * Get Changed/Updated Records
+// ********************************************/
+//Acct_Cntrct_Group_Rlt_D1:
+//LOAD
+//  SHIP_TO_CUSTOMER_NUM & '-' & CNTRCT_GROUP_NUM & '-' &  SHIP_TO_LOCATION_NUM as [PRIMARY_KEY]
+// ,CNTRCT_GROUP_NUM                                                            as [CNTRCT_GROUP_NUM]
+// ,SHIP_TO_LOCATION_NUM                                                        as [SHIP_TO_LOCATION_NUM]
+// ,SHIP_TO_CUSTOMER_NUM                                                        as [SHIP_TO_CUSTOMER_NUM]
+// ,START_DTE                                                                   as [START_DTE]
+// ,END_DTE                                                                     as [END_DTE]
+// ,GROUP_PRTY_RANK_NUM                                                         as [Cardinal Priority Rank]
+// ,CUSTOMER_MARKUP_PCT                                                         as [CUSTOMER_MARKUP_PCT]
+// ,ROW_ADD_STP                                                                 as [ROW_ADD_STP]
+// ,ROW_ADD_USER_ID                                                             as [ROW_ADD_USER_ID]
+// ,ROW_UPDATE_STP                                                              as [ROW_UPDATE_STP]
+// ,ROW_UPDATE_USER_ID                                                          as [ROW_UPDATE_USER_ID]
+//;
+//SQL
+//SELECT
+//  CNTRCT_GROUP_NUM
+// ,SHIP_TO_LOCATION_NUM
+// ,SHIP_TO_CUSTOMER_NUM
+// ,START_DTE
+// ,END_DTE
+// ,GROUP_PRTY_RANK_NUM
+// ,CUSTOMER_MARKUP_PCT
+// ,ROW_ADD_STP
+// ,ROW_ADD_USER_ID
+// ,ROW_UPDATE_STP
+// ,ROW_UPDATE_USER_ID
+//FROM
+//  VIEWS.ACCT_CNTRCT_GROUP_RLT_D1
+//WHERE  
+//  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+////  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+////  AND ROW_ADD_STP < '$(vThisExecTime)')  
+//;
+//
+///********************************************
+// * Check to see if any new records exists
+// * otherwise do not concatenate
+// ********************************************/
+//LET vDeltaRecords = NoOfRows('$(vTableName)');
+//
+//IF $(vDeltaRecords) <> 0 THEN
+//  /********************************************
+//   * Concatenate Records where not exists in
+//   * the query above
+//   ********************************************/
+//  CONCATENATE
+//  LOAD
+//    CNTRCT_GROUP_NUM
+//   ,CUSTOMER_MARKUP_PCT
+//   ,END_DTE
+//   ,[Cardinal Priority Rank]
+//   ,ROW_ADD_STP
+//   ,ROW_ADD_USER_ID
+//   ,ROW_UPDATE_STP
+//   ,ROW_UPDATE_USER_ID
+//   ,SHIP_TO_CUSTOMER_NUM
+//   ,SHIP_TO_LOCATION_NUM
+//   ,START_DTE
+//  FROM
+//   '$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd' (qvd)
+//  WHERE
+//    NOT EXISTS(PRIMARY_KEY, SHIP_TO_CUSTOMER_NUM & '-' & CNTRCT_GROUP_NUM & '-' &  SHIP_TO_LOCATION_NUM)
+//  ;
+//
+//  /********************************************
+//   * Since Primary Key was composite key need
+//   * to drop the field
+//   ********************************************/
+//  DROP FIELD PRIMARY_KEY;
+//
+//  /********************************************
+//   * Store New QVD, if no errors
+//   ********************************************/ 
+//   
+//  if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+//
+//	//*****************************************************************
+//	trace "************************** DEV LOAD: Creating Dev version of Acct_Cntrct_Group_Rlt_D1";
+//	//*****************************************************************
+//	NoConcatenate
+//	Acct_Cntrct_Group_Rlt_D1_dev:
+//	load 
+//		* 
+//	resident
+//		Acct_Cntrct_Group_Rlt_D1
+//	where exists(SHIP_TO_FILTER, SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM)
+//	;
+//
+//	store Acct_Cntrct_Group_Rlt_D1_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Acct_Cntrct_Group_Rlt_D1.qvd';
+//	drop table Acct_Cntrct_Group_Rlt_D1_dev;
+//	
+//endif; 
+//   
+//  IF ScriptErrorCount = 0 THEN
+//    STORE
+//      Acct_Cntrct_Group_Rlt_D1
+//    INTO
+//      '$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd';
+//    LET vLastExecTime = '$(vThisExecTime)'; 
+//  END IF
+//END IF
+//
+///********************************************
+// * Set Statistics Variables
+// ********************************************/
+////LET vEnd = Now();
+////LET vNoOfRows = NoOfRows('$(vTableName)');
+////LET vNoOfFields = NoOfFields('$(vTableName)');
+////LET vFileSize = FileSize('$(vRootFileLocation)$(vQVDs)$(vTableName).qvd');
+////LET vDuration = interval(num(vEnd)-num(vStart),'hh:mm:ss');
+//
+///********************************************
+// * Drop table out of memory
+// ********************************************/ 
+//DROP TABLE Acct_Cntrct_Group_Rlt_D1;
+//
+///********************************************
+// * Load Statistics in Memory
+// ********************************************/
+////LoadStats:
+////load
+////	year('$(vTimeStamp)')  as LoadYear,
+////	month('$(vTimeStamp)') as LoadMonth,
+////	day('$(vTimeStamp)')   as LoadDay,	
+////	'$(vTableName)'		   as TableName,
+////	'$(vStart)'			   as DateStart,
+////	'$(vEnd)'			   as DateEnd,
+////	'$(vNoOfFields)'       as FieldCount, 	
+////	'$(vNoOfRows)'		   as RecordCount,
+////	'$(vDuration)'         as LoadDuration,
+////	'$(vQVDs)'             as QVDPath
+////autogenerate 1;
+//
+///********************************************
+// * Check to see if QVD exists 
+// ********************************************/
+////IF (NOT isNull(qvdCreateTime('$(vRootFileLocation)$(vQVDs)LoadStats.qvd'))) THEN
+////  CONCATENATE(LoadStats)
+////  LOAD
+////    *
+////  FROM
+////    '$(vRootFileLocation)$(vQVDs)LoadStats.qvd'(qvd);
+////END IF
+//
+///********************************************
+// * Store Statistics
+// ********************************************/
+////STORE
+////  LoadStats
+////INTO
+////  '$(vRootFileLocation)$(vQVDs)LoadStats.qvd'(qvd);
+//  
+///********************************************
+// * Drop Table
+// ********************************************/
+////DROP TABLE LoadStats;  

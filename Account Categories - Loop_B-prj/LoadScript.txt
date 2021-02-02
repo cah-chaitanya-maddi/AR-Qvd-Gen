@@ -1,0 +1,510 @@
+﻿///$tab Document
+/*
+ ******************************************************************************
+ * Overview:
+ * This QVW is being rewritten to not use the Invoice_Line count method of 
+ * assigning categories. Instead, the Hadoop user- segment # assignments will be 
+ * used to group the users into user documents. The user-account assignments will 
+ * continue to come from QVDs, not from Hadoop.  
+ * The QVW will load user information based on the 4 requirements above. This is 
+ * currently being done in QV. Reports will only be loaded for users that are in 
+ * both the Hadoop file and Account Categories – Loop.qvw. No provision is being 
+ * made to add new users into some designated segment. This is why the two systems 
+ * need to be in sync with SDW updates. 
+ * It may be needed to create a larger number of segments. This QVW should be able 
+ * to create user_categories QVDs even when there are no users for the segment or report. 
+ * This QVW builds user_categories QVDs for:
+	•	Invoice_Line segments
+	•	Assigned documents – PurchasesReview, InvoiceReview, ContractsReview, etc.
+	•	Acute Landing Page
+	•	Retail Landing Page 
+	•	Demo documents
+
+ ******************************************************************************
+ *
+ * Revision History:
+ *
+ * 10.01.2014 Warren Lea
+ * Initial Creation
+ *
+ * 4.11.2016 Rajdeep Biswas
+ * this will not run if any segment has more than 1500 users
+ *
+ *
+ */
+///$tab Defaults
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+///$tab Setup
+
+
+let v_today = date(floor(today()),'MM/DD/YYYY');
+
+Let v_total_segments = 16; 
+Let v_SuperUser_segments = 34;
+///$tab Adv Reports
+/**********************************************************
+Creating user_categories QVDs for each Adv Report.
+The Resident table user_categories was created in the previous tab and 
+is kept open for this tab. 
+
+Changelog:
+10.09.2014 warren.lea 
+Using the same WildMatches that were used before. 
+These can be combined into one WildMatch()
+**********************************************************/
+
+// (Acute) Executive Dashboard document; using the same WildMatch() search
+For q = 5 to 8
+	acute_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From
+		'$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+		
+    Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Executive*')
+	    and WildMatch([Report Name], '*Retail*')
+	;
+	
+	Store acute_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_retail_$(q).qvd';
+	Drop Table acute_$(q);
+Next
+
+// Retail Executive Dashboard document; using the same WildMatch() search
+For q = 5 to 8
+	retail_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Executive*')
+	and not WildMatch([Report Name], '*Retail*')	
+	;
+	
+	Store retail_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_acute_$(q).qvd';
+	Drop Table retail_$(q);
+Next
+
+// Contract Opps document; using the same WildMatch() search
+For q = 5 to 8
+	contract_opps_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*contract*avail*') 
+	;
+	
+	Store contract_opps_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_contracts_opps_$(q).qvd';
+//	Store contract_opps_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_SOURCE_opps_$(q).qvd';
+	Drop Table contract_opps_$(q);
+Next
+
+// Contracts Review document; using the same WildMatch() search
+For q = 5 to 8
+	contracts_rev_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and  WildMatch([Report Name], '*contract*')
+	    and WildMatch([Report Name], '*Review*')
+	;
+	
+	Store contracts_rev_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_contracts_review_$(q).qvd';
+	Drop Table contracts_rev_$(q);
+Next
+
+// Department Billing document; using the same WildMatch() search
+For q = 5 to 8
+	department_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Department*') 
+	;
+	
+	Store department_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_department_$(q).qvd';
+	Drop Table department_$(q);
+Next
+
+// GenericRebateEstimator document; using the same WildMatch() search
+// All users of the Generic Rebate Estimator are stored in one document
+estimator:
+Load
+     ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     [Segment #],
+     [Account #], 
+     [DC #], 
+     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where 
+    WildMatch([Report Name], '*Generic*')
+   	and WildMatch([Report Name], '*Rebate*')
+    and WildMatch([Report Name], '*Estimator*')
+;
+
+Store estimator into '$(vRootFileLocation)$(vQVDs)user_categories_estimator_1.qvd';
+Drop Table estimator;
+
+// SourceRebateEstimator document; using the same WildMatch() search
+// All users of the Source Rebate Estimator are stored in one document
+source_estimator:
+Load
+     ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     [Segment #],
+     [Account #], 
+     [DC #], 
+     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where 
+    WildMatch([Report Name], '*Source*')
+   	and WildMatch([Report Name], '*Rebate*')
+    and WildMatch([Report Name], '*Estimator*')
+;
+
+Store source_estimator into '$(vRootFileLocation)$(vQVDs)user_categories_acute_estimator_1.qvd';
+Drop Table source_estimator;
+
+// InvoiceReview document; using the same WildMatch() search
+For q = 5 to 8
+	invoices_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector,
+	     '1' as invoice_user 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Invoice*')
+	    and WildMatch([Report Name], '*Review*')
+	;
+	
+	Store invoices_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_invoices_$(q).qvd';
+	Drop Table invoices_$(q);
+Next
+
+// Invoice Approval document; using the same WildMatch() search
+For q = 5 to 8
+	invoices_approval$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector,
+	     '1' as invoice_user 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Invoice*')
+	    and WildMatch([Report Name], '*Approval*')
+	;
+	
+	Store invoices_approval$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_invoice_approval_$(q).qvd';
+	Drop Table invoices_approval$(q);
+Next 
+
+// Purchases document; using the same WildMatch() search
+For q = 5 to 8
+	purchases_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  	
+    	'$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and  WildMatch([Report Name], '*Purchase*')
+	    and WildMatch([Report Name], '*Review*')
+	;
+	
+	Store purchases_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_purchases_$(q).qvd';
+	Drop Table purchases_$(q);
+Next
+
+// ServiceLevel document; using the same WildMatch() search
+For q = 5 to 8
+	service_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Service*') 
+	    and WildMatch([Report Name], '*Level*')
+	;
+	
+	Store service_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_service_$(q).qvd';
+	Drop Table service_$(q);
+Next
+
+ // Separation Of Duties document; using its WildMatch() search
+For q = 5 to 8
+	separation_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Separation*Duties*') 
+	;
+	
+	Store separation_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_separation_$(q).qvd';
+	Drop Table separation_$(q);
+Next
+
+// Purchases-ProductGroups document.
+// This app is a copy of Purchases to test its performance compared to Purchases Review
+For q = 5 to 8
+	purchases_prodgroups_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Purchases*Prod*Group*') 
+	;
+	
+	Store purchases_prodgroups_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_purchases_prodgroups_$(q).qvd';
+	Drop Table purchases_prodgroups_$(q);
+Next
+
+//Market Share document; using the same WildMatch() search  - // Added by Andrew on 5/4/2016
+For q = 5 to 8
+	marketshare_$(q):
+	Load	
+     		ACCT_KEY_NUM, 
+     		MRCRY_USER_ID, 
+     		USER_ID, 
+     		USER_NAME, 
+     		[Segment #],
+     		[Account #], 
+     		[DC #], 
+     		AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where [Segment #] = $(q)
+	and WildMatch([Report Name], '*Market*')
+   	and WildMatch([Report Name], '*Share*')
+    	and WildMatch([Report Name], '*Report*')
+;
+
+Store marketshare_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_marketshare_$(q).qvd';
+Drop Table marketshare_$(q);
+
+Next
+// GCP report document.
+For q = 5 to 8
+ps_$(q):
+Load
+     ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     [Segment #],
+     [Account #], 
+     [DC #], 
+     AccountSelector 
+   
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where
+	[Segment #] = $(q)
+	and 
+    WildMatch([Report Name], '*PricingConfirmationReport*')
+;
+
+Store ps_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_PricingConfirmationReport_$(q).qvd' ;
+DROP Table ps_$(q);
+NEXT
+
+// QBR report document.
+For q = 5 to 8
+qbr_$(q):
+Load
+     ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     [Segment #],
+     [Account #], 
+     [DC #], 
+     AccountSelector 
+   
+   From  	
+   	'$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where
+	[Segment #] = $(q)
+	and 
+    WildMatch([Report Name], '*qbr*')
+;
+
+Store qbr_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_qbr_$(q).qvd' ;
+DROP Table qbr_$(q);
+NEXT
+
+// SOURCE Opps document; using the same WildMatch() search
+For q = 5 to 8
+	SOURCE_opps_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*SourceOps*') 
+	;
+	
+	Store SOURCE_opps_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_SOURCE_opps_$(q).qvd';
+	Drop Table SOURCE_opps_$(q);
+Next
+
+// Open to Buy document; 
+For q = 5 to 8
+	OpentoBuy_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and  WildMatch([Report Name], '*OpentoBuy*')
+	;
+	
+	Store OpentoBuy_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_OpentoBuy_$(q).qvd';
+	Drop Table OpentoBuy_$(q);
+NEXT
+
+// BackOrderReport ; 
+For q = 5 to 8  /* Segments not needed as per Aug 2018 release */
+	BackOrderReport_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*BackOrderReport*')
+	;
+	
+	Store BackOrderReport_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_BackOrderReport_$(q).qvd';
+	Drop Table BackOrderReport_$(q);
+NEXT

@@ -1,0 +1,289 @@
+﻿<DocInternals>
+  <AlwaysLoose></AlwaysLoose>
+  <FieldSrcTables></FieldSrcTables>
+  <TableViewData>
+    <Pos></Pos>
+    <CtlInfo>
+      <InternalView>
+        <Tables>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>489</Left>
+              <Top>461</Top>
+              <Width>175</Width>
+              <Height>100</Height>
+            </Pos>
+            <Caption>USER_CATEGORIES</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>1022</Left>
+              <Top>186</Top>
+              <Width>100</Width>
+              <Height>136</Height>
+            </Pos>
+            <Caption>Ship_To_Account</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>1045</Left>
+              <Top>441</Top>
+              <Width>203</Width>
+              <Height>136</Height>
+            </Pos>
+            <Caption>account_contracts</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>244</Left>
+              <Top>225</Top>
+              <Width>302</Width>
+              <Height>154</Height>
+            </Pos>
+            <Caption>Contract_Group</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>251</Left>
+              <Top>147</Top>
+              <Width>225</Width>
+              <Height>64</Height>
+            </Pos>
+            <Caption>account_contracts_tmp</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>850</Left>
+              <Top>378</Top>
+              <Width>140</Width>
+              <Height>208</Height>
+            </Pos>
+            <Caption>Product_All</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>970</Left>
+              <Top>85</Top>
+              <Width>100</Width>
+              <Height>172</Height>
+            </Pos>
+            <Caption>active_dds_contracts</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>850</Left>
+              <Top>93</Top>
+              <Width>100</Width>
+              <Height>154</Height>
+            </Pos>
+            <Caption>$Syn 1 Table</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>251</Left>
+              <Top>43</Top>
+              <Width>100</Width>
+              <Height>82</Height>
+            </Pos>
+            <Caption>$Syn 2 Table</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>550</Left>
+              <Top>48</Top>
+              <Width>267</Width>
+              <Height>532</Height>
+            </Pos>
+            <Caption>Contract_History</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>280</Left>
+              <Top>240</Top>
+              <Width>382</Width>
+              <Height>208</Height>
+            </Pos>
+            <Caption>invoice_line_merge</Caption>
+          </TableViewTableWinSaveInfo>
+        </Tables>
+        <BroomPoints></BroomPoints>
+        <ConnectionPoints></ConnectionPoints>
+        <ZoomFactor>3FF0000000000000</ZoomFactor>
+      </InternalView>
+      <SourceView></SourceView>
+    </CtlInfo>
+    <Mode>0</Mode>
+  </TableViewData>
+  <Bookmarks></Bookmarks>
+  <SavedByVersion>12.20.21000.0</SavedByVersion>
+  <ForceBackEndMacroExecution>false</ForceBackEndMacroExecution>
+  <FieldTags>
+    <ScriptBased>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>AccountSelector</String>
+          <String>Contract Name</String>
+          <String>Contract Class</String>
+          <String>New Contract #</String>
+          <String>New Contract Name</String>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>Contract Type</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>AccountSelector</String>
+          <String>Contract Name</String>
+          <String>Contract Class</String>
+          <String>New Contract #</String>
+          <String>New Contract Name</String>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>Contract Type</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>Contract #</String>
+          <String>RPT_TO_GROUP_NUM</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>contract_number</String>
+          <String>CNTRCT_GROUP_AFLTN_NUM</String>
+          <String>CNTRCT_GROUP_NUM</String>
+          <String>CORP_ITEM_NUM_TMP</String>
+          <String>CNTRCT_NUM</String>
+          <String>Contract Start Date</String>
+          <String>Contract Expiration Date</String>
+          <String>CNTRCT_COST_DLR</String>
+          <String>CNTRCT_SELL_DLR</String>
+          <String>Contract Cost</String>
+          <String>Cardinal Rank</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>Contract #</String>
+          <String>RPT_TO_GROUP_NUM</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>contract_number</String>
+          <String>CNTRCT_GROUP_AFLTN_NUM</String>
+          <String>CNTRCT_GROUP_NUM</String>
+          <String>CORP_ITEM_NUM_TMP</String>
+          <String>CNTRCT_NUM</String>
+          <String>Contract Start Date</String>
+          <String>Contract Expiration Date</String>
+          <String>Cardinal Rank</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$hidden</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$system</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+    </ScriptBased>
+    <Interactive>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>ROW_ADD_STP</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>Contract Start Date</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>ROW_ADD_STP</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>MRCRY_USER_ID</String>
+          <String>INVOICE_LINES</String>
+          <String>loop_category_numeric</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>CNTRCT_COST_DLR</String>
+          <String>CNTRCT_SELL_DLR</String>
+          <String>Contract #</String>
+          <String>Contract Expiration Date</String>
+          <String>Contract Start Date</String>
+          <String>CNTRCT_NUM</String>
+          <String>CORP_ITEM_NUM</String>
+          <String>Contract Cost</String>
+          <String>CNTRCT_GROUP_AFLTN_NUM</String>
+          <String>CNTRCT_GROUP_STAT_CDE</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+          <String>MRCRY_USER_ID</String>
+          <String>INVOICE_LINES</String>
+          <String>loop_category_numeric</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>Contract #</String>
+          <String>Contract Expiration Date</String>
+          <String>Contract Start Date</String>
+          <String>CNTRCT_NUM</String>
+          <String>CORP_ITEM_NUM</String>
+          <String>CNTRCT_GROUP_AFLTN_NUM</String>
+          <String>CNTRCT_GROUP_STAT_CDE</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$date</Tag>
+        <FieldNames>
+          <String>Contract Start Date</String>
+        </FieldNames>
+      </FieldTagData>
+    </Interactive>
+  </FieldTags>
+  <FieldComments></FieldComments>
+  <TableComments></TableComments>
+  <CreatePrjFolder>false</CreatePrjFolder>
+  <LinkedTables></LinkedTables>
+  <AppObjectEntries></AppObjectEntries>
+  <GenericDimensions></GenericDimensions>
+  <GenericMeasures></GenericMeasures>
+  <GenericBookmarks></GenericBookmarks>
+  <ConnectionInfo></ConnectionInfo>
+  <GenericDerivedDefinitions></GenericDerivedDefinitions>
+  <GenericDerivedFields></GenericDerivedFields>
+  <BnfOff>false</BnfOff>
+  <CreatedAfterSingleQuoteExactSearch>false</CreatedAfterSingleQuoteExactSearch>
+</DocInternals>

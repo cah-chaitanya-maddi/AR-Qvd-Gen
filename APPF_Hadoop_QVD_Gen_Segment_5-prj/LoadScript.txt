@@ -1,0 +1,209 @@
+﻿///$tab Set Up
+
+
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+LET vQVDs='\QVDs\';
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs); /*Cloud PROD ODBC*/
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+///$tab Last Execution
+/******************************************************************************************
+* Fetch the execution date for the previous run.
+*******************************************************************************************/
+
+/////////////////////////////////
+// Read the segmented APPF qvd //
+/////////////////////////////////
+execution_date_temp:
+LOAD hdp_xfm_dte_part as exec_dte
+FROM
+   '$(vRootFileLocation)$(vQVDs)ACCOUNT_PROD_PRICE_SEG_$(v_doc_num).qvd'
+(qvd)
+;
+
+
+////////////////////////////////////////////
+// Get the max value for hdp_xfm_dte_part //
+////////////////////////////////////////////
+NoConcatenate
+exec_dte:
+LOAD max(exec_dte) as max_dte
+Resident
+execution_date_temp
+;
+
+DROP Table execution_date_temp;
+
+//////////////////////////////////
+// Store the date in a variable //
+//////////////////////////////////
+LET v_last_execution_date=date(Peek('max_dte',0,'exec_dte'),'YYYY-MM-DD');
+
+DROP Table exec_dte;
+
+TRACE v_last_execution_date = $(v_last_execution_date);
+
+
+
+///$tab Hadoop Connection
+//exit Script;
+
+ODBC CONNECT TO $(vHadoopConnection); 
+
+//ODBC CONNECT TO [PD Hadoop Hive Dev] (XUserId is MRCUQZFMNBaIGYFOMLaWGbFNFbdcSQRMWTcAHaA, XPassword is ZfDHECNOFDOKTRQMGTcCDZMGZZNSL);  ////Hadoop Dev New Created
+
+//ODBC CONNECT TO PD_Hadoop_Hive (XUserId is RRGLXZFMNBaIGYFOMLaWGbFNFbdcSQRMWTcAHaA, XPassword is UOMLNCNOFDOKTRQMGTcCDZMGZZNQE);  ////Hadoop Dev
+//ODBC CONNECT TO PD_Hadoop_Hive (XUserId is cLSXTZFMNBaIGYFOMLaWGbFNFbdcSQRMWTcAHaB, XPassword is LLdUGCNOFDOKTRQMGTcCDZMGZZNQD);   //// Hadoop Integration
+
+//ODBC CONNECT TO PD_Hadoop_Hive_Integration (XUserId is EbbWfZFMNBaIGYFOMLaWGbFNFbdcSQRMWTcAHBD, XPassword is ZACaKCNOFDOKTRQMGTcCDZMGZZNYL);
+
+//EXIT SCRIPT;
+
+///$tab PRICE_SEG
+/******************************************************************************************
+* Fecth the data from hadoop based on segment num.
+* Hadoop segments start from 0 for both normal and super users
+* Normal user data is stored in PUB_POERPT_QLIKVIEW_ACCOUNT_PROD_PRICE_SEG table
+* Super user date is stored in PUB_POERPT_QLIKVIEW_ACCOUNT_PROD_PRICE_SEG_SUPER_USR table
+*******************************************************************************************/
+
+/////////////////////////////////
+// Extraction for normal users //
+/////////////////////////////////
+
+if v_doc_num < 30 then
+
+let v_seg_num = v_doc_num-1;
+
+trace v_seg_num= $(v_seg_num);
+
+ACCOUNT_PROD_PRICE_SEG:
+
+SELECT	
+*
+FROM  HIVE."default"."PUB_POERPT_QLIKVIEW_ACCOUNT_PROD_PRICE_SEG"
+where 
+hdp_xfm_dte_part > '$(v_last_execution_date)'  
+and 
+segment_num_part = '$(v_seg_num)'
+;
+
+ENDIF;
+
+
+/////////////////////////////////
+// Extraction for super users //
+/////////////////////////////////
+
+if v_doc_num > 30 then
+
+let v_seg_num = v_doc_num-31;
+
+trace v_seg_num= $(v_seg_num);
+
+ACCOUNT_PROD_PRICE_SEG:
+
+SELECT	
+*
+FROM  HIVE."default"."PUB_POERPT_QLIKVIEW_ACCOUNT_PROD_PRICE_SEG_SUPER_USR"
+where 
+hdp_xfm_dte_part > '$(v_last_execution_date)' 
+and 
+segment_num_part = '$(v_seg_num)'
+;
+
+ENDIF;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// If there are records then Store the extracted data in Tier 1 QVD else do not save anthing and exist the esecution//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+if(NoOfRows('ACCOUNT_PROD_PRICE_SEG')>0) then
+STORE ACCOUNT_PROD_PRICE_SEG into '$(vRootFileLocation)$(vQVDs)ACCOUNT_PROD_PRICE_SEG_$(v_doc_num).qvd' ; 
+ENDIF;
+
+if(NoOfRows('ACCOUNT_PROD_PRICE_SEG')=0) then
+EXIT Script; 
+ENDIF;
+
+DROP TABLE ACCOUNT_PROD_PRICE_SEG;
+///$tab Mapping Load
+/***************************************
+* Mapping load to create the Pricing Key
+***************************************/
+
+
+/********************************************
+ * Mapping for PROD_KEY_NUM
+ ********************************************/
+product_map:
+MAPPING LOAD  
+     PROD_KEY_NUM, 
+     CIN
+FROM
+  '$(vRootFileLocation)$(vQVDs)Product_All.qvd'
+(qvd);
+
+/********************************************
+ * Mapping for Account#
+ ********************************************/
+account_map:
+MAPPING LOAD  
+     ACCT_KEY_NUM,
+     AccountSelector
+     
+FROM
+  '$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+(qvd);
+
+///********************************************
+// * Mapping for DC#
+// ********************************************/
+//dc_map:
+//MAPPING LOAD  
+//     ACCT_KEY_NUM,
+//     SHIP_TO_LOCATION_NUM     
+//FROM
+//  '$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+//(qvd);
+///$tab Final QVD
+/***************************************
+* Create and store final Pricing QVD
+***************************************/
+
+appf:
+LOAD Distinct
+//	 ApplyMap('dc_map',acct_key_num)&'-'&ApplyMap('account_map',acct_key_num)&'-'&ApplyMap('product_map',prod_key_num) as [Pricing Key], 
+	 ApplyMap('account_map',acct_key_num)&'-'&ApplyMap('product_map',prod_key_num) as [Pricing Key],
+     hdp_xfm_dte_part,
+     acct_key_num, 
+     prod_key_num, 
+     cntrct_key_num as CNTRCT_KEY_NUM, 
+     flg_key_num, 
+     sell_price_dlr as SELL_PRICE_DLR, 
+     retail_sell_price_dlr as RETAIL_SELL_PRICE_DLR
+FROM
+   '$(vRootFileLocation)$(vQVDs)ACCOUNT_PROD_PRICE_SEG_$(v_doc_num).qvd'
+(qvd);
+
+
+Inner Join (appf)
+
+LOAD	[Pricing Key],
+		MaxString(hdp_xfm_dte_part) as hdp_xfm_dte_part
+
+Resident appf
+
+Group by [Pricing Key]	;
+
+
+STORE appf into '$(vRootFileLocation)$(vQVDs)ACCOUNT_PRODUCT_PRICE_FACT_FINAL_$(v_doc_num).qvd';
+
+Drop Table appf;

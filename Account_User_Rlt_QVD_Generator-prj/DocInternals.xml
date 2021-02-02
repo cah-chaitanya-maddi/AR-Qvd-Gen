@@ -1,0 +1,203 @@
+﻿<DocInternals>
+  <AlwaysLoose></AlwaysLoose>
+  <FieldSrcTables></FieldSrcTables>
+  <TableViewData></TableViewData>
+  <Bookmarks></Bookmarks>
+  <SavedByVersion>12.20.21000.0</SavedByVersion>
+  <ForceBackEndMacroExecution>false</ForceBackEndMacroExecution>
+  <FieldTags>
+    <ScriptBased>
+      <FieldTagData>
+        <Tag>$hidden</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$system</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>ROW_UPDATE_USER_ID</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>ROW_UPDATE_USER_ID</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$key</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+          <String>ROW_ADD_STP</String>
+          <String>ROW_UPDATE_STP</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+    </ScriptBased>
+    <Interactive>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>LoadDuration</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>CURR_SR_NUM</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>CLASS_CDE</String>
+          <String>Accounting Code</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>Account Zip Code</String>
+          <String>HIN_ID</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>Store Numbers</String>
+          <String>Status</String>
+          <String>Account Phone</String>
+          <String>Shipping Contact Phone</String>
+          <String>Billing Contact Phone</String>
+          <String>State Pharmacy Other Expiration Date</String>
+          <String>State Pharmacy Other Extension Date</String>
+          <String>Current AR Balance</String>
+          <String>Last Payment Amount</String>
+          <String>Last Payment Date</String>
+          <String>Credit Limit</String>
+          <String>COD Add on Amount</String>
+          <String>Discount %</String>
+          <String>Discount Paid Days</String>
+          <String>COD Code</String>
+          <String>PRE_PAY_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>CURR_SR_NUM</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>CLASS_CDE</String>
+          <String>Accounting Code</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>Account Zip Code</String>
+          <String>HIN_ID</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>Store Numbers</String>
+          <String>Status</String>
+          <String>Account Phone</String>
+          <String>Shipping Contact Phone</String>
+          <String>Billing Contact Phone</String>
+          <String>State Pharmacy Other Expiration Date</String>
+          <String>State Pharmacy Other Extension Date</String>
+          <String>Last Payment Date</String>
+          <String>Discount %</String>
+          <String>Discount Paid Days</String>
+          <String>COD Code</String>
+          <String>PRE_PAY_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+        </FieldNames>
+      </FieldTagData>
+    </Interactive>
+  </FieldTags>
+  <FieldComments></FieldComments>
+  <TableComments></TableComments>
+  <CreatePrjFolder>false</CreatePrjFolder>
+  <LinkedTables></LinkedTables>
+  <AppObjectEntries></AppObjectEntries>
+  <GenericDimensions></GenericDimensions>
+  <GenericMeasures></GenericMeasures>
+  <GenericBookmarks></GenericBookmarks>
+  <ConnectionInfo></ConnectionInfo>
+  <GenericDerivedDefinitions></GenericDerivedDefinitions>
+  <GenericDerivedFields></GenericDerivedFields>
+  <BnfOff>false</BnfOff>
+  <CreatedAfterSingleQuoteExactSearch>false</CreatedAfterSingleQuoteExactSearch>
+</DocInternals>

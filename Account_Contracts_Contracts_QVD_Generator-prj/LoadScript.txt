@@ -1,0 +1,567 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ *
+ * Overview:
+ *   This is the QVD Generator for Contract History that will be used
+ *   in the Contracts and Product Availability document.
+ * Sources:
+ *   
+ *   QVDs\user_categories.qvd (via *entitlement.qvs)
+ *   QVDs\Ship_To_Account.qvd
+ *   QVDs\ProductAll.qvd
+ *   QVDs\Acct_Cntrct_Group_Rlt_D1.qvd
+ *   QVDs\Contract_Group.qvd
+ *   QVDs\contract_group_d1.qvd
+ *	 QVDs\Active_Dds_Contracts.qvd
+ *   QVDs\Contract_Detail_D1.qvd
+ *   QVDs\Contract_D1.qvd
+ *   QVDs\Acct_Cntrct_Group_Rlt_D1.qvd
+ *   QVDs\Invoice_Line_Retail.qvd
+ *   QVDs\Invoice_Line_Acute.qvd
+ *   QVDs\Short_Reason.qvd
+ *
+ *
+ * Outputs:
+ *   Contract_History.qvd
+ *
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 10/24/13 Joe Roberts
+ * Initial creation of this file
+ * 
+ * 
+ * 
+ */
+///$tab Setup
+/***********************************************************
+Setup the root directory and the needed include files for
+this application.
+
+Changelog:
+-
+**********************************************************/
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+//LET vDocName = 'Contracts and Product Availability';
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+///$tab Variables
+/*************************************************************************
+Setup of variables to be used within the document. This is not
+where all variables will be found e.g.(some specific calendaring
+variables will be found on that sheet). Ideally all variables used
+within the application will be found here. This is better for versioning
+as we can see changes here but not within the document.
+*************************************************************************/
+
+let v_today = date(floor(today()),'MM/DD/YYYY');
+///$tab Ship To Accounts
+//*****************************************************************************************************
+trace "*********** Loading Ship_To_Account table";
+//*****************************************************************************************************
+
+// Limit the number of users' accounts that we are loading
+// user_categories.qvd contains the user-account data for all Premium users
+// This will limit other loads
+// 2.19.2014 warren.lea
+//   Note: Load script was loading all premium users; currently Contracts are 
+//   only loaded for Acute users. 
+
+user_categories:
+LOAD Distinct
+//     ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+//     USER_NAME, 
+//     INVOICE_LINES, 
+//     LOOP_AND_REDUCE_CATEGORY, 
+//     loop_category_numeric, 
+//     dashboard_assignment, 
+     [Account #], 
+     [DC #], 
+     AccountSelector
+FROM
+	'$(vRootFileLocation)$(vQVDs)user_categories_acute.qvd'
+(qvd);
+
+
+Ship_To_Account:
+load Distinct
+//    ACCT_KEY_NUM 
+    [Account #]
+    ,AccountSelector
+   	,[DC #] & '|' & [Account #] as ship_to_key
+    ,[Account Name] 
+  	,CURR_VRSN_FLG
+from
+	'$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+(qvd)
+Where Exists (AccountSelector)
+;
+
+Drop Table user_categories;
+///$tab Products
+//
+////*****************************************************************************************************
+//trace "*********** Loading Product_All table";
+////*****************************************************************************************************
+//
+//Product_All:
+//load 
+//	PROD_KEY_NUM 
+//   // ,[Total Doses] 
+//   // ,[AHFS #-hist] 
+//   // ,"Generic Indicator-hist" 
+//    ,CIN 
+//    ,CIN as CORP_ITEM_NUM_TMP
+//    ,[DEA Schedule #-hist] 
+//   // ,[Drug Class-hist] 
+//   // ,[Form-hist] 
+//   // ,[Generic Name-hist] 
+//    ,[Manufacturer-hist] 
+//    ,[Mfr-hist] 
+//    //,[NDC Code-hist] 
+//   // ,[Package Qty-hist] 
+//   ,[Product Active Status-hist] 
+//   // ,[Product Name-hist] 
+//   // ,[Product Type-hist] 
+//   // ,[Size-hist] 
+//   // ,[Strength-hist] 
+//   // ,[Trade Name-hist] 
+//   // ,[Unit Dose-hist] 
+//    ,[Product Active Status] 
+//    ,[AHFS #] 
+//    ,[AHFS Description]     
+//    ,[Cardinal Generic Indicator] 
+//    ,[Generic Indicator] 
+//    ,[Alternative Product Code] 
+//    ,GCN 
+//   // ,[Drug Category] 
+//    ,[GPI Class Name]
+//    ,[GPI Class #] 
+//    ,[GPI Group Name]
+//    ,[GPI Group #] 
+//    ,[GPI Subclass Name]
+//    ,[GPI Subclass #] 
+//    ,[Federal Upper Limit] 
+//    ,[FDA Therapeutic Equivalency Rating]     
+//    ,Form 
+//    ,[Generic Name]
+//    ,[GPI Description] 
+//    ,[GPI Code] 
+//    ,[Fineline Description]
+//    ,[Fineline #] 
+//    ,Manufacturer 
+//    ,Mfr 
+//    ,"Multi-Source" as [Multi-Source Indicator]
+//    ,NDC 
+//    ,[Package Qty] 
+//    ,[Package Size] 
+//   // ,[Product Name]  Do not use the Teradata field Product Name
+//    ,[Private Label Description]
+//   // ,[Product Type] 
+//   // ,[Product Add'l Description]
+//    ,"DEA Schedule #"
+//    ,Size 
+//    ,Strength 
+//    ,[Trade Name]
+//    // Quantity column headers are abbreviated "Qty"
+//    ,[Total Package Quantity] as [Total Package Qty]
+//    ,[UOM] 
+//    ,[Unit Dose] 
+//    ,UPC
+//    ,Controlled
+//    ,Category
+//    ,"Rx Flag"
+//    ,[Cardinal Generic Indicator-hist] 
+//    ,Capitalize([Trade Name])& '|' & Strength & '|' & Form & '|' & Size as [Purchased Product] 
+//    ,Capitalize([Trade Name])& '|' & Strength & '|' & Form & '|' & Size as [Product Name] 
+//    ,CIN & ' | ' & Capitalize([Trade Name]) as [CIN|TradeName] 
+//    ,CIN & ' | ' & Capitalize([Product Name]) as [CIN|ProdName]   
+//    ,CIN & ' | ' & Capitalize([Generic Name]) & '|' & [Trade Name] as [CIN|Generic Name|Trade Name] 
+//    ,[Current Version-hist]
+//    ,[Package U/M]
+//    ,[Package U/M Description]
+//    
+//from
+//	'$(vRootFileLocation)$(vQVDs)Product_All.qvd'
+//(qvd)
+//;
+///$tab Contracts
+/***********************************************************
+Build the account_contracts table used by Contract. A version for Contract_Group
+is also built which includes additional fields. 
+
+Changelog:
+- 1.28.2014 warren.lea
+  Modified the Dev version and used user_categories to limit the amount of data
+  to just the users that are assigned Contracts.
+- 2.19.2014 warren.lea
+  The Left Join with Ship_To_Account for ACCT_KEY_NUM is not used in Contracts Review
+**********************************************************/
+
+//*****************************************************************************************************
+trace "*********** Loading account_contracts table";
+//*****************************************************************************************************
+
+account_contracts:
+load distinct
+    SHIP_TO_LOCATION_NUM & '|' &  SHIP_TO_CUSTOMER_NUM as ship_to_key 
+    ,CNTRCT_GROUP_NUM //as [Contract #]
+    ,START_DTE 
+    ,END_DTE 
+    ,[Cardinal Priority Rank]  // GROUP_PRTY_RANK_NUM 
+//   ,CUSTOMER_MARKUP_PCT 
+    ,SHIP_TO_LOCATION_NUM
+    ,SHIP_TO_CUSTOMER_NUM
+from
+	'$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd'
+(qvd)
+// Only load acct-contract records for accounts that have been loaded
+where exists(ship_to_key, SHIP_TO_LOCATION_NUM & '|' & SHIP_TO_CUSTOMER_NUM)
+   and Date(END_DTE,'MM/DD/YYYY') >= '$(v_today)'
+;
+
+Drop Table Ship_To_Account;
+
+//*****************************************************************************************************
+trace "*********** Loading Contract_Group table";
+//*****************************************************************************************************
+// Contract_Group holds contract level data.
+Contract_Group:
+// There are no zero contract numbers in contract_group? Then what happens to [Contract #]=0
+load distinct
+     CNTRCT_GROUP_KEY_NUM,
+     [Contract #], 
+     [Contract Name], 
+     RPT_TO_GROUP_NUM, 
+     CARD_ACCT_GROUP_NUM, 
+     if([Contract #] = 0, 'Off-Contract', 
+     if(INDVDL_CNTRCT_GROUP_FLG = 'Y', 'Ancillary', 'Primary'))as [Contract Type],
+     CNTRCT_GROUP_CLASS_DESC as [Contract Class]
+	,CNTRCT_KEY_NUM
+    ,CNTRCT_NUM as contract_number,
+    //    	,CARD_ACCT_GROUP_NUM
+//     SRCH_NAM, 
+//     ADDR_TXT, 
+//     ADDR2_TXT, 
+//     CITY, 
+//     STATE, 
+//     ZIP, 
+//     PHONE_NUM, 
+//     CNTRCT_GROUP_TYPE_CDE, 
+//     CNTRCT_GROUP_TYPE_DESC, 
+//     CNTRCT_GROUP_STAT_CDE, 
+//     CNTRCT_GROUP_STAT_DESC, 
+//     DEL_FLG, 
+//     CNTRCT_GROUP_CLASS_CDE, 
+//     CNTRCT_GROUP_ABBR_NAM, 
+//     PPM_CLASS_CDE, 
+//     PPM_CLASS_DESC
+//		,SAP_BUY_GROUP_ID 		as [New Contract #],	//PMOD
+//		 SAP_BUY_GROUP_NAM		as [New Contract Name]			//PMOD
+	[New Contract #],   //PMOD
+	[New Contract Name]	 // PMOD
+		//****************The below coulmns are added to accomodate the chnage of using Contract table intsted of Contratc_Group**********
+from  
+'$(vRootFileLocation)$(vQVDs)Contracts.qvd' (qvd)		// Changes by Sumit 07292020
+//	'$(vRootFileLocation)$(vQVDs)Contracts_PMOD.qvd' (qvd)
+
+;
+
+
+//*****************************************************************************************************
+trace "*********** Adding [Source Contract] to Contract_Group";
+//*****************************************************************************************************
+left join (Contract_Group)
+load distinct
+      [CARD_ACCT_GROUP_NUM], 
+       [Affiliation #] as CNTRCT_GROUP_AFLTN_NUM
+from '$(vRootFileLocation)$(vQVDs)Cardinal_Account_Group.qvd'
+(qvd)
+;
+
+//*****************************************************************************************************
+trace "*********** Performing transformations on account_contracts";
+//*****************************************************************************************************
+// Copy account_contracts so that Contract Number is the alias [Contract #] 
+// so it can be joined to contract_group
+// Also add Card Rank
+account_contracts_tmp:
+load Distinct
+	CNTRCT_GROUP_NUM as [Contract #]
+	,[Cardinal Priority Rank] as [Cardinal Rank]
+
+resident 
+	account_contracts
+;
+
+//*****************************************************************************************************
+trace "*********** Joining account_contracts_tmp to Contract_Group";
+//*****************************************************************************************************
+
+// Add Cardinal Rank to contract_group to update Invoice_Line
+// Could do this as APPLYMAP
+left join (Contract_Group)
+load Distinct 
+	[Contract #] 
+    ,[Cardinal Rank]
+resident account_contracts_tmp
+;
+drop table account_contracts_tmp;
+
+//*****************************************************************************************************
+trace "*********** Joining Contract_Group back to account_contracts";
+//*****************************************************************************************************
+
+left join (account_contracts)
+load Distinct
+    CNTRCT_GROUP_KEY_NUM,
+    [Contract #] as CNTRCT_GROUP_NUM, 
+	[Contract Name],
+	[Contract Type],
+	RPT_TO_GROUP_NUM,  //[PHS Contract],
+	CNTRCT_GROUP_AFLTN_NUM, //[Source Contract],
+	//CNTRCT_GROUP_CLASS_CDE, 
+    [Contract Class]    
+resident Contract_Group
+;
+
+//*****************************************************************************************************
+trace "*********** Loading active_dds_contracts table";
+//*****************************************************************************************************
+// Join on Contract number, CNTRCT_GROUP_NUM.
+active_dds_contracts:
+load Distinct
+	[Contract #] as CNTRCT_GROUP_NUM
+	,CORP_ITEM_NUM as CORP_ITEM_NUM_TMP
+	,CNTRCT_NUM
+	,[Contract Start Date]
+    ,[Contract Expiration Date]   
+    //,CNTRCT_GROUP_NAM           	
+	,CNTRCT_COST_DLR
+    ,CNTRCT_SELL_DLR
+    ,[Contract Cost]
+from
+	'$(vRootFileLocation)$(vQVDs)Active_Dds_Contracts.qvd'	(qvd)
+where exists(CNTRCT_GROUP_NUM, [Contract #])
+;
+
+////*****************************************************************************************************
+//trace "*********** Joining Product_All to active_dds_contracts";
+////*****************************************************************************************************
+//// Add prod_key_num and product attributes to contracts table
+//// The Alternative labeled fields will be loaded into Invoice_Line with Usage_Flag=2.
+//left join (active_dds_contracts)
+//load Distinct
+//    CORP_ITEM_NUM_TMP 
+//    ,PROD_KEY_NUM as prod_key
+//	,[Alternative Product Code] as [Alternative Contract Product Code]
+//	,Form as "Alternative Form"
+//    ,[Generic Name] as "Alternative Generic Name"
+//    ,Size as "Alternative Size"
+//    ,Strength as "Alternative Strength"
+//    ,[Trade Name] as "Alternative Trade Name"
+//    ,Manufacturer  as "Alternative Manufacturer"
+//    ,Mfr as "Alternative Mfr"
+//    ,[Product Name] as "Alternative Product Name"
+//    ,[Product Active Status-hist] 
+//    ,NDC as "Alternative NDC"
+//resident 
+//	Product_All
+//where 
+//	[Current Version-hist] = 'Y'
+//// 7.18.2013 warren.lea
+//// There will be some account_contracts items with blank Alternative 
+////	and	[Alternative Product Code] <> ''	
+//;
+
+//// Drop Product_All from memory
+//drop table Product_All;
+
+
+////*****************************************************************************************************
+//trace "*********** Joining active_dds_contracts to account_contracts";
+////*****************************************************************************************************
+//// Bring in account contract detail for the contract #s in account_contracts.
+//left join (account_contracts)
+//load Distinct
+//	CNTRCT_GROUP_NUM
+//	,CORP_ITEM_NUM_TMP
+//	,CNTRCT_NUM
+//	,[Contract Start Date]
+//    ,[Contract Expiration Date]   
+//    ////,CNTRCT_GROUP_NAM           	
+//	,CNTRCT_COST_DLR
+//    ,CNTRCT_SELL_DLR
+//    ,[Contract Cost]
+////    ,prod_key   
+////	,[Alternative Contract Product Code]
+////	,"Alternative Form"
+////    ,"Alternative Generic Name"
+////    ,"Alternative Size"
+////    ,"Alternative Strength"
+////    ,"Alternative Trade Name"
+////    ,"Alternative Manufacturer"
+////    ,"Alternative Mfr"
+////    ,"Alternative Product Name"
+////    ,"Alternative NDC"
+////    ,[Product Active Status-hist]    
+//resident 
+//	active_dds_contracts
+//;
+
+// Resident table active_dds_contracts not used any further and is 
+//   taking up a lot of memory.
+drop table active_dds_contracts;
+
+//// Reload account contracts to be used by Contracts Review document.
+//account_contracts_review:
+//load Distinct
+//    ship_to_key &'|'& CNTRCT_GROUP_NUM &'|'& CORP_ITEM_NUM_TMP as ship_cntrct_cin_key
+//    ,ship_to_key
+//	,[Contract Start Date]
+//    ,[Contract Expiration Date]  
+//    ,[Contract Cost]
+//	,[Cardinal Priority Rank]
+//Resident account_contracts
+//;
+drop table account_contracts;
+
+// MOVE CONTRACT HISTORY LOAD INTO A DIFFERENT QVW
+// IT TAKES A LONG TIME TO COMPLETE AND IS NOT USED BY ContractReview
+//
+//contract_history_tmp:
+//LOAD Distinct
+//     CORP_ITEM_NUM as [Contract History CIN], 
+//     CNTRCT_NUM, 
+//     date(START_DTE,'MM/DD/YYYY') AS "Contract History Start", 
+//     date(END_DTE,'MM/DD/YYYY') as "Contract History End", 
+//    // CNTRCT_SELL_DLR as [Contract History Sell Dlr], 
+//    // CNTRCT_COST_DLR as [Contract History Cost Dlr],
+//     IF(CNTRCT_SELL_DLR <> 0.00, CNTRCT_SELL_DLR, CNTRCT_COST_DLR) as [Contract History Cost]
+//     //'1' as sort_field
+//FROM
+//	'$(vRootFileLocation)$(vQVDs)Contract_Detail_D1.qvd'
+//(qvd);
+//
+//// Join with CONTRACT_D1 on CNTRCT_NUM to get Mfr Contract # and contract group num
+////
+//Left Join (contract_history_tmp)
+//LOAD Distinct
+//     CNTRCT_NUM, 
+//     [Mfr Contract #], 
+//    // START_DTE, 
+//    // END_DTE, 
+//     CNTRCT_GROUP_NUM, 
+//     CNTRCT_TYPE_CDE 
+//FROM
+//	'$(vRootFileLocation)$(vQVDs)Contract_D1.qvd'
+//(qvd);
+//
+//// Joining on CNTRCT_GROUP_NUM
+//// I found that I couldn't join to account_contracts because it has only current
+////   contract information and none of the expired contract history was picked up.
+//Inner Join (contract_history_tmp)
+//LOAD Distinct
+//     CNTRCT_GROUP_NUM, 
+//     SHIP_TO_LOCATION_NUM, 
+//     SHIP_TO_LOCATION_NUM as "Contract History DC #", 
+//     SHIP_TO_CUSTOMER_NUM
+////     [Cardinal Priority Rank], 
+////     CUSTOMER_MARKUP_PCT
+//FROM
+//	'$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd' 
+//(qvd) 
+//where exists(ship_to_key, SHIP_TO_LOCATION_NUM & '|' & SHIP_TO_CUSTOMER_NUM)
+//;
+//
+//
+//Contract_History:
+//LOAD Distinct
+//    "Contract History CIN", 
+//    // CNTRCT_NUM, 
+//     "Contract History Start", 
+//     "Contract History End", 
+//     [Contract History Cost],
+//     [Mfr Contract #], 
+//     CNTRCT_GROUP_NUM as "Contract History Cntrct Group #", 
+//     "Contract History DC #",
+////     CNTRCT_TYPE_CDE,
+////     SHIP_TO_LOCATION_NUM, 
+////     SHIP_TO_CUSTOMER_NUM,
+//     SHIP_TO_LOCATION_NUM &'-'& SHIP_TO_CUSTOMER_NUM as [AccountSelector],
+//     SHIP_TO_LOCATION_NUM &'|'& SHIP_TO_CUSTOMER_NUM &'|'& [Contract History CIN] as ship_to_CIN
+//Resident contract_history_tmp
+//;
+//
+//DROP Table contract_history_tmp;
+//
+//// Add Contract Name to contract_history table
+//Left Join (Contract_History)
+//LOAD Distinct
+//     [Contract #] as "Contract History Cntrct Group #", 
+//     [Contract Name] as "Contract History Contract Name"
+//Resident Contract_Group
+//;
+
+
+
+
+
+//// Add Product information to the Contract History table
+//Left Join (Contract_History)
+//LOAD distinct
+//	CORP_ITEM_NUM_TMP as "Contract History CIN",
+//	NDC as "Contract History NDC",
+//	[Generic Name] as "Contract History Generic Name",
+//	[Trade Name] as "Contract History Trade Name",
+//	Form as "Contract History Form",
+//	Strength as "Contract History Strength",
+//	Size as "Contract History Size",
+//	[DEA Schedule #] as "Contract History DEA Schedule #",
+//	[GPI Code] as "Contract History GPI Code",
+//	[Generic Indicator] as "Contract History Generic Indicator",
+//	[GPI Description] as "Contract History GPI Description",
+//	Manufacturer as "Contract History Manufacturer",
+//	Mfr as "Contract History Mfr",
+//	[Multi-Source Indicator] as "Contract History Multi-Source Ind",
+//	[Package Qty] as "Contract History Package Qty", 
+//    [Package Size] as "Contract History Package Size",
+//    [Product Active Status] as "Contract History Product Active Status",
+//    [Total Package Qty] as "Contract History Total Package Qty",
+//    [Unit Dose] as "Contract History Unit Dose",
+//    UPC as "Contract History UPC"
+//resident 
+//	Product_All
+//;
+///$tab Create QVD
+/***************************************************************
+*** Write out QVDs
+***************************************************************/
+// Changed account contracts with only the fields needed by Contracts Review.
+// 2.20.2014 warren.lea
+// Turned off the account_contracts table as this was taking too much time and is not used
+//    by Contracts Review. 
+//store account_contracts to qvd
+//store account_contracts_review into '$(vRootFileLocation)$(vQVDs)account_contracts_Contracts.qvd';
+//drop table account_contracts_review;
+
+//store Contract Group table to Contracts_Contract_Group
+store Contract_Group into '$(vRootFileLocation)$(vQVDs)Contract_Group_Contracts.qvd';
+//store Contract_Group into '$(vRootFileLocation)$(vQVDs)Contract_Group_Contracts_PMOD.qvd';
+drop table Contract_Group;
+
+//call store_into_qvd('Contract_History', '$(vRootFileLocation)$(vQVDs)Contract_History.qvd', 0);
+//store Contract_History into '$(vRootFileLocation)$(vQVDs)Contract_History.qvd';
+//drop table Contract_History;
