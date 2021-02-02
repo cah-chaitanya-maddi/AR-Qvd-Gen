@@ -1,0 +1,245 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for MERCURY_USER delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Mercury_User.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/15/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+//VIEWS Changes by Chaitanya 11/30/2020 ARR 262-270
+///$tab 1st QA Run
+Mercury_User:
+SQL
+SELECT
+  MRCRY_USER_ID
+ ,MRCRY_USER_NAM
+ ,MRCRY_ADMIN_CDE
+ ,MRCRY_ADMIN_ID
+ ,PSWD_TXT
+ ,PERSON_CDE
+ ,ADMIN_FLG
+ ,CUSTOMER_FLG
+ ,CARD_FLG
+ ,ADMIN_ID
+ ,MISC_TXT
+ ,MISC2_TXT
+ ,MRCRY_ROLE_CDE
+ ,USER_ID
+ ,UUID
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,USER_ID_ACTIVE_FLG
+FROM
+  VIEWS.MERCURY_USER
+  ;
+  
+  STORE
+      Mercury_User
+    INTO
+      '$(vRootFileLocation)$(vQVDs)Mercury_User.qvd';
+      
+  DROP TABLE Mercury_User;
+  
+  
+  EXIT SCRIPT; 
+///$tab Mercury_User
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Mercury_User';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date;
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Mercury_User:
+LOAD
+  Upper(MRCRY_USER_ID) as MRCRY_USER_ID    //changed on 5/12 will be deployed on 5/15/2020
+ ,Capitalize(MRCRY_USER_NAM) as [MRCRY_USER_NAM]
+ ,MRCRY_ADMIN_CDE
+ ,MRCRY_ADMIN_ID
+ ,Capitalize(PSWD_TXT)       as [PSWD_TXT]
+ ,PERSON_CDE
+ ,ADMIN_FLG
+ ,CUSTOMER_FLG 
+ ,CARD_FLG
+ ,ADMIN_ID 
+ ,Capitalize(MISC_TXT)       as [MISC_TXT]
+ ,Capitalize(MISC2_TXT)      as [MISC2_TXT]
+ ,MRCRY_ROLE_CDE 
+ ,USER_ID 
+ ,UUID 
+ ,ROW_ADD_STP 
+ ,ROW_ADD_USER_ID 
+ ,ROW_UPDATE_STP 
+ ,ROW_UPDATE_USER_ID 
+ ,USER_ID_ACTIVE_FLG
+;
+SQL
+SELECT
+  MRCRY_USER_ID
+ ,MRCRY_USER_NAM
+ ,MRCRY_ADMIN_CDE
+ ,MRCRY_ADMIN_ID
+ ,PSWD_TXT
+ ,PERSON_CDE
+ ,ADMIN_FLG
+ ,CUSTOMER_FLG
+ ,CARD_FLG
+ ,ADMIN_ID
+ ,MISC_TXT
+ ,MISC2_TXT
+ ,MRCRY_ROLE_CDE
+ ,USER_ID
+ ,UUID
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,USER_ID_ACTIVE_FLG
+FROM
+  VIEWS.MERCURY_USER
+WHERE
+  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    Upper(MRCRY_USER_ID) as MRCRY_USER_ID   //changed on 5/12 will be deployed on 5/15/2020
+   ,MRCRY_USER_NAM
+   ,MRCRY_ADMIN_CDE
+   ,MRCRY_ADMIN_ID
+   ,PSWD_TXT
+   ,PERSON_CDE
+   ,ADMIN_FLG
+   ,CUSTOMER_FLG
+   ,CARD_FLG
+   ,ADMIN_ID
+   ,MISC_TXT
+   ,MISC2_TXT
+   ,MRCRY_ROLE_CDE
+   ,USER_ID
+   ,UUID
+   ,ROW_ADD_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_UPDATE_USER_ID
+   ,USER_ID_ACTIVE_FLG
+  FROM
+    '$(vRootFileLocation)$(vQVDs)Mercury_User.qvd' (qvd)
+  WHERE
+    NOT EXISTS(MRCRY_USER_ID, MRCRY_USER_ID)
+  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+  IF ScriptErrorCount = 0 THEN
+    STORE
+      Mercury_User
+    INTO
+      '$(vRootFileLocation)$(vQVDs)Mercury_User.qvd';
+    LET vLastExecTime = '$(vThisExecTime)'; 
+  END IF
+END IF
+
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+DROP TABLE Mercury_User;
+

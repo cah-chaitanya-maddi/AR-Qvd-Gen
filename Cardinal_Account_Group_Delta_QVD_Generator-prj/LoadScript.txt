@@ -1,0 +1,344 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for CARDINAL_ACCOUNT_GROUP Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Cardinal_Account_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+//ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+ODBC CONNECT TO PD_SDW_Stg;		 //VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+///$tab CAG_PMOD
+
+
+
+Cardinal_Account_Group:
+LOAD
+  CARD_ACCT_GROUP_NUM              as [CARD_ACCT_GROUP_NUM]
+ ,Capitalize(CARD_ACCT_GROUP_DESC) as [CARD_ACCT_GROUP_DESC]
+ ,NTNL_ACCT_FLG                    as [NTNL_ACCT_FLG]
+ ,WHSE_FLG                         as [WHSE_FLG]
+ ,PARENT_CARD_ACCT_GROUP_NUM       as [PARENT_CARD_ACCT_GROUP_NUM]
+ ,ADMIN_UPCHG_PCT                  as [ADMIN_UPCHG_PCT]
+ ,Capitalize(PRIM_CNTCT_TXT)       as [PRIM_CNTCT_TXT]
+ ,Capitalize(ADDR_TXT)             as [ADDR_TXT]
+ ,Capitalize(ADDR2_TXT)            as [ADDR2_TXT]
+ ,Capitalize(CNTRY)                as [CNTRY]
+ ,PHONE_NUM                        as [PHONE_NUM]
+ ,FAX_NUM                          as [FAX_NUM]
+ ,Capitalize(CITY)                 as [CITY]
+ ,STATE                            as [STATE]
+ ,ZIP                              as [ZIP]
+ ,ROOT_CARD_ACCT_GROUP_FLG         as [ROOT_CARD_ACCT_GROUP_FLG]
+ ,ADMIN_FEE_FLG                    as [ADMIN_FEE_FLG]
+ ,CHOICE_HQ_GROUP_FLG              as [CHOICE_HQ_GROUP_FLG]
+ ,AR_ACCT_FLG                      as [AR_ACCT_FLG]
+ ,AR_ID                            as [AR_ID]
+ ,AFLTN_NUM                        as [Affiliation #]
+ ,SMG_NUM                          as [SMG_NUM]
+ ,GROUP_TYPE_CDE                   as [GROUP_TYPE_CDE]
+ ,FEE_BASIS_POINT_QTY              as [FEE_BASIS_POINT_QTY]
+ ,VRSN_START_DTE                   as [VRSN_START_DTE]
+ ,VRSN_END_DTE                     as [VRSN_END_DTE]
+ ,CURR_VRSN_FLG                    as [CURR_VRSN_FLG]
+ ,ROW_ADD_STP                      as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                  as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                   as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID               as [ROW_UPDATE_USER_ID]
+;
+SQL
+SELECT
+  CARD_ACCT_GROUP_NUM
+ ,CARD_ACCT_GROUP_DESC
+ ,NTNL_ACCT_FLG
+ ,WHSE_FLG
+ ,PARENT_CARD_ACCT_GROUP_NUM
+ ,ADMIN_UPCHG_PCT
+ ,PRIM_CNTCT_TXT
+ ,ADDR_TXT
+ ,ADDR2_TXT
+ ,CNTRY
+ ,PHONE_NUM
+ ,FAX_NUM
+ ,CITY
+ ,STATE
+ ,ZIP
+ ,ROOT_CARD_ACCT_GROUP_FLG
+ ,ADMIN_FEE_FLG
+ ,CHOICE_HQ_GROUP_FLG
+ ,AR_ACCT_FLG
+ ,AR_ID
+ ,AFLTN_NUM
+ ,SMG_NUM
+ ,GROUP_TYPE_CDE
+ ,FEE_BASIS_POINT_QTY
+ ,VRSN_START_DTE
+ ,VRSN_END_DTE
+ ,CURR_VRSN_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+FROM
+  VIEWS.CARDINAL_ACCOUNT_GROUP
+  ;
+
+
+
+store 
+			Cardinal_Account_Group
+		into 
+			'$(vRootFileLocation)$(vQVDs)\Cardinal_Account_Group.qvd';
+			
+			Drop Table Cardinal_Account_Group; 
+			
+			EXIT SCRIPT ; 
+///$tab Cardinal_Account_Group
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Cardinal_Account_Group';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vQvdFile)'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date; 
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Cardinal_Account_Group:
+LOAD
+  CARD_ACCT_GROUP_NUM              as [CARD_ACCT_GROUP_NUM]
+ ,Capitalize(CARD_ACCT_GROUP_DESC) as [CARD_ACCT_GROUP_DESC]
+ ,NTNL_ACCT_FLG                    as [NTNL_ACCT_FLG]
+ ,WHSE_FLG                         as [WHSE_FLG]
+ ,PARENT_CARD_ACCT_GROUP_NUM       as [PARENT_CARD_ACCT_GROUP_NUM]
+ ,ADMIN_UPCHG_PCT                  as [ADMIN_UPCHG_PCT]
+ ,Capitalize(PRIM_CNTCT_TXT)       as [PRIM_CNTCT_TXT]
+ ,Capitalize(ADDR_TXT)             as [ADDR_TXT]
+ ,Capitalize(ADDR2_TXT)            as [ADDR2_TXT]
+ ,Capitalize(CNTRY)                as [CNTRY]
+ ,PHONE_NUM                        as [PHONE_NUM]
+ ,FAX_NUM                          as [FAX_NUM]
+ ,Capitalize(CITY)                 as [CITY]
+ ,STATE                            as [STATE]
+ ,ZIP                              as [ZIP]
+ ,ROOT_CARD_ACCT_GROUP_FLG         as [ROOT_CARD_ACCT_GROUP_FLG]
+ ,ADMIN_FEE_FLG                    as [ADMIN_FEE_FLG]
+ ,CHOICE_HQ_GROUP_FLG              as [CHOICE_HQ_GROUP_FLG]
+ ,AR_ACCT_FLG                      as [AR_ACCT_FLG]
+ ,AR_ID                            as [AR_ID]
+ ,AFLTN_NUM                        as [Affiliation #]
+ ,SMG_NUM                          as [SMG_NUM]
+ ,GROUP_TYPE_CDE                   as [GROUP_TYPE_CDE]
+ ,FEE_BASIS_POINT_QTY              as [FEE_BASIS_POINT_QTY]
+ ,VRSN_START_DTE                   as [VRSN_START_DTE]
+ ,VRSN_END_DTE                     as [VRSN_END_DTE]
+ ,CURR_VRSN_FLG                    as [CURR_VRSN_FLG]
+ ,ROW_ADD_STP                      as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                  as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                   as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID               as [ROW_UPDATE_USER_ID]
+;
+SQL
+SELECT
+  CARD_ACCT_GROUP_NUM
+ ,CARD_ACCT_GROUP_DESC
+ ,NTNL_ACCT_FLG
+ ,WHSE_FLG
+ ,PARENT_CARD_ACCT_GROUP_NUM
+ ,ADMIN_UPCHG_PCT
+ ,PRIM_CNTCT_TXT
+ ,ADDR_TXT
+ ,ADDR2_TXT
+ ,CNTRY
+ ,PHONE_NUM
+ ,FAX_NUM
+ ,CITY
+ ,STATE
+ ,ZIP
+ ,ROOT_CARD_ACCT_GROUP_FLG
+ ,ADMIN_FEE_FLG
+ ,CHOICE_HQ_GROUP_FLG
+ ,AR_ACCT_FLG
+ ,AR_ID
+ ,AFLTN_NUM
+ ,SMG_NUM
+ ,GROUP_TYPE_CDE
+ ,FEE_BASIS_POINT_QTY
+ ,VRSN_START_DTE
+ ,VRSN_END_DTE
+ ,CURR_VRSN_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+FROM
+  VIEWS.CARDINAL_ACCOUNT_GROUP		
+WHERE  
+  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;		 //VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+		
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    ROW_UPDATE_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_ADD_STP
+   ,CURR_VRSN_FLG
+   ,VRSN_END_DTE
+   ,VRSN_START_DTE
+   ,FEE_BASIS_POINT_QTY
+   ,GROUP_TYPE_CDE
+   ,SMG_NUM
+   ,[Affiliation #]
+   ,AR_ID
+   ,AR_ACCT_FLG
+   ,CHOICE_HQ_GROUP_FLG
+   ,ADMIN_FEE_FLG
+   ,ROOT_CARD_ACCT_GROUP_FLG
+   ,ZIP
+   ,STATE
+   ,CITY
+   ,FAX_NUM
+   ,PHONE_NUM
+   ,CNTRY
+   ,ADDR2_TXT
+   ,ADDR_TXT
+   ,PRIM_CNTCT_TXT
+   ,ADMIN_UPCHG_PCT
+   ,PARENT_CARD_ACCT_GROUP_NUM
+   ,WHSE_FLG
+   ,NTNL_ACCT_FLG
+   ,CARD_ACCT_GROUP_DESC
+   ,CARD_ACCT_GROUP_NUM
+  FROM
+    '$(vQvdFile)' (qvd)
+  WHERE
+    NOT EXISTS(CARD_ACCT_GROUP_NUM, CARD_ACCT_GROUP_NUM)
+  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+	//call store_into_qvd(vTableName, vQvdFile, 0);
+    
+    	store 
+			Cardinal_Account_Group
+		into 
+			'$(vRootFileLocation)$(vQVDs)\Cardinal_Account_Group.qvd';
+    
+    let vLastExecTime = '$(vThisExecTime)';
+    
+    /********************************************
+	 * Store Dev QVD
+	 ********************************************/
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	trace "************************** DEV LOAD: Dev copy for Cardinal_Account_Group";
+
+		store 
+			Cardinal_Account_Group
+		into 
+			'$(vRootFileLocation)$(vQVDs)\Dev\Cardinal_Account_Group.qvd';
+	
+	endif;
+     
+END IF
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+DROP Table Cardinal_Account_Group;
+//call drop_table(vTableName);

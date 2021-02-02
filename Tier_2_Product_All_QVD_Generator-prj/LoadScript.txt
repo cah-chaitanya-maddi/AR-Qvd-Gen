@@ -1,0 +1,190 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for Tier 2 Product_All information.
+ *   This table is a combination of Product, Product_No_Scd and Unit_H_Code
+ *   tables
+ * 
+ * Sources:
+ *   Product.qvd, Product_No_Scd.qvd, Unit_H_Code.qvd
+ *
+ * Outputs:
+ *   Product_All.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ *
+ * 04/29/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+///$tab Product_All
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Product_All_PMOD';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Product_All:
+LOAD
+  [Item Type Code-hist]
+ ,[Product Active Status Code-hist]
+ ,[Total Doses-hist]                                                                                       as [Total Doses-hist]
+ ,[Product Active Status-hist]                                                                             as [Product Active Status-hist]
+ ,[AHFS #-hist]                                                                                            as [AHFS #-hist]
+ ,[Generic Indicator-hist]                                                                                 as [Generic Indicator-hist]
+ ,[Cardinal Generic Indicator-hist]                                                                        as [Brand Generic Indicator] // Renamed from [Cardinal Generic Indicator-hist]
+// ,[Cardinal Generic Indicator-hist]                                                                        as [Cardinal Generic Indicator-hist]
+ ,CIN                                                                                                      as [CIN]
+ ,[Current Version-hist]                                                                                   as [Current Version-hist] //??PROD_CURR_VRSN_FLG
+ ,[DEA Schedule #-hist]                                                                                    as [DEA Schedule #-hist]
+ ,[Drug Class-hist]                                                                                        as [Drug Class-hist]
+ ,[Fineline #-hist]                                                                                        as [Fineline #-hist]
+ ,[Fineline Description-hist]                                                                              as [Fineline Description-hist]
+ ,[Form-hist]                                                                                              as [Form-hist]
+ ,[Generic Name-hist]                                                                                      as [Generic Name-hist]
+ ,[NDC-hist]                                                                                               as [NDC-hist]
+ ,[NDC-hist]                                                                                               as [NDC Code-hist]
+ ,[Package Qty-hist]                                                                                       as [Package Qty-hist]
+ ,PROD_KEY_NUM                                                                                             as [PROD_KEY_NUM]
+ ,[Product Name-hist]                                                                                      as [Product Name-hist]
+ ,[Purchase Product Type Code-hist]                                                                        as [Purchase Product Type Code-hist]
+ ,[Size-hist]                                                                                              as [Size-hist]
+ ,[Strength-hist]                                                                                          as [Strength-hist]
+ ,[Manufacturer-hist]                                                                                      as [Manufacturer-hist]
+ ,[Mfr-hist]                                                                                               as [Mfr-hist]
+ ,[Trade Name-hist]                                                                                        as [Trade Name-hist]
+ ,IF([Unit Dose-hist] = 'UD', [Unit Dose-hist], '  ')                                                      as [Unit Dose-hist] 
+ ,[Mfr Part #]																							   as [Mfr Part #]  /////// Added by Dicky Mohanty on 01/27/16
+																						
+FROM
+ '$(vRootFileLocation)$(vQVDs)Product.qvd' (qvd)
+;
+
+
+
+outer JOIN (Product_All)
+LOAD
+  [Total Doses]                                                                                        as [Total Doses]
+ ,[ITEM_TYPE_CDE] 																					   as [ITEM_TYPE_CDE]
+ ,[Product Active Status Code]																		   as [Product Active Status Code]
+ ,IF([Product Active Status Code] <= 5, PICK([Product Active Status Code] + 1, 'A', 'I', 'X', '', '', 'D'), '')         as [Product Active Status]
+ ,[Product Add'l Description]                                                                          as [Product Add'l Description]
+ ,[AHFS #]                                                                                             as [AHFS #]
+ ,[AHFS Description]                                                                                   as [AHFS Description]
+ ,[Generic Indicator]                                                                                  as [Generic Indicator]
+  ,IF([Generic Indicator] = 'Branded/Otc (N)' , 'BRAND', 
+	IF([Generic Indicator]   = 'Generic Drug (D)' , 'GENERIC',
+			'Non Drug' ) )  																		   as [Brand/Generic]	//// ARB-545	
+ ,CARD_GEN_IND_CDE                                                                                     as [Generic Indicator Code] //Cardinal Generic Indicator Code?
+ ,[Cardinal Generic Indicator]                                                                         as [Cardinal Generic Indicator] 
+ ,[Alternative Product Code]                                                                           as [Alternative Product Code]
+ ,GCN                                                                                                  as [GCN]
+ ,IF([DEA Schedule #] = 0, 'Non-Controlled', 'Controlled')                                             as [Controlled]
+ ,If([DEA Schedule #] = 0, [Drug Class],  'C' &''& [DEA Schedule #])                                   as [Type]
+ ,RTRN_RSTRCT_DESC																					   as [Returnable]
+ ,[Drug Category]                                                                                      as [Drug Category]
+ ,text(IF([DEA Schedule #] = 6, '2N', IF([DEA Schedule #] = 7, '3N', [DEA Schedule #])))               as [DEA Schedule #]
+ ,[GPI Class #]                                                                                        as [GPI Class #]
+ ,[GPI Class Name]                                                                                     as [GPI Class Name]
+ ,[GPI Group #]                                                                                        as [GPI Group #]
+ ,[GPI Group Name]                                                                                     as [GPI Group Name]
+ ,[GPI Subclass #]                                                                                     as [GPI Subclass #]
+ ,[GPI Subclass Name]                                                                                  as [GPI Subclass Name]
+ ,[Federal Upper Limit]                                                                                as [Federal Upper Limit]
+ ,[FDA Therapeutic Equivalency Rating]                                                                 as [FDA Therapeutic Equivalency Rating]
+ ,Form                                                                                                 as [Form]
+ ,[Generic Name]                                                                                       as [Generic Name]
+ ,[GPI Description]                                                                                    as [GPI Description]
+ ,[GPI Code]                                                                                           as [GPI Code]
+ ,[Fineline Description]                                                                               as [Fineline Description]
+ ,[Fineline #]                                                                                         as [Fineline #]
+ ,If(MULTI_SRC_IND_CDE = 1, 'Y', 'N')                                                                  as [Multi-Source]
+ ,NDC                                                                                                  as [NDC]
+ ,[Package Qty]                                                                                        as [Package Qty]
+ ,[Package Size]                                                                                       as [Package Size]
+ ,PROD_KEY_NUM                                                                                         as [PROD_KEY_NUM]
+ ,IF(PROD_TYPE_CDE = 6, 'Rx', 'Non-Rx')                                                                as [Rx Indicator] // renamed from [Rx Flag]
+// ,IF(PROD_TYPE_CDE = 6, 'Rx', 'Non-Rx')                                                                as [Rx Flag]
+ ,IF(PROD_TYPE_CDE = 6 and CARD_GEN_IND_CDE = 1, 'Rx Generic',
+    if(PROD_TYPE_CDE = 6 and CARD_GEN_IND_CDE = 2, 'Rx Branded',
+     IF(PROD_TYPE_CDE = 6 and CARD_GEN_IND_CDE <> 2 and CARD_GEN_IND_CDE <> 1, 'Rx Other',
+      IF(PROD_TYPE_CDE = 4, 'OTC',
+        IF(PROD_TYPE_CDE = 1, 'HBA',
+          IF(PROD_TYPE_CDE = 2, 'HHC', 'Non-Rx Other')
+         )
+       )
+      )
+     )
+    )                                                                                                  as [Category]
+ ,PROD_NAM                                                                                             as [Product Name]
+ ,PROD_TYPE_CDE                                                                                        as [Product Type]
+ ,[Drug Class]
+ ,Size 
+ ,[Strength] 
+ ,[Mfr #]                                                                                              as [Mfr #]
+ ,Manufacturer
+ ,Mfr 
+ ,[Trade Name]
+ ,[Total Package Quantity]
+ ,UOM 
+ ,IF([Unit Dose] = 'UD', [Unit Dose], '  ')                                                            as [Unit Dose] 
+ ,UPC 
+ ,[Private Label Description]
+ ,UNIT_H_CDE                                                                                           as [UNIT_H_CDE]
+ ,[DEA Description]
+ ,[DEA Base Code]
+ ,[Mfr Part #]               /////// Added by Dicky Mohanty on 01/27/16
+ ,FDB_AHFS_ID
+//,IF([Generic Indicator] = 'Branded/Otc (N)', 'BRAND', 
+//IF([Generic Indicator] = 'Generic Drug (D)', 'GENERIC',
+//'Non Drug')) as [Brand/Generic] /////// Added by Gouthaman Shanmugam on 03/08/19 for ARB 544
+,IF([Drug Class] = 'Rx', 'RX',
+IF([Drug Class] = 'Otc', 'OTC',
+'OTHER')) as [Product_Type] /////// Added by Gouthaman Shanmugam on 03/08/19 for ARB 545
+
+ 
+FROM
+  '$(vRootFileLocation)$(vQVDs)Product_No_Scd.qvd' (qvd)
+;
+
+
+outer JOIN (Product_All)
+LOAD 
+  [Package U/M]                  as [Package U/M]
+ ,[Package U/M Description]      as [Package U/M Description]
+ ,UNIT_H_CDE                     as UNIT_H_CDE
+FROM
+  '$(vRootFileLocation)$(vQVDs)Unit_H_Code.qvd' (qvd)
+;
+
+
+
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+
+
+store Product_All into	'$(vRootFileLocation)$(vQVDs)Product_All.qvd';
+
+/********************************************
+ * Free up memory
+ ********************************************/
+ DROP Table Product_All;

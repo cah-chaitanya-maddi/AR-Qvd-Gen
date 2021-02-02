@@ -1,0 +1,806 @@
+﻿<DocInternals>
+  <AlwaysLoose>
+    <bool>false</bool>
+    <bool>false</bool>
+    <bool>false</bool>
+    <bool>false</bool>
+    <bool>false</bool>
+  </AlwaysLoose>
+  <FieldSrcTables>
+    <String>6</String>
+    <String>1</String>
+    <String>FilesToDelete</String>
+    <String>7</String>
+    <String>1</String>
+    <String>files_to_delete</String>
+  </FieldSrcTables>
+  <TableViewData>
+    <Pos></Pos>
+    <CtlInfo>
+      <InternalView>
+        <Tables>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>750</Left>
+              <Top>277</Top>
+              <Width>100</Width>
+              <Height>208</Height>
+            </Pos>
+            <Caption>Cag_Level_04</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>644</Left>
+              <Top>361</Top>
+              <Width>173</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>ListFilesTable</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>567</Left>
+              <Top>266</Top>
+              <Width>100</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>file_name</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>320</Left>
+              <Top>527</Top>
+              <Width>100</Width>
+              <Height>100</Height>
+            </Pos>
+            <Caption>ListFilesTable-1</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>104</Left>
+              <Top>277</Top>
+              <Width>256</Width>
+              <Height>100</Height>
+            </Pos>
+            <Caption>$Syn 1 Table</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>466</Left>
+              <Top>155</Top>
+              <Width>174</Width>
+              <Height>100</Height>
+            </Pos>
+            <Caption>calendar_table</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>278</Left>
+              <Top>362</Top>
+              <Width>246</Width>
+              <Height>82</Height>
+            </Pos>
+            <Caption>mix_max_file</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>657</Left>
+              <Top>83</Top>
+              <Width>207</Width>
+              <Height>279</Height>
+            </Pos>
+            <Caption>Invoice_Line_201306</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>361</Left>
+              <Top>196</Top>
+              <Width>214</Width>
+              <Height>489</Height>
+            </Pos>
+            <Caption>Invoice_Line</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>750</Left>
+              <Top>340</Top>
+              <Width>100</Width>
+              <Height>82</Height>
+            </Pos>
+            <Caption>min_max_file</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>655</Left>
+              <Top>165</Top>
+              <Width>165</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>ship_to_account</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>490</Left>
+              <Top>384</Top>
+              <Width>202</Width>
+              <Height>82</Height>
+            </Pos>
+            <Caption>min_max_file-1</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>540</Left>
+              <Top>285</Top>
+              <Width>283</Width>
+              <Height>64</Height>
+            </Pos>
+            <Caption>Invoice_Line_Files_to_Delete</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>758</Left>
+              <Top>491</Top>
+              <Width>100</Width>
+              <Height>82</Height>
+            </Pos>
+            <Caption>ListFileTable</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>374</Left>
+              <Top>286</Top>
+              <Width>100</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>FilesToDelete</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>995</Left>
+              <Top>509</Top>
+              <Width>255</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>files_to_delete</Caption>
+          </TableViewTableWinSaveInfo>
+        </Tables>
+        <BroomPoints></BroomPoints>
+        <ConnectionPoints></ConnectionPoints>
+        <ZoomFactor>3FF0000000000000</ZoomFactor>
+      </InternalView>
+      <SourceView></SourceView>
+    </CtlInfo>
+    <Mode>0</Mode>
+  </TableViewData>
+  <Bookmarks></Bookmarks>
+  <SavedByVersion>12.20.21000.0</SavedByVersion>
+  <ForceBackEndMacroExecution>false</ForceBackEndMacroExecution>
+  <FieldTags>
+    <ScriptBased>
+      <FieldTagData>
+        <Tag>$hidden</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$system</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>files_to_delete</String>
+          <String>yr_mon_to_delete</String>
+          <String>Date</String>
+          <String>DEA Blank #</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>Customer Item Code</String>
+          <String>Contract Flag</String>
+          <String>Contract Name</String>
+          <String>COMM_KEY</String>
+          <String>File</String>
+          <String>CREDIT_DETAIL_CMNT_TXT</String>
+          <String>SRC_SYSTEM_NAM</String>
+          <String>Contract #</String>
+          <String>num_records</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>files_to_delete</String>
+          <String>yr_mon_to_delete</String>
+          <String>Date</String>
+          <String>DEA Blank #</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>Customer Item Code</String>
+          <String>Contract Flag</String>
+          <String>Contract Name</String>
+          <String>COMM_KEY</String>
+          <String>File</String>
+          <String>CREDIT_DETAIL_CMNT_TXT</String>
+          <String>SRC_SYSTEM_NAM</String>
+          <String>Contract #</String>
+          <String>num_records</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>RFRNC_DTE</String>
+          <String>PROD_KEY_NUM</String>
+          <String>CIN</String>
+          <String>DC_NUM</String>
+          <String>ACCT_NUM</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>Date</String>
+          <String>DTE_KEY_NUM</String>
+          <String>SMRY_NUM</String>
+          <String>DC #</String>
+          <String>Account #</String>
+          <String>FLG_KEY_NUM</String>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>DEA Blank #</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>RPT_LINE_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_SHRT_REASON_KEY_NUM</String>
+          <String>OTS_TYPE_KEY_NUM</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>CREDIT_REBILL_REASON_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORIG_ORDER_QTY</String>
+          <String>CAC_KEY_NUM</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>Qty Multiplier</String>
+          <String>Order Qty</String>
+          <String>Ship Qty Amt</String>
+          <String>Unit Price DOD</String>
+          <String>Unit Price</String>
+          <String>Purchase Dollars DOD</String>
+          <String>Purchase Dollars Amt</String>
+          <String>Sub Purchase Dollars Amt</String>
+          <String>Sub Unit Price</String>
+          <String>NIFO Cost</String>
+          <String>PO #</String>
+          <String>Due Date</String>
+          <String>VENDOR_RFRNC_ID</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>Invoice Line #</String>
+          <String>Invoice #</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>SALES_RETURNS</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>Customer Item Code</String>
+          <String>Contract #</String>
+          <String>CSN</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>ORIG_PROD_KEY_NUM</String>
+          <String>COGS_TYPE_KEY_NUM</String>
+          <String>START_DTE</String>
+          <String>END_DTE</String>
+          <String>YearMonthID</String>
+          <String>YearMonth</String>
+          <String>Invoice_Line_File_Extension</String>
+          <String>MinDate</String>
+          <String>MaxDate</String>
+          <String>File_Extension</String>
+          <String>Mindte</String>
+          <String>maxdte</String>
+          <String>FileTime</String>
+          <String>YYYYMM</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>RFRNC_DTE</String>
+          <String>PROD_KEY_NUM</String>
+          <String>CIN</String>
+          <String>DC_NUM</String>
+          <String>ACCT_NUM</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>SMRY_NUM</String>
+          <String>DC #</String>
+          <String>Account #</String>
+          <String>FLG_KEY_NUM</String>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>DEA Blank #</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>RPT_LINE_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_SHRT_REASON_KEY_NUM</String>
+          <String>OTS_TYPE_KEY_NUM</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>CREDIT_REBILL_REASON_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORIG_ORDER_QTY</String>
+          <String>CAC_KEY_NUM</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>Qty Multiplier</String>
+          <String>Order Qty</String>
+          <String>Ship Qty Amt</String>
+          <String>PO #</String>
+          <String>Due Date</String>
+          <String>VENDOR_RFRNC_ID</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>Invoice Line #</String>
+          <String>Invoice #</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>SALES_RETURNS</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>Customer Item Code</String>
+          <String>Contract #</String>
+          <String>CSN</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>ORIG_PROD_KEY_NUM</String>
+          <String>COGS_TYPE_KEY_NUM</String>
+          <String>START_DTE</String>
+          <String>END_DTE</String>
+          <String>YearMonthID</String>
+          <String>YearMonth</String>
+          <String>Invoice_Line_File_Extension</String>
+          <String>MinDate</String>
+          <String>MaxDate</String>
+          <String>File_Extension</String>
+          <String>Mindte</String>
+          <String>maxdte</String>
+          <String>FileTime</String>
+          <String>YYYYMM</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>Date</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>Due Date</String>
+          <String>RFRNC_DTE</String>
+          <String>FileTime</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$key</Tag>
+        <FieldNames>
+          <String>CSN</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>DEA Blank #</String>
+          <String>Invoice #</String>
+          <String>Invoice Line #</String>
+          <String>PROD_KEY_NUM</String>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>FLG_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>VENDOR_RFRNC_ID</String>
+          <String>Due Date</String>
+          <String>PO #</String>
+          <String>NIFO Cost</String>
+          <String>Purchase Dollars Amt</String>
+          <String>Purchase Dollars DOD</String>
+          <String>Unit Price</String>
+          <String>Unit Price DOD</String>
+          <String>Ship Qty Amt</String>
+          <String>Order Qty</String>
+          <String>Qty Multiplier</String>
+          <String>ROW_ADD_STP</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ORDER_NUM</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+          <String>CAC_KEY_NUM</String>
+          <String>ORIG_ORDER_QTY</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>CREDIT_REBILL_REASON_KEY_NUM</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_LINE_SHRT_REASON_KEY_NUM</String>
+          <String>OTS_TYPE_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>CREDIT_DETAIL_CMNT_TXT</String>
+          <String>CREDIT_MEMO_NUM</String>
+          <String>ORIG_PROD_KEY_NUM</String>
+          <String>Sub Purchase Dollars Amt</String>
+          <String>Sub Unit Price</String>
+          <String>COGS_TYPE_KEY_NUM</String>
+          <String>SALES_RETURNS</String>
+          <String>files_to_delete</String>
+          <String>$Field</String>
+          <String>$Table</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$date</Tag>
+        <FieldNames>
+          <String>RFRNC_DTE</String>
+          <String>Due Date</String>
+          <String>FileTime</String>
+        </FieldNames>
+      </FieldTagData>
+    </ScriptBased>
+    <Interactive>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>Due Date</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>L02_VRSN_END_DTE</String>
+          <String>L02_VRSN_START_DTE</String>
+          <String>L02_FEE_BASIS_POINT_QTY</String>
+          <String>Affiliation #</String>
+          <String>L02_CARD_ACCT_GROUP_NUM</String>
+          <String>L01_CARD_ACCT_GROUP_NUM</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>LoadDuration</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>CSN</String>
+          <String>CURR_SR_NUM</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>CLASS_CDE</String>
+          <String>Accounting Code</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>Account Zip Code</String>
+          <String>HIN_ID</String>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>RPT_TO_GROUP_NUM</String>
+          <String>ZIP</String>
+          <String>PHONE_NUM</String>
+          <String>CNTRCT_GROUP_TYPE_CDE</String>
+          <String>CNTRCT_GROUP_STAT_CDE</String>
+          <String>Contract #</String>
+          <String>CNTRCT_GROUP_CLASS_CDE</String>
+          <String>GWSA_CNTRCT_GROUP_NUM</String>
+          <String>PPM_CLASS_CDE</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>Store Numbers</String>
+          <String>Status</String>
+          <String>Account Phone</String>
+          <String>Shipping Contact Phone</String>
+          <String>Billing Contact Phone</String>
+          <String>State Pharmacy Other Expiration Date</String>
+          <String>State Pharmacy Other Extension Date</String>
+          <String>Current AR Balance</String>
+          <String>Last Payment Amount</String>
+          <String>Last Payment Date</String>
+          <String>Credit Limit</String>
+          <String>COD Add on Amount</String>
+          <String>Discount %</String>
+          <String>Discount Paid Days</String>
+          <String>COD Code</String>
+          <String>PRE_PAY_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+          <String>FLG_KEY_NUM</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>RPT_LINE_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_SHRT_REASON_KEY_NUM</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORIG_ORDER_QTY</String>
+          <String>CAC_KEY_NUM</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>Qty Multiplier</String>
+          <String>Order Qty</String>
+          <String>Ship Qty Amt</String>
+          <String>Unit Price DOD</String>
+          <String>Unit Price</String>
+          <String>Purchase Dollars DOD</String>
+          <String>Purchase Dollars Amt</String>
+          <String>NIFO Cost</String>
+          <String>Due Date</String>
+          <String>PROD_KEY_NUM</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>Invoice Line #</String>
+          <String>Invoice #</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>SALES_RETURNS</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>CIN</String>
+          <String>Customer Item Code</String>
+          <String>PO #</String>
+          <String>VENDOR_RFRNC_ID</String>
+          <String>DEA Blank #</String>
+          <String>CREDIT_MEMO_NUM</String>
+          <String>OTS_TYPE_KEY_NUM</String>
+          <String>CREDIT_REBILL_REASON_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>L02_VRSN_END_DTE</String>
+          <String>L02_VRSN_START_DTE</String>
+          <String>Affiliation #</String>
+          <String>L02_CARD_ACCT_GROUP_NUM</String>
+          <String>L01_CARD_ACCT_GROUP_NUM</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>CSN</String>
+          <String>CURR_SR_NUM</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>CLASS_CDE</String>
+          <String>Accounting Code</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>Account Zip Code</String>
+          <String>HIN_ID</String>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>RPT_TO_GROUP_NUM</String>
+          <String>ZIP</String>
+          <String>PHONE_NUM</String>
+          <String>CNTRCT_GROUP_TYPE_CDE</String>
+          <String>CNTRCT_GROUP_STAT_CDE</String>
+          <String>Contract #</String>
+          <String>CNTRCT_GROUP_CLASS_CDE</String>
+          <String>GWSA_CNTRCT_GROUP_NUM</String>
+          <String>PPM_CLASS_CDE</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>Store Numbers</String>
+          <String>Status</String>
+          <String>Account Phone</String>
+          <String>Shipping Contact Phone</String>
+          <String>Billing Contact Phone</String>
+          <String>State Pharmacy Other Expiration Date</String>
+          <String>State Pharmacy Other Extension Date</String>
+          <String>Last Payment Date</String>
+          <String>Discount %</String>
+          <String>Discount Paid Days</String>
+          <String>COD Code</String>
+          <String>PRE_PAY_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+          <String>FLG_KEY_NUM</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>RPT_LINE_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_SHRT_REASON_KEY_NUM</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORIG_ORDER_QTY</String>
+          <String>CAC_KEY_NUM</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>Qty Multiplier</String>
+          <String>Order Qty</String>
+          <String>Ship Qty Amt</String>
+          <String>Due Date</String>
+          <String>PROD_KEY_NUM</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>Invoice Line #</String>
+          <String>Invoice #</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>SALES_RETURNS</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>CIN</String>
+          <String>Customer Item Code</String>
+          <String>PO #</String>
+          <String>VENDOR_RFRNC_ID</String>
+          <String>DEA Blank #</String>
+          <String>CREDIT_MEMO_NUM</String>
+          <String>OTS_TYPE_KEY_NUM</String>
+          <String>CREDIT_REBILL_REASON_KEY_NUM</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$date</Tag>
+        <FieldNames>
+          <String>Due Date</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>CREDIT_MEMO_NUM</String>
+          <String>Contract Flag</String>
+          <String>CITY</String>
+          <String>STATE</String>
+          <String>CNTRCT_GROUP_TYPE_DESC</String>
+          <String>CNTRCT_GROUP_STAT_DESC</String>
+          <String>CURR_VRSN_FLG</String>
+          <String>DEL_FLG</String>
+          <String>INDVDL_CNTRCT_GROUP_FLG</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>CNTRCT_GROUP_CLASS_DESC</String>
+          <String>GWSA_CNTRCT_GROUP_NAM</String>
+          <String>CNTRCT_GROUP_ABBR_NAM</String>
+          <String>PPM_CLASS_DESC</String>
+          <String>Contract Type</String>
+          <String>DEA Blank #</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>CREDIT_DETAIL_CMNT_TXT</String>
+          <String>Contract Name</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>CREDIT_MEMO_NUM</String>
+          <String>Contract Flag</String>
+          <String>Contract Name</String>
+          <String>CITY</String>
+          <String>STATE</String>
+          <String>CNTRCT_GROUP_TYPE_DESC</String>
+          <String>CNTRCT_GROUP_STAT_DESC</String>
+          <String>CURR_VRSN_FLG</String>
+          <String>DEL_FLG</String>
+          <String>INDVDL_CNTRCT_GROUP_FLG</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>CNTRCT_GROUP_CLASS_DESC</String>
+          <String>GWSA_CNTRCT_GROUP_NAM</String>
+          <String>CNTRCT_GROUP_ABBR_NAM</String>
+          <String>PPM_CLASS_DESC</String>
+          <String>Contract Type</String>
+          <String>DEA Blank #</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>CREDIT_DETAIL_CMNT_TXT</String>
+        </FieldNames>
+      </FieldTagData>
+    </Interactive>
+  </FieldTags>
+  <FieldComments></FieldComments>
+  <TableComments></TableComments>
+  <CreatePrjFolder>false</CreatePrjFolder>
+  <LinkedTables></LinkedTables>
+  <AppObjectEntries></AppObjectEntries>
+  <GenericDimensions></GenericDimensions>
+  <GenericMeasures></GenericMeasures>
+  <GenericBookmarks></GenericBookmarks>
+  <ConnectionInfo></ConnectionInfo>
+  <GenericDerivedDefinitions></GenericDerivedDefinitions>
+  <GenericDerivedFields></GenericDerivedFields>
+  <BnfOff>false</BnfOff>
+  <CreatedAfterSingleQuoteExactSearch>false</CreatedAfterSingleQuoteExactSearch>
+</DocInternals>

@@ -1,0 +1,127 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for SHIP_TO_ACCOUNT information.
+ *   
+ * 
+ * Sources:
+ *  Teradata
+ *	TPT Extract
+ *
+ * Outputs:
+ *   Ship_To_Account.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+/**********************************************************
+Setup the root directory and the needed include files for
+this application.
+
+Changelog:
+3.6.2014 jeremy.fourman
+-Added this block.
+-Added Util.qvs include
+6.3.2014 jeremy.fourman
+- Removed include of meta data file.
+**********************************************************/
+
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Ship_To_Account
+user_report_rlt:
+load
+	UserName as [User]
+	, UserID as [User ID]
+	, Upper(MercuryID) as [Mercury ID]   //changed on 5/12 will be deployed on 5/15/2020
+	, ValidFrom as [Report Assignment Start Date]
+	, ValidTo as [Report Assignment End Date]
+	, ReportID as [Report ID]
+	, ReportName as [Report Name]
+	, if(date(ValidTo)<today(), 'No', 'Yes') as [Is Assignment Active]
+;
+SQL
+SELECT 
+m.MRCRY_USER_NAM as UserName,
+m.USER_ID as UserID,
+r.MRCRY_USER_ID as MercuryID, 
+r.START_DTE as ValidFrom, 
+r.END_DTE as ValidTo, 
+p.RPT_KEY_NUM as ReportID, 
+p.RPT_NAM as ReportName
+FROM VIEWS.REPORT_USER_RLT r
+join VIEWS.PHARMA_ECOM_REPORT p on (r.RPT_KEY_NUM=p.RPT_KEY_NUM)
+join VIEWS.MERCURY_USER m on (m.MRCRY_USER_ID=r.MRCRY_USER_ID)	
+;
+
+
+
+Concatenate (user_report_rlt)
+
+load
+	  UserName as [User]
+	, UserID as [User ID]
+	, Upper(MercuryID) as [Mercury ID]    //changed on 5/12 will be deployed on 5/15/2020
+	, ValidFrom as [Report Assignment Start Date]
+	, ValidTo as [Report Assignment End Date]
+	, ReportID as [Report ID]
+	, ReportName as [Report Name]
+	, if(date(ValidTo)<today(), 'No', 'Yes') as [Is Assignment Active]
+;
+
+SELECT  Distinct 
+USR.MRCRY_USER_NAM as UserName,
+USR.USER_ID as UserID,
+USR.MRCRY_USER_ID as MercuryID, 
+'4/24/2019 09:01:02 AM' as ValidFrom, 
+'12/31/9999 12:00:00 AM' as ValidTo, 
+'22' as ReportID, 
+'OpentoBuy' as ReportName
+
+FROM VIEWS.LDAP_USER_APPL LDAP
+join VIEWS.MERCURY_USER USR on (USR.MRCRY_USER_ID=LDAP.MRCRY_USER_ID)
+join VIEWS.ACCOUNT_USER_RLT AUR on  (AUR.MRCRY_USER_ID=LDAP.MRCRY_USER_ID)
+join VIEWS.SHIP_TO_ACCOUNT STA on (STA.ACCT_KEY_NUM = AUR.ACCT_KEY_NUM)
+where appl_group_nam='ORDER_EXPRESS_REPORTING'
+AND LDAP.MRCRY_USER_ID IN 
+(
+SELECT distinct MRCRY_USER_ID FROM VIEWS.LDAP_USER_APPL WHERE APPL_GROUP_NAM in ('ACUTE_CARE', 'RETAIL_INDEPENDENT') 
+)
+and LDAP.MRCRY_USER_ID not in (SELECT distinct MRCRY_USER_ID FROM VIEWS.report_user_rlt)
+and LDAP.USER_TYPE_NAM = 'Premium Aap'
+and USR.USER_ID_ACTIVE_FLG = 'Y'
+and EXTRNL_INTRNL_USER_FLG <> 'Y'
+;
+
+store 
+		user_report_rlt
+into
+		'$(vRootFileLocation)$(vQVDs)\User_Report_Rlt.qvd';
+	
+drop table user_report_rlt;

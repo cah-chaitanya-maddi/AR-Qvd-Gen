@@ -1,0 +1,127 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ITEM_GROUP information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Item_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Item_Group
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Item_Group';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Item_Group:
+LOAD
+  ITEM_GROUP_NUM
+ ,Capitalize(ITEM_GROUP_NAM)  as [ITEM_GROUP_NAM]
+ ,Capitalize(ITEM_GROUP_DESC) as [ITEM_GROUP_DESC]
+ ,LOCK_FLG 
+ ,Upper(MRCRY_USER_ID) as MRCRY_USER_ID   //changed on 5/12 will be deployed on 5/15/2020
+  ,MRCRY_ADMIN_ID
+ ,USER_ACCT_GROUP_NUM
+FROM
+  '$(vExtractFileLocation)Item_Group-Caret.txt'
+  (txt, codepage is 1252, embedded labels, delimiter is '^', no quotes, no eof);
+  
+/********************************************
+ * Concatenate Exceptions into Item_Group table
+ ********************************************/
+CONCATENATE(Item_Group)
+LOAD
+  ITEM_GROUP_NUM
+ ,Capitalize(ITEM_GROUP_NAM)  as [Item Group Name]
+ ,Capitalize(ITEM_GROUP_DESC) as [Item Group Desc]
+ ,LOCK_FLG 
+ ,Upper(MRCRY_USER_ID) as MRCRY_USER_ID   //changed on 5/12 will be deployed on 5/15/2020
+ ,MRCRY_ADMIN_ID
+ ,USER_ACCT_GROUP_NUM
+;
+SQL
+SELECT
+  ITEM_GROUP_NUM
+ ,ITEM_GROUP_NAM
+ ,ITEM_GROUP_DESC
+ ,LOCK_FLG
+ ,MRCRY_USER_ID
+ ,MRCRY_ADMIN_ID
+ ,USER_ACCT_GROUP_NUM
+FROM
+  VIEWS.ITEM_GROUP
+WHERE
+  ITEM_GROUP_DESC like '%^%'
+  or position('0A'xc in ITEM_GROUP_DESC) > 0  
+;
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+//call store_into_qvd(vTableName, vQvdFile, 0);
+
+store Item_Group into '$(vRootFileLocation)$(vQVDs)\Item_Group.qvd';
+
+/********************************************
+ * Store Dev QVD
+ ********************************************/
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	trace "************************** DEV LOAD: Creating Dev version of Item_Group";
+
+	NoConcatenate
+	Item_Group_dev:
+	load * resident	Item_Group;
+	store Item_Group_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Item_Group.qvd';
+	drop table Item_Group_dev;
+	
+endif;
+
+/********************************************
+  * Free up memory
+ ********************************************/
+drop table Item_Group;
+//call drop_table(vTableName);
+

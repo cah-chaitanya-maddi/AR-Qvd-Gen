@@ -1,0 +1,355 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for PRODUCT information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Product.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+//ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+ODBC CONNECT TO PD_SDW_Stg;		//VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+///$tab Product
+/*********************************************************************************
+Load in the Product extract file that is delimited with a caret. Query Teradata 
+for records that have a caret in one of the read fields. 
+
+Changelog:
+- 10.24.2013 warren.lea
+Removed fields that do not need to be loaded at this time.
+Labeled GCN as "GCN-hist"
+*********************************************************************************/
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Product';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Product:
+
+SELECT	
+    
+ ACCUNET_QTY                   ,
+ACCUNET_SIZE_NUM              ,
+ACT_STAT_CDE                  ,
+ACT_STAT_DESC                 ,
+ACT_STAT_H_ID                 ,
+ADDL_DESC                     ,
+AHFS_DESC                     ,
+AHFS_NUM                      ,
+AIR_FRT_FLG                   ,
+AMP_TXT                       ,
+ARCOS_FLG                     ,
+BASE_CDE_GMS_NUM              ,
+BUYER_NAM                     ,
+BUYER_NUM                     ,
+CARD_GEN_CDE_NUM              ,
+CARD_GEN_IND_CDE              ,
+CARD_GEN_IND_DESC             ,
+CARD_GPPC_ID                  ,
+CARD_SBST_KEY_ID              ,
+CGBK_PARENT_SUPPLIER_NUM      ,
+CH_ALTRNT_HAM_DEPT_DESC       ,
+CH_ALTRNT_HAM_DEPT_FLG        ,
+CH_ALTRNT_HAM_DEPT_NUM        ,
+CH_CTGRY_DESC                 ,
+CH_CTGRY_MNGR_ASSIST_NAM      ,
+CH_CTGRY_MNGR_NAM             ,
+CH_HHC_SUB_CTGRY_DESC         ,
+CH_NON_PRIVATE_LABEL_MNGR_NAM ,
+CH_SUB_CTGRY_DESC             ,
+CONVEN_PACK_QTY               ,
+CORP_DESC                     ,
+CORP_ITEM_NUM                 ,
+CSE_LABEL_FLG                 ,
+CSE_WEIGHT_NUM                ,
+CTGRY_CDE                     ,
+CTGRY_DESC                    ,
+CURR_VRSN_FLG                 ,
+DEA_BASE_DESC                 ,
+DEA_BASE_NUM                  ,
+DEA_SCHED_DESC                ,
+DEA_SCHED_NUM                 ,
+DEA_SPECIAL_ATTN_CDE          ,
+DEA_SPECIAL_ATTN_DESC         ,
+DEA_SUB_BASE_NUM              ,
+DEL_FLG                       ,
+DEPT_CDE                      ,
+DEPT_DESC                     ,
+DISP_FLG                      ,
+DP_NUM                        ,
+DRUG_CLASS_CDE                ,
+DRUG_CLASS_DESC               ,
+DRUG_CLASS_FLG                ,
+DRUG_CLASS_ID                 ,
+DRUG_GROUP_CDE                ,
+DRUG_GROUP_DESC               ,
+DRUG_GROUP_ID                 ,
+DRUG_SUBCLS_CDE               ,
+DRUG_SUBCLS_DESC              ,
+DRUG_SUBCLS_ID                ,
+EDI_CGBK_FLG                  ,
+EDI_ID                        ,
+EDLP_PCT                      ,
+FDB_AHFS_ID                   ,
+FDB_AWP_MULT_NUM              ,
+FDB_BBPKG_D1                  ,
+FDB_BBPKG_P1                  ,
+FDB_CWPPKG_P1                 ,
+FDB_FFPUL_P1                  ,
+FDB_HICL_SEQNO                ,
+FDB_OBC_EXP                   ,
+FIXED_SELL_PCT                ,
+FORM_DESC                     ,
+FORM_H_ID                     ,
+FORM_ID                       ,
+GEN_IND_CDE                   ,
+GEN_IND_DESC                  ,
+GEN_IND_FLG                   ,
+GEN_IND_H_ID                  ,
+GEN_NAM                       ,
+GEN_PROD_IND_CDE              ,
+GEN_PROD_IND_DESC             ,
+GEN_SBST_FLG                  ,
+GLBL_SRC_FLG                  ,
+GPI_GEN_NAM                   ,
+GPI_ID                        ,
+GWSA_EXCLSV_FLG               ,
+GWSA_INJCT_FLG                ,
+HAM_DEPT_DESC                 ,
+HAM_DEPT_NUM                  ,
+HAZARD_ID_NUM                 ,
+HOSP_ONLY_FLG                 ,
+IBT_ELIGIBLE_FLG              ,
+INST_PACK_CDE                 ,
+INST_PACK_DESC                ,
+INTRNL_PROD_FNC_CLASS_CDE     ,
+INTRNL_PROD_FNC_CLASS_DESC    ,
+INVTRY_CLASS_DESC             ,
+INVTRY_CLASS_ID               ,
+INVTRY_TYPE_DESC              ,
+INVTRY_TYPE_ID                ,
+ITEM_TYPE_CDE                 ,
+ITEM_TYPE_DESC                ,
+MDSP_AWP_MULT_NUM             ,
+MDSP_PACK_QTY                 ,
+MDSP_PACK_SIZE_NUM            ,
+MDSP_PKG_SIZE_UOM_ID          ,
+MDSP_THER_EQV_ID              ,
+MDSP_TOTAL_PKG_QTY            ,
+MFG_PROD_ID                   ,
+MIN_PACK_QTY                  ,
+MKT_DESC                      ,
+MSTR_PACK_QTY                 ,
+MULTI_SRC_IND_CDE             ,
+MULTI_SRC_IND_DESC            ,
+NDC_CDE                       ,
+NDC_IND_CDE                   ,
+NDC_IND_DESC                  ,
+NDC_KEY_CDE                   ,
+NDC_KEY_DESC                  ,
+NDC_UPC_FLG                   ,
+NLC_TYPE_CDE                  ,
+NLC_TYPE_DESC                 ,
+PACK_AMP_DLR                  ,
+PACK_FFPUL_P1_DLR             ,
+PACK_QTY                      ,
+PACK_SIZE_H_ID                ,
+PACK_SIZE_QTY                 ,
+PARENT_SUPPLIER_NUM           ,
+PRFTPK_DISC_PCT               ,
+PRIVATE_LABEL_CDE             ,
+PRIVATE_LABEL_DESC            ,
+PRIVATE_LABEL_H_ID            ,
+PROD_AGR_CDE                  ,
+PROD_AGR_DESC                 ,
+PROD_DSCONT_DTE               ,
+PROD_KEY_NUM                  ,
+PROD_NAM                      ,
+PROD_TYPE_CDE                 ,
+PROD_TYPE_DESC                ,
+PURCH_PROD_TYPE_CDE           ,
+PURCH_PROD_TYPE_DESC          ,
+REFRIG_FLG                    ,
+RLS_DTE                       ,
+ROW_ADD_STP                   ,
+ROW_ADD_USER_ID               ,
+ROW_UPDATE_STP                ,
+ROW_UPDATE_USER_ID            ,
+RSTRCT_FLG                    ,
+RTRN_RSTRCT_CDE               ,
+RTRN_RSTRCT_DESC              ,
+RTRN_RSTRCT_EXP_DTE           ,
+RX_FLG                        ,
+RX_TYPE_CDE                   ,
+RX_TYPE_DESC                  ,
+SBST_DESC                     ,
+SBST_ID                       ,
+SELL_CUBE_NUM                 ,
+SELL_WEIGHT_NUM               ,
+SIZE_TXT                      ,
+SPECIAL_PROG_FLG              ,
+SRC_CDE                       ,
+SRC_DESC                      ,
+STRGTH_EXT_TXT                ,
+STRGTH_H_TXT                  ,
+STRGTH_TXT                    ,
+SUBCAT_CDE                    ,
+SUBCAT_DESC                   ,
+SUPL_GWSA_SVC_LEVEL_TYPE_CDE  ,
+SUPL_GWSA_SVC_LEVEL_TYPE_DESC ,
+SUPPLIER_ABBR_TXT             ,
+SUPPLIER_ADDR_TXT             ,
+SUPPLIER_ADDR2_TXT            ,
+SUPPLIER_CASH_DISC_WAC_PCT    ,
+SUPPLIER_CITY                 ,
+SUPPLIER_CLASS_CDE            ,
+SUPPLIER_CLASS_DESC           ,
+SUPPLIER_DEA_LIC_ID           ,
+SUPPLIER_DEA_NUM              ,
+SUPPLIER_FAX_NUM              ,
+SUPPLIER_GWSA_CNTRCT_COST_FLG ,
+SUPPLIER_GWSA_GROUP_NAM       ,
+SUPPLIER_GWSA_GROUP_NUM       ,
+SUPPLIER_GWSA_NAV_SUPPLIER_FLG,
+SUPPLIER_GWSA_RPRCR_FLG       ,
+SUPPLIER_GWSA_SVC_LEVEL_FLG   ,
+SUPPLIER_GWSA_WAC_FLG         ,
+SUPPLIER_NAM                  ,
+SUPPLIER_NLC_TYPE_CDE         ,
+SUPPLIER_NLC_TYPE_DESC        ,
+SUPPLIER_NUM                  ,
+SUPPLIER_ORDER_ID             ,
+SUPPLIER_PHONE_NUM            ,
+SUPPLIER_STATE                ,
+SUPPLIER_STATE_NAM            ,
+SUPPLIER_TYPE_CDE             ,
+SUPPLIER_TYPE_DESC            ,
+SUPPLIER_ZIP                  ,
+SUPPLY_FLG                    ,
+SYSTEM_CDE                    ,
+SYSTEM_NAM                    ,
+TOTAL_QTY                     ,
+TRADE_NAM                     ,
+UNIT_CDE                      ,
+UNIT_DESC                     ,
+UNIT_DOSE_DESC                ,
+UNIT_DOSE_ID                  ,
+UNIT_H_CDE                    ,
+UNIT_H_DESC                   ,
+UPC_NUM                       ,
+VOLUME_NUM                    ,
+WAC_DLR                       ,
+WEIGHT_EXT_NUM                ,
+WEIGHT_NUM                       
+    
+  
+//PROD_KEY_NUM, PROD_NAM, GEN_NAM, MFG_PROD_ID, CORP_ITEM_NUM,
+//		CORP_DESC, DP_NUM, SELL_CUBE_NUM, SELL_WEIGHT_NUM, CSE_WEIGHT_NUM,
+//		FDB_AWP_MULT_NUM, BASE_CDE_GMS_NUM, VOLUME_NUM, MDSP_AWP_MULT_NUM,
+//		PACK_SIZE_H_ID, HAZARD_ID_NUM, WEIGHT_EXT_NUM, WEIGHT_NUM, STRGTH_EXT_TXT,
+//		STRGTH_H_TXT, SIZE_TXT, ACCUNET_SIZE_NUM, ARCOS_FLG, CSE_LABEL_FLG,
+//		AIR_FRT_FLG, RSTRCT_FLG, REFRIG_FLG, HOSP_ONLY_FLG, RX_FLG, CURR_VRSN_FLG,
+//		DEL_FLG, SUPPLY_FLG, DISP_FLG, GEN_SBST_FLG, GEN_IND_FLG, SPECIAL_PROG_FLG,
+//		NDC_UPC_FLG, DRUG_CLASS_FLG, IBT_ELIGIBLE_FLG, RTRN_RSTRCT_EXP_DTE,
+//		RLS_DTE, UNIT_CDE, UNIT_DESC, UNIT_H_CDE, UNIT_H_DESC, NDC_CDE,
+//		GEN_IND_CDE, GEN_IND_DESC, GEN_IND_H_ID, GEN_PROD_IND_CDE, GEN_PROD_IND_DESC,
+//		CARD_GEN_IND_CDE, CARD_GEN_IND_DESC, CARD_GEN_CDE_NUM, CARD_GPPC_ID,
+//		CARD_SBST_KEY_ID, AHFS_NUM, AHFS_DESC, PROD_TYPE_CDE, PROD_TYPE_DESC,
+//		HAM_DEPT_NUM, HAM_DEPT_DESC, NDC_IND_CDE, NDC_IND_DESC, UNIT_DOSE_ID,
+//		UNIT_DOSE_DESC, DEA_SCHED_NUM, DEA_SCHED_DESC, RX_TYPE_CDE, RX_TYPE_DESC,
+//		ACT_STAT_CDE, ACT_STAT_DESC, ACT_STAT_H_ID, CTGRY_CDE, CTGRY_DESC,
+//		DEA_BASE_NUM, DEA_BASE_DESC, DEPT_CDE, DEPT_DESC, FORM_ID, FORM_DESC,
+//		FORM_H_ID, INST_PACK_CDE, INST_PACK_DESC, NDC_KEY_CDE, NDC_KEY_DESC,
+//		PRIVATE_LABEL_CDE, PRIVATE_LABEL_DESC, PRIVATE_LABEL_H_ID, RTRN_RSTRCT_CDE,
+//		RTRN_RSTRCT_DESC, SUBCAT_CDE, SUBCAT_DESC, SYSTEM_CDE, SYSTEM_NAM,
+//		EDI_ID, SUPPLIER_ORDER_ID, SUPPLIER_NUM, SUPPLIER_NAM, SUPPLIER_ABBR_TXT,
+//		SUPPLIER_ADDR_TXT, SUPPLIER_ADDR2_TXT, SUPPLIER_CITY, SUPPLIER_STATE,
+//		SUPPLIER_STATE_NAM, SUPPLIER_ZIP, SUPPLIER_DEA_NUM, SUPPLIER_DEA_LIC_ID,
+//		SUPPLIER_TYPE_CDE, SUPPLIER_TYPE_DESC, SUPPLIER_PHONE_NUM, SUPPLIER_FAX_NUM,
+//		PARENT_SUPPLIER_NUM, SUPPLIER_CLASS_CDE, SUPPLIER_CLASS_DESC,
+//		EDLP_PCT, PRFTPK_DISC_PCT, FIXED_SELL_PCT, CONVEN_PACK_QTY, MSTR_PACK_QTY,
+//		TOTAL_QTY, MIN_PACK_QTY, PACK_QTY, GPI_ID, GPI_GEN_NAM, DRUG_CLASS_CDE,
+//		DRUG_CLASS_ID, DRUG_CLASS_DESC, DRUG_GROUP_CDE, DRUG_GROUP_ID,
+//		DRUG_GROUP_DESC, DRUG_SUBCLS_CDE, DRUG_SUBCLS_ID, DRUG_SUBCLS_DESC,
+//		UPC_NUM, ROW_ADD_STP, ROW_ADD_USER_ID, ROW_UPDATE_STP, ROW_UPDATE_USER_ID,
+//		PURCH_PROD_TYPE_CDE, PURCH_PROD_TYPE_DESC, BUYER_NUM, BUYER_NAM,
+//		FDB_BBPKG_P1, FDB_BBPKG_D1, FDB_CWPPKG_P1, FDB_FFPUL_P1, MDSP_THER_EQV_ID,
+//		MDSP_PACK_SIZE_NUM, MDSP_PACK_QTY, MDSP_PKG_SIZE_UOM_ID, MDSP_TOTAL_PKG_QTY,
+//		ADDL_DESC, PACK_SIZE_QTY, TRADE_NAM, STRGTH_TXT, FDB_OBC_EXP,
+//		ACCUNET_QTY, NLC_TYPE_CDE, NLC_TYPE_DESC, SUPPLIER_NLC_TYPE_CDE,
+//		SUPPLIER_NLC_TYPE_DESC, MULTI_SRC_IND_CDE, MULTI_SRC_IND_DESC,
+//		AMP_TXT, GLBL_SRC_FLG, FDB_HICL_SEQNO, ITEM_TYPE_CDE, ITEM_TYPE_DESC,
+//		INTRNL_PROD_FNC_CLASS_CDE, INTRNL_PROD_FNC_CLASS_DESC, PACK_FFPUL_P1_DLR,
+//		PACK_AMP_DLR, GWSA_INJCT_FLG, GWSA_EXCLSV_FLG, SUPPLIER_CASH_DISC_WAC_PCT,
+//		SUPL_GWSA_SVC_LEVEL_TYPE_CDE, SUPL_GWSA_SVC_LEVEL_TYPE_DESC,
+//		SUPPLIER_GWSA_GROUP_NUM, SUPPLIER_GWSA_GROUP_NAM, SUPPLIER_GWSA_NAV_SUPPLIER_FLG,
+//		SUPPLIER_GWSA_WAC_FLG, SUPPLIER_GWSA_CNTRCT_COST_FLG, SUPPLIER_GWSA_RPRCR_FLG,
+//		SUPPLIER_GWSA_SVC_LEVEL_FLG, DEA_SPECIAL_ATTN_CDE, DEA_SPECIAL_ATTN_DESC,
+//		CH_ALTRNT_HAM_DEPT_NUM, CH_CTGRY_MNGR_NAM, CH_NON_PRIVATE_LABEL_MNGR_NAM,
+//		CH_CTGRY_MNGR_ASSIST_NAM, CH_CTGRY_DESC, CH_SUB_CTGRY_DESC, CH_HHC_SUB_CTGRY_DESC,
+//		CH_ALTRNT_HAM_DEPT_DESC, CH_ALTRNT_HAM_DEPT_FLG, INVTRY_TYPE_ID,
+//		INVTRY_TYPE_DESC, INVTRY_CLASS_ID, INVTRY_CLASS_DESC, SBST_ID,
+//		SBST_DESC, PROD_AGR_CDE, PROD_AGR_DESC, EDI_CGBK_FLG, CGBK_PARENT_SUPPLIER_NUM,
+//		PROD_DSCONT_DTE, MKT_DESC, DEA_SUB_BASE_NUM, SRC_CDE, SRC_DESC,
+//		WAC_DLR
+		
+		
+FROM VIEWS.PRODUCT		//VIEWS Changes by Sumit 11/06/2020 ARR 262-264
+;
+
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE Product into '$(vRootFileLocation)$(vQVDs)Product_Full_Extract.qvd';
+//call store_into_qvd(vTableName, vQvdFile, 0);
+
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP Table Product;
+//call drop_table(vTableName);
+
+

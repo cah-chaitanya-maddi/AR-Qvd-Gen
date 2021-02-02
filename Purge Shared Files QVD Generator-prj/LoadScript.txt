@@ -1,0 +1,72 @@
+﻿///$tab Main
+SET ThousandSep=',';
+SET DecimalSep='.';
+SET MoneyThousandSep=',';
+SET MoneyDecimalSep='.';
+SET MoneyFormat='$#,##0.00;($#,##0.00)';
+SET TimeFormat='h:mm:ss TT';
+SET DateFormat='M/D/YYYY';
+SET TimestampFormat='M/D/YYYY h:mm:ss[.fff] TT';
+SET MonthNames='Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec';
+SET DayNames='Mon;Tue;Wed;Thu;Fri;Sat;Sun';
+
+
+
+
+
+LET vDistFolderLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'DistFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vQVDs='\QVDs\';
+
+///$tab Move Shared Files
+
+////////// ********************* Read the Shared Files folder destinations *************************/////////////
+
+////$(Include=$(vDistFolderLocation)Config\$(vEnvironment)\sharedfilefoldertable.inc);
+
+
+Let vToday = Timestamp(now(),'YYYY-MM-DD_hh-mm-ss_TT');
+ 
+
+
+Folder:
+
+Load * inline [
+
+Folder
+Department_Billing
+Executive_Dashboard  
+Contract_Ops
+Contract_Review 
+Invoice_Review 
+Invoice_Approval 
+Generic_Rebate_Estimator
+Market_Share 
+Purchases-ProductGroups 
+Purchases_Review
+Retail_Dashboard
+Separation Of Duties  
+Service_Level
+Source_Rebate_Estimator
+PricingReport
+PurchaseReviewGPO
+QBR
+];
+
+//AcuteSourceRebateEstimator
+
+FOR Each Folder in FieldValueList('Folder')
+
+
+EXECUTE cmd.exe /C MKDIR "$(vDistFolderLocation)Purged Shared Files\$(vToday)";  //// This creates subfolders based on each dates
+
+
+EXECUTE cmd.exe /C MOVE "$(vDistFolderLocation)$(Folder)\*.shared" "$(vDistFolderLocation)Purged Shared Files\$(vToday)";    //// Shared files are stored into respective date folders for that date.
+
+
+
+
+NEXT 
+
+
+drop Table Folder ; 

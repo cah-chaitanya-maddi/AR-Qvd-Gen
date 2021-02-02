@@ -1,0 +1,321 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for DISTRIBUTION_CENTER Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Distribution_Center.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Ship_To_limiter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM as SHIP_TO_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Distribution_Center
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Distribution_Center';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vQvdFile)'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date; 
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Distribution_Center:
+LOAD
+  DIST_CENTER_KEY_NUM            as [DIST_CENTER_KEY_NUM]
+ ,Capitalize(DIST_CENTER_NAM)    as [DIST_CENTER_NAM]
+ ,Capitalize(ADDR_TXT)           as [ADDR_TXT]
+ ,Capitalize(ADDR2_TXT)          as [ADDR2_TXT]
+ ,Capitalize(CITY)               as [CITY]
+ ,STATE                          as [STATE]
+ ,ZIP                            as [ZIP]
+ ,PHONE_NUM                      as [PHONE_NUM]
+ ,ACT_STAT_ID                    as [Account Active Status]
+ ,DEA_LIC_NUM                    as [DEA_LIC_NUM]
+ ,HIN_ID                         as [HIN_ID]
+ ,Capitalize(DESC_ABBR_TXT)      as [DESC_ABBR_TXT]
+ ,BSNS_UNIT_CDE                  as [BSNS_UNIT_CDE]
+ ,Capitalize(BSNS_UNIT_DESC)     as [BSNS_UNIT_DESC]
+ ,REGION_CDE                     as [REGION_CDE]
+ ,Capitalize(REGION_DESC)        as [REGION_DESC]
+ ,GROUP_CDE                      as [GROUP_CDE]
+ ,Capitalize(GROUP_DESC)         as [GROUP_DESC]
+ ,HLTH_SCTR_CDE                  as [HLTH_SCTR_CDE]
+ ,Capitalize(HLTH_SCTR_DESC)     as [HLTH_SCTR_DESC]
+ ,BRKRG_FLG                      as [BRKRG_FLG]
+ ,LOCATION_NUM                   as [LOCATION_NUM]
+ ,CURR_VRSN_FLG                  as [CURR_VRSN_FLG]
+ ,DEL_FLG                        as [DEL_FLG]
+ ,SYSTEM_CDE                     as [SYSTEM_CDE]
+ ,SYSTEM_NAM                     as [SYSTEM_NAM]
+ ,SRC_SYSTEM_CDE                 as [SRC_SYSTEM_CDE]
+ ,Capitalize(SRC_SYSTEM_DESC)    as [SRC_SYSTEM_DESC]
+ ,REMOTE_OUTQ_ID                 as [REMOTE_OUTQ_ID]
+ ,MAIN_FLOOR_SQUARE_FOOTAGE_QTY  as [MAIN_FLOOR_SQUARE_FOOTAGE_QTY]
+ ,MEZZANINE_SQUARE_FOOTAGE_QTY   as [MEZZANINE_SQUARE_FOOTAGE_QTY]
+ ,TEMP_HOUR_RATE_DLR             as [TEMP_HOUR_RATE_DLR]
+ ,Capitalize(PICK_METHOD_DESC)   as [PICK_METHOD_DESC]
+ ,SQUARE_FOOTAGE_QTY             as [SQUARE_FOOTAGE_QTY]
+ ,OPRTN_ACTIVE_FLG               as [OPRTN_ACTIVE_FLG]
+ ,ROW_ADD_STP                    as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                 as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID             as [ROW_UPDATE_USER_ID]
+ ,PRFL_ID                        as [PRFL_ID]
+ ,ADC_BSNS_UNIT_CDE              as [ADC_BSNS_UNIT_CDE]
+ ,Capitalize(ADC_BSNS_UNIT_DESC) as [ADC_BSNS_UNIT_DESC]
+ ,ADC_BSNS_UNIT_ID               as [ADC_BSNS_UNIT_ID]
+;
+SQL
+SELECT
+  DIST_CENTER_KEY_NUM
+ ,DIST_CENTER_NAM
+ ,ADDR_TXT
+ ,ADDR2_TXT
+ ,CITY
+ ,STATE
+ ,ZIP
+ ,PHONE_NUM
+ ,ACT_STAT_ID
+ ,DEA_LIC_NUM
+ ,HIN_ID
+ ,DESC_ABBR_TXT
+ ,BSNS_UNIT_CDE
+ ,BSNS_UNIT_DESC
+ ,REGION_CDE
+ ,REGION_DESC
+ ,GROUP_CDE
+ ,GROUP_DESC
+ ,HLTH_SCTR_CDE
+ ,HLTH_SCTR_DESC
+ ,BRKRG_FLG
+ ,LOCATION_NUM
+ ,CURR_VRSN_FLG
+ ,DEL_FLG
+ ,SYSTEM_CDE
+ ,SYSTEM_NAM
+ ,SRC_SYSTEM_CDE
+ ,SRC_SYSTEM_DESC
+ ,REMOTE_OUTQ_ID
+ ,MAIN_FLOOR_SQUARE_FOOTAGE_QTY
+ ,MEZZANINE_SQUARE_FOOTAGE_QTY
+ ,TEMP_HOUR_RATE_DLR
+ ,PICK_METHOD_DESC
+ ,SQUARE_FOOTAGE_QTY
+ ,OPRTN_ACTIVE_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,PRFL_ID
+ ,ADC_BSNS_UNIT_CDE
+ ,ADC_BSNS_UNIT_DESC
+ ,ADC_BSNS_UNIT_ID
+FROM
+  VIEWS.DISTRIBUTION_CENTER
+WHERE  
+  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    DIST_CENTER_KEY_NUM
+   ,DIST_CENTER_NAM
+   ,ADDR_TXT
+   ,ADDR2_TXT
+   ,CITY
+   ,STATE
+   ,ZIP
+   ,PHONE_NUM
+   ,[Account Active Status]
+   ,DEA_LIC_NUM
+   ,HIN_ID
+   ,DESC_ABBR_TXT
+   ,BSNS_UNIT_CDE
+   ,BSNS_UNIT_DESC
+   ,REGION_CDE
+   ,REGION_DESC
+   ,GROUP_CDE
+   ,GROUP_DESC
+   ,HLTH_SCTR_CDE
+   ,HLTH_SCTR_DESC
+   ,BRKRG_FLG
+   ,LOCATION_NUM
+   ,CURR_VRSN_FLG
+   ,DEL_FLG
+   ,SYSTEM_CDE
+   ,SYSTEM_NAM
+   ,SRC_SYSTEM_CDE
+   ,SRC_SYSTEM_DESC
+   ,REMOTE_OUTQ_ID
+   ,MAIN_FLOOR_SQUARE_FOOTAGE_QTY
+   ,MEZZANINE_SQUARE_FOOTAGE_QTY
+   ,TEMP_HOUR_RATE_DLR
+   ,PICK_METHOD_DESC
+   ,SQUARE_FOOTAGE_QTY
+   ,OPRTN_ACTIVE_FLG
+   ,ROW_ADD_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_UPDATE_USER_ID
+   ,PRFL_ID
+   ,ADC_BSNS_UNIT_CDE
+   ,ADC_BSNS_UNIT_DESC
+   ,ADC_BSNS_UNIT_ID
+  FROM
+    '$(vQvdFile)' (qvd)
+  WHERE
+    NOT EXISTS(DIST_CENTER_KEY_NUM, DIST_CENTER_KEY_NUM)
+  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+  call store_into_qvd(vTableName, vQvdFile, 0);
+  let vLastExecTime = '$(vThisExecTime)'; 
+
+  /********************************************
+   * Store New Dev QVD
+   ********************************************/
+   
+   store Customer_Department_dev into '$(vRootFileLocation)$(vQVDs)Customer_Department.qvd';
+   
+   
+   
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	//*****************************************************************
+	trace "************************** DEV LOAD: Creating Dev version of Customer_Department";
+	//*****************************************************************
+	NoConcatenate
+	Customer_Department_dev:
+	load 
+		* 
+	resident
+		Customer_Department
+	where exists(SHIP_TO_FILTER, SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM)
+	;
+
+	store Customer_Department_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Customer_Department.qvd';
+	drop table Customer_Department_dev;
+	
+	endif;
+
+END IF
+
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+///call drop_table(vTableName);
+
+drop Table Customer_Department ; 
+

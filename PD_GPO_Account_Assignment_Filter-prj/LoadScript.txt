@@ -1,0 +1,109 @@
+﻿///$tab Setup
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+
+///$tab Filter
+user_categories:
+load distinct
+      Upper(USER_ID) as USER_ID
+     ,MRCRY_USER_ID 
+from
+'$(vRootFileLocation)$(vQVDs)user_categories_PurchaseReviewGPO_1.qvd' (qvd)
+ ;
+
+left join
+LOAD distinct MRCRY_USER_ID, 
+     CARD_ACCT_GROUP_NUM
+FROM
+'$(vRootFileLocation)$(vQVDs)GPO_Contract_Group.qvd'
+(qvd)
+Where Exists (MRCRY_USER_ID)
+;
+
+left join
+LOAD CARD_ACCT_GROUP_NUM, 
+     USER_ACCT_GROUP_NUM
+FROM
+'$(vRootFileLocation)$(vQVDs)CAG_UAG_RLT.qvd'
+(qvd);
+
+Left Join 
+LOAD Distinct
+  ACCT_KEY_NUM
+ ,USER_ACCT_GROUP_NUM 
+FROM
+  '$(vRootFileLocation)$(vQVDs)Account_Group_Rlt.qvd'
+(qvd)
+;
+
+NoConcatenate
+exclusion_temp:
+LOAD
+MRCRY_USER_ID&'|'&ACCT_KEY_NUM as exclusion_key_temp
+Resident
+user_categories
+;
+
+drop Table user_categories;
+
+e1:
+LOAD 
+	MRCRY_USER_ID&'|'&ACCT_KEY_NUM as reject_exclusion_key
+FROM
+  '$(vRootFileLocation)$(vQVDs)Account_User_Rlt.qvd'
+(qvd);
+
+exclusion:
+LOAD exclusion_key_temp as exclusion_key
+Resident
+exclusion_temp
+Where not Exists (reject_exclusion_key, exclusion_key_temp);
+
+drop Tables exclusion_temp, e1;
+
+//EXIT Script;
+///$tab New User Categories
+user_category_temp:
+LOAD MRCRY_USER_ID&'|'&ACCT_KEY_NUM as exclusion_key,
+	 ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     [Segment #], 
+     [Account #], 
+     [DC #], 
+     AccountSelector
+FROM
+'$(vRootFileLocation)$(vQVDs)user_categories_PurchaseReviewGPO_1.qvd'
+(qvd)
+Where not Exists (exclusion_key, MRCRY_USER_ID&'|'&ACCT_KEY_NUM)
+;
+
+DROP Table exclusion;
+
+NoConcatenate
+user_category:
+LOAD ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     [Segment #], 
+     [Account #], 
+     [DC #], 
+     AccountSelector
+Resident
+	user_category_temp;
+	
+DROP Table user_category_temp;
+
+STORE user_category into '$(vRootFileLocation)$(vQVDs)user_categories_PR_GPO_1.qvd';
+
+Drop Table user_category;

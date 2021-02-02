@@ -1,0 +1,198 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for EXTENDED_DATING_CODE Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Extended_Dating_Code.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Extended_Dating_Code
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Extended_Dating_Code';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date; 
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Extended_Dating_Code:
+LOAD
+  EXT_DTE_ALLOW_CDE   
+ ,Capitalize(EXT_DTE_ALLOW_DESC) as [EXT_DTE_ALLOW_DESC]
+ ,EXT_DTE_ALLOW_ID   
+ ,ROW_ADD_STP    
+ ,ROW_ADD_USER_ID  
+ ,ROW_UPDATE_STP   
+ ,ROW_UPDATE_USER_ID  
+;
+SQL
+SELECT
+  EXT_DTE_ALLOW_CDE
+ ,EXT_DTE_ALLOW_DESC
+ ,EXT_DTE_ALLOW_ID
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+FROM
+  VIEWS.EXTENDED_DATING_CODE
+WHERE  
+  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    ROW_UPDATE_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_ADD_STP
+   ,[Extended Date Allowed]
+   ,EXT_DTE_ALLOW_DESC
+   ,EXT_DTE_ALLOW_CDE
+  FROM
+    '$(vRootFileLocation)$(vQVDs)Extended_Dating_Code.qvd' (qvd)
+  WHERE
+    NOT EXISTS(EXT_DTE_ALLOW_CDE, EXT_DTE_ALLOW_CDE)
+  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+  IF ScriptErrorCount = 0 THEN
+    STORE
+      Extended_Dating_Code
+    INTO
+      '$(vRootFileLocation)$(vQVDs)Extended_Dating_Code.qvd';
+    LET vLastExecTime = '$(vThisExecTime)'; 
+  END IF
+  
+	/********************************************
+	 * Store In-Memory Table into QVD
+	 ********************************************/
+	STORE
+	  Extended_Dating_Code
+	INTO
+	  '$(vRootFileLocation)$(vQVDs)Extended_Dating_Code.qvd' (qvd)
+	;
+
+	/********************************************
+	 * Store Dev QVD
+ 	********************************************/
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		trace "************************** DEV LOAD: Dev copy for Extended_Dating_Code";
+
+		store 
+			Extended_Dating_Code
+		into 
+			'$(vRootFileLocation)$(vQVDs)\Dev\Extended_Dating_Code.qvd';
+	
+	endif;
+END IF
+
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vEnd = Now();
+LET vNoOfRows = NoOfRows('$(vTableName)');
+LET vNoOfFields = NoOfFields('$(vTableName)');
+LET vFileSize = FileSize('$(vRootFileLocation)$(vQVDs)$(vTableName).qvd');
+LET vDuration = interval(num(vEnd)-num(vStart),'hh:mm:ss');
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+DROP TABLE Extended_Dating_Code;
+

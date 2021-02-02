@@ -1,0 +1,303 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for IDB_ENTRY Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Idb_Entry.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/17/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+
+//Reverting --Nikita Brijwasi for testing purpose only $(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections_PROD.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+//VIEWS Changes by Sumit 11/06/2020 ARR 262-283
+///$tab Ship to Limiter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              SHIP_TO_LOCATION_NUM & '-' & SHIP_TO_CUSTOMER_NUM as SHIP_TO_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Idb_Entry
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Idb_Entry';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vQvdFile)'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date;
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Idb_Entry:
+LOAD
+  BILL_ENTRY_KEY_NUM
+ ,BILL_ENTRY_NUM
+ ,BILL_ENTRY_ID
+ ,BILL_ENTRY_DTE
+ ,PAY_DTE 
+ ,text(CUSTOMER_DEPT_ID)                 as [CUSTOMER_DEPT_ID_OLD]
+ ,if(text(trim(CUSTOMER_DEPT_ID))='', text(trim(DEPT_NUM)), text(CUSTOMER_DEPT_ID))&'|'&trim(text(DEPT_NUM))                       as [CUSTOMER_DEPT_ID]
+ ,text(DEPT_NUM)						 as [DEPT_NUM]
+ ,SHIP_TO_CUSTOMER_NUM                   as [SHIP_TO_CUSTOMER_NUM]
+ ,SHIP_TO_LOCATION_NUM                   as [SHIP_TO_LOCATION_NUM]
+ ,BILL_ENTRY_TYPE_CDE                    as [BILL_ENTRY_TYPE_CDE]
+ ,Capitalize(BILL_ENTRY_TYPE_DESC)       as [BILL_ENTRY_TYPE_DESC]
+ ,BILL_ENTRY_STAT_CDE                    as [BILL_ENTRY_STAT_CDE]
+ ,Capitalize(BILL_ENTRY_STAT_DESC)       as [BILL_ENTRY_STAT_DESC]
+ ,BILL_ENTRY_VALUE_TYPE_CDE              as [BILL_ENTRY_VALUE_TYPE_CDE]
+ ,Capitalize(BILL_ENTRY_VALUE_TYPE_DESC) as [BILL_ENTRY_VALUE_TYPE_DESC]
+ ,BILL_BASE_CDE                          as [BILL_BASE_CDE]
+ ,Capitalize(BILL_BASE_DESC)             as [BILL_BASE_DESC]
+ ,DSPNS_FEE_LEVEL_CDE                    as [DSPNS_FEE_LEVEL_CDE]
+ ,Capitalize(DSPNS_FEE_LEVEL_DESC)       as [DSPNS_FEE_LEVEL_DESC]
+ ,TERM_OF_SALE_DAY_DISC_PCT              as [TERM_OF_SALE_DAY_DISC_PCT]
+ ,TERM_OF_SALE_DAY_QTY                   as [TERM_OF_SALE_DAY_QTY]
+ ,TERM_OF_SALE_DAY_NET_QTY               as [TERM_OF_SALE_DAY_NET_QTY]
+ ,TERM_OF_SALE_DAY_LATE_PCT              as [TERM_OF_SALE_DAY_LATE_PCT]
+ ,DSPNS_FEE_DLR                          as [DSPNS_FEE_DLR]
+ ,DLVRY_CHRG_DLR                         as [DLVRY_CHRG_DLR]
+ ,MARKUP_PCT                             as [MARKUP_PCT]
+ ,BILL_ENTRY_LINE_QTY                    as [BILL_ENTRY_LINE_QTY]
+ ,BILL_ENTRY_LINE_COST_DLR               as [BILL_ENTRY_LINE_COST_DLR]
+ ,BILL_ENTRY_LINE_FEE_DLR                as [BILL_ENTRY_LINE_FEE_DLR]
+ ,TOTAL_COST_DLR                         as [TOTAL_COST_DLR]
+ ,Capitalize(CMNT_TXT)                   as [CMNT_TXT]
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,DEL_FLG
+;
+SQL
+SELECT
+  BILL_ENTRY_KEY_NUM
+ ,BILL_ENTRY_NUM
+ ,BILL_ENTRY_ID
+ ,BILL_ENTRY_DTE
+ ,PAY_DTE
+ ,CUSTOMER_DEPT_ID
+ ,DEPT_NUM
+ ,DEPT_NUM
+ ,SHIP_TO_CUSTOMER_NUM
+ ,SHIP_TO_LOCATION_NUM
+ ,BILL_ENTRY_TYPE_CDE
+ ,BILL_ENTRY_TYPE_DESC
+ ,BILL_ENTRY_STAT_CDE
+ ,BILL_ENTRY_STAT_DESC
+ ,BILL_ENTRY_VALUE_TYPE_CDE
+ ,BILL_ENTRY_VALUE_TYPE_DESC
+ ,BILL_BASE_CDE
+ ,BILL_BASE_DESC
+ ,DSPNS_FEE_LEVEL_CDE
+ ,DSPNS_FEE_LEVEL_DESC
+ ,TERM_OF_SALE_DAY_DISC_PCT
+ ,TERM_OF_SALE_DAY_QTY
+ ,TERM_OF_SALE_DAY_NET_QTY
+ ,TERM_OF_SALE_DAY_LATE_PCT
+ ,DSPNS_FEE_DLR
+ ,DLVRY_CHRG_DLR
+ ,MARKUP_PCT
+ ,BILL_ENTRY_LINE_QTY
+ ,BILL_ENTRY_LINE_COST_DLR
+ ,BILL_ENTRY_LINE_FEE_DLR
+ ,TOTAL_COST_DLR
+ ,CMNT_TXT
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,DEL_FLG
+FROM
+  VIEWS.IDB_ENTRY
+//WHERE  
+//  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+//LET vDeltaRecords = NoOfRows('$(vTableName)');
+//
+//IF $(vDeltaRecords) <> 0 THEN
+//  /********************************************
+//   * Concatenate Records where not exists in
+//   * the query above
+//   ********************************************/
+//  CONCATENATE
+//  LOAD
+//    BILL_ENTRY_KEY_NUM
+//   ,BILL_ENTRY_NUM
+//   ,BILL_ENTRY_ID
+//   ,BILL_ENTRY_DTE
+//   ,PAY_DTE
+//   ,CUSTOMER_DEPT_ID_OLD
+//   ,CUSTOMER_DEPT_ID
+//   ,SHIP_TO_CUSTOMER_NUM
+//   ,SHIP_TO_LOCATION_NUM
+//   ,BILL_ENTRY_TYPE_CDE
+//   ,BILL_ENTRY_TYPE_DESC
+//   ,BILL_ENTRY_STAT_CDE
+//   ,BILL_ENTRY_STAT_DESC
+//   ,BILL_ENTRY_VALUE_TYPE_CDE
+//   ,BILL_ENTRY_VALUE_TYPE_DESC
+//   ,BILL_BASE_CDE
+//   ,BILL_BASE_DESC
+//   ,DSPNS_FEE_LEVEL_CDE
+//   ,DSPNS_FEE_LEVEL_DESC
+//   ,TERM_OF_SALE_DAY_DISC_PCT
+//   ,TERM_OF_SALE_DAY_QTY
+//   ,TERM_OF_SALE_DAY_NET_QTY
+//   ,TERM_OF_SALE_DAY_LATE_PCT
+//   ,DSPNS_FEE_DLR
+//   ,DLVRY_CHRG_DLR
+//   ,MARKUP_PCT
+//   ,BILL_ENTRY_LINE_QTY
+//   ,BILL_ENTRY_LINE_COST_DLR
+//   ,BILL_ENTRY_LINE_FEE_DLR
+//   ,TOTAL_COST_DLR
+//   ,CMNT_TXT
+//   ,ROW_ADD_STP
+//   ,ROW_ADD_USER_ID
+//   ,ROW_UPDATE_STP
+//   ,ROW_UPDATE_USER_ID
+//   ,DEL_FLG
+//  FROM
+//	'$(vQvdFile)' (qvd)
+//  WHERE
+//    NOT EXISTS(BILL_ENTRY_KEY_NUM, BILL_ENTRY_KEY_NUM)
+//  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+ // call store_into_qvd(vTableName, vQvdFile, 0);
+ // Getting General Script Errors with the call store_into_qvd()  8-09
+ Store Idb_Entry into '$(vQvdFile)' ;
+ 
+  let vLastExecTime = '$(vThisExecTime)'; 
+//END IF
+
+  /********************************************
+   * Store Dev QVD
+   ********************************************/ 
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	//*****************************************************************
+	trace "************************** DEV LOAD: Creating Dev version of Idb_Entry";
+	//*****************************************************************
+	NoConcatenate
+	Idb_Entry_dev:
+	load 
+		* 
+	resident
+		Idb_Entry
+	where exists(SHIP_TO_FILTER, SHIP_TO_LOCATION_NUM & '-' & SHIP_TO_CUSTOMER_NUM)
+	;
+
+	store Idb_Entry_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Idb_Entry.qvd';
+	drop table Idb_Entry_dev;
+	
+endif;
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+DROP Table Idb_Entry;
+//call drop_table(vTableName);
+
+

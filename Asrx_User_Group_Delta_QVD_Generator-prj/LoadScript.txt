@@ -1,0 +1,157 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ASRX_USER_GROUP Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Asrx_User_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/17/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Asrx_User_Group
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Asrx_User_Group';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+LET vLastExecTime = QvdCreateTime('$(vQvdFile)');
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Asrx_User_Group:
+LOAD
+  USER_GROUP_NUM                   as [USER_GROUP_NUM]
+ ,USER_GROUP_ID                    as [USER_GROUP_ID]
+ ,USER_GROUP_TYPE_CDE              as [USER_GROUP_TYPE_CDE]
+ ,USER_GROUP_TYPE_ID               as [USER_GROUP_TYPE_ID]
+ ,Capitalize(USER_GROUP_TYPE_DESC) as [USER_GROUP_TYPE_DESC]
+ ,ROW_ADD_STP                      as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                  as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                   as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID               as [ROW_UPDATE_USER_ID]
+;
+SQL
+SELECT
+  USER_GROUP_NUM
+ ,USER_GROUP_ID
+ ,USER_GROUP_TYPE_CDE
+ ,USER_GROUP_TYPE_ID
+ ,USER_GROUP_TYPE_DESC
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+FROM
+  VIEWS.ASRX_USER_GROUP
+WHERE  
+  (ROW_UPDATE_STP >= '$(vLastExecTime)'
+  AND ROW_UPDATE_STP < '$(vThisExecTime)')
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    USER_GROUP_NUM
+   ,USER_GROUP_ID
+   ,USER_GROUP_TYPE_CDE
+   ,USER_GROUP_TYPE_ID
+   ,USER_GROUP_TYPE_DESC
+   ,ROW_ADD_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_UPDATE_USER_ID
+  FROM
+    '$(vQvdFile)' (qvd)
+  WHERE
+    NOT EXISTS(USER_GROUP_NUM, USER_GROUP_NUM)
+  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+		store 
+			Asrx_User_Group
+		into 
+			'$(vRootFileLocation)$(vQVDs)Asrx_User_Group.qvd';
+	
+	//call store_into_qvd(vTableName, vQvdFile, 0);
+    let vLastExecTime = '$(vThisExecTime)'; 
+    
+	/********************************************
+	 * Store Dev QVD
+	 ********************************************/
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		trace "************************** DEV LOAD: Dev copy for Asrx_User_Group";
+
+		store 
+			Asrx_User_Group
+		into 
+			'$(vRootFileLocation)$(vQVDs)\Dev\Asrx_User_Group.qvd';
+	
+	endif;
+
+END IF
+
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+call drop_table(vTableName);
+
+

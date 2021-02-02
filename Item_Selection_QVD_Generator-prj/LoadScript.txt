@@ -1,0 +1,87 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ITEM_SELECTION information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Item_Selection.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+///$tab Item_Selection
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Item_Selection';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Item_Selection:
+LOAD
+  ITEM_GROUP_NUM             as [ITEM_GROUP_NUM]
+ ,SELECT_NUM                 as [SELECT_NUM]
+ ,INCL_FLG                   as [INCL_FLG]
+ ,Capitalize(ITEM_VALUE_TXT) as [ITEM_VALUE_TXT]
+FROM
+  '$(vExtractFileLocation)Item_Selection-Caret.txt'
+  (txt, codepage is 1252, embedded labels, delimiter is '^', no quotes, no eof);
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+//call store_into_qvd(vTableName, vQvdFile, 0);
+store Item_Selection into '$(vRootFileLocation)$(vQVDs)\Item_Selection.qvd';
+/********************************************
+ * Store Dev QVD
+ ********************************************/
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+trace "************************** DEV LOAD: Dev copy for Item_Selection";
+store Item_Selection into '$(vRootFileLocation)$(vQVDs)\Dev\Item_Selection.qvd';
+	
+endif;
+
+ /********************************************
+  * Free up memory
+  ********************************************/
+DROP Table Item_Selection;
+//call drop_table(vTableName);
+
+

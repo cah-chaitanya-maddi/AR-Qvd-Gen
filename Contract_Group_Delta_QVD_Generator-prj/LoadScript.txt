@@ -1,0 +1,257 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for CONTRACT_GROUP Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Contract_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+//ODBC CONNECT TO PD_SDW_Stg;			//VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+///$tab Contract_Group
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Contract_Group';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vQvdFile)'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date; 
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Contract_Group:
+LOAD
+  CNTRCT_GROUP_KEY_NUM
+ ,Capitalize(CNTRCT_GROUP_NAM)         as [Contract Name]
+ ,RPT_TO_GROUP_NUM
+ ,SRCH_NAM
+ ,Capitalize(ADDR_TXT)                 as [ADDR_TXT]
+ ,Capitalize(ADDR2_TXT)                as [ADDR2_TXT]
+ ,Capitalize(CITY)                     as [CITY]
+ ,STATE
+ ,ZIP
+ ,PHONE_NUM
+ ,CARD_ACCT_GROUP_NUM                  as [CARD_ACCT_GROUP_NUM]
+ ,CNTRCT_GROUP_TYPE_CDE                as [CNTRCT_GROUP_TYPE_CDE]
+ ,CNTRCT_GROUP_TYPE_DESC               as [CNTRCT_GROUP_TYPE_DESC]
+ ,CNTRCT_GROUP_STAT_CDE                as [CNTRCT_GROUP_STAT_CDE]
+ ,Capitalize(CNTRCT_GROUP_STAT_DESC)   as [CNTRCT_GROUP_STAT_DESC]
+ ,CURR_VRSN_FLG
+ ,CNTRCT_GROUP_NUM                     as [Contract #]
+ ,DEL_FLG
+ ,INDVDL_CNTRCT_GROUP_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,CNTRCT_GROUP_CLASS_CDE
+ ,Capitalize(CNTRCT_GROUP_CLASS_DESC)  as [CNTRCT_GROUP_CLASS_DESC]
+ ,GWSA_CNTRCT_GROUP_NUM
+ ,GWSA_CNTRCT_GROUP_NAM
+ ,CNTRCT_GROUP_ABBR_NAM
+ ,PPM_CLASS_CDE 
+ ,Capitalize(PPM_CLASS_DESC)           as [PPM_CLASS_DESC]
+ ,IF(CNTRCT_GROUP_NUM = 0, 'Off-Contract', IF(INDVDL_CNTRCT_GROUP_FLG = 'Y', 'Ancillary', 'Primary')) as [Contract Type]
+;
+SQL
+SELECT
+  CNTRCT_GROUP_KEY_NUM
+ ,CNTRCT_GROUP_NAM
+ ,RPT_TO_GROUP_NUM
+ ,SRCH_NAM
+ ,ADDR_TXT
+ ,ADDR2_TXT
+ ,CITY
+ ,STATE
+ ,ZIP
+ ,PHONE_NUM
+ ,CARD_ACCT_GROUP_NUM
+ ,CNTRCT_GROUP_TYPE_CDE
+ ,CNTRCT_GROUP_TYPE_DESC
+ ,CNTRCT_GROUP_STAT_CDE
+ ,CNTRCT_GROUP_STAT_DESC
+ ,CURR_VRSN_FLG
+ ,CNTRCT_GROUP_NUM
+ ,DEL_FLG
+ ,INDVDL_CNTRCT_GROUP_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,CNTRCT_GROUP_CLASS_CDE
+ ,CNTRCT_GROUP_CLASS_DESC
+ ,GWSA_CNTRCT_GROUP_NUM
+ ,GWSA_CNTRCT_GROUP_NAM
+ ,CNTRCT_GROUP_ABBR_NAM
+ ,PPM_CLASS_CDE
+ ,PPM_CLASS_DESC
+FROM
+  VIEWST.CONTRACT_GROUP		//VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+WHERE  
+  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    PPM_CLASS_DESC
+   ,PPM_CLASS_CDE
+   ,CNTRCT_GROUP_ABBR_NAM
+   ,GWSA_CNTRCT_GROUP_NAM
+   ,GWSA_CNTRCT_GROUP_NUM
+   ,CNTRCT_GROUP_CLASS_DESC
+   ,CNTRCT_GROUP_CLASS_CDE
+   ,ROW_UPDATE_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_ADD_STP
+   ,INDVDL_CNTRCT_GROUP_FLG
+   ,DEL_FLG
+   ,[Contract #]
+   ,CURR_VRSN_FLG
+   ,CNTRCT_GROUP_STAT_DESC
+   ,CNTRCT_GROUP_STAT_CDE
+   ,CNTRCT_GROUP_TYPE_DESC
+   ,CNTRCT_GROUP_TYPE_CDE
+   ,CARD_ACCT_GROUP_NUM
+   ,PHONE_NUM
+   ,ZIP
+   ,STATE
+   ,CITY
+   ,ADDR2_TXT
+   ,ADDR_TXT
+   ,SRCH_NAM
+   ,RPT_TO_GROUP_NUM
+   ,[Contract Name]
+   ,CNTRCT_GROUP_KEY_NUM
+   ,[Contract Type]
+  FROM
+    '$(vQvdFile)' (qvd)
+  WHERE
+    NOT EXISTS(CNTRCT_GROUP_KEY_NUM, CNTRCT_GROUP_KEY_NUM)
+  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+	//call store_into_qvd(vTableName, vQvdFile, 0);
+		store 
+			Contract_Group
+		into 
+			'$(vRootFileLocation)$(vQVDs)\Contract_Group.qvd';    
+    
+    let vLastExecTime = '$(vThisExecTime)';
+    
+	/********************************************
+	 * Store Dev QVD
+	 ********************************************/
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	trace "************************** DEV LOAD: Dev copy for Contract_Group";
+
+		store 
+			Contract_Group
+		into 
+			'$(vRootFileLocation)$(vQVDs)\Dev\Contract_Group.qvd';
+	
+	endif;
+     
+END IF
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+DROP Table Contract_Group;
+//call drop_table(vTableName);

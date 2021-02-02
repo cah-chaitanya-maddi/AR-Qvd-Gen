@@ -1,0 +1,436 @@
+﻿///$tab Doc
+
+///$tab Setup
+/**********************************************************
+Setup the root directory and the needed include files for
+this application.
+
+Changelog:
+- 5.24.2013 jeremy.fourman
+Added this block.
+
+ 04/25/2014 Sushma BV
+ Changed the Section Access Script File name to used doc level section access
+- 6.11.2013 jeremy.fourman
+Added $(Must_Include=$(vRootFileLocation)Config\Web.qvs);
+Changed the Section Access Script File name to used doc level section access
+**********************************************************/
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+LET v_today = Today();
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+
+TRACE $(v_doc_num);
+
+
+///$tab SOURCE Ops Alternates New
+
+SOURCEOpsAlternates:
+
+LOAD [Alternative CIN], 
+     %Alternate_Product_Key, 
+     Alternate_Price_Key, 
+     [Cardinal Priority Rank], 
+     [Alternative Contract #], 
+     [Alternative Contract Name], 
+     [Alternative Contract Cost], 
+     [Alternative Contract Start Date], 
+     [Alternative Contract Expiration Date], 
+     [Target Contract Type], 
+     [Alternative Source Contract], 
+     [Alternative 340B Contract], 
+     [340B Target Contract Type], 
+     [340B Target Contract Name], 
+     cin_cntrct_alternate, 
+     [Alternative Form], 
+     [Alternative Generic Name], 
+     [Alternative Manufacturer], 
+     [Alternative Mfr], 
+     [Alternative NDC], 
+     [Alternative Package Qty], 
+     [Alternative Package Size], 
+     [Alternative DEA Schedule#], 
+     [Alternative Size], 
+     [Alternative Strength], 
+     [Alternative Trade Name]
+     ,[New Alternative Contract Name]
+     ,sap_customer_num
+FROM
+
+'$(vRootFileLocation)$(vQVDs)ALTERNATE_ELIGIBILITY_$(v_doc_num).qvd' (qvd)   // // PMOD QVD removed by Sumit 04082020
+Where 
+Match([Target Contract Type], 'Primary SOURCE', 'All SOURCE')
+;
+
+NoConcatenate
+
+Contract_Rank:
+
+LOAD Distinct
+%Alternate_Product_Key,
+[Alternative CIN],
+if(IsNull(
+	FirstSortedValue([Alternative Contract #],[Cardinal Priority Rank]) )=-1
+		, MinString([Alternative Contract #])
+			,FirstSortedValue([Alternative Contract #],[Cardinal Priority Rank]) )as [Alternative Contract #]
+	
+Resident SOURCEOpsAlternates
+
+group by
+%Alternate_Product_Key,
+[Alternative CIN]
+;
+
+Inner Join (SOURCEOpsAlternates)
+
+LOAD	*
+Resident Contract_Rank;
+
+DROP Table Contract_Rank;
+
+
+NoConcatenate
+//Inner Join (Alternatives)
+
+Min_Alt_Cont_Cost:
+LOAD 
+%Alternate_Product_Key,
+[Alternative CIN],
+//Max([Alternative Contract #]) as Max_Alt_Cont_#,
+Min([Alternative Contract Cost]) as Min_Alt_Cont_Cost
+Resident SOURCEOpsAlternates
+
+group by
+%Alternate_Product_Key,
+[Alternative CIN]
+
+;
+
+Inner Join (Min_Alt_Cont_Cost)
+
+LOAD 
+%Alternate_Product_Key,
+FirstSortedValue( [Alternative CIN],Min_Alt_Cont_Cost) as [Alternative CIN]
+
+Resident Min_Alt_Cont_Cost
+
+group by
+%Alternate_Product_Key
+;
+
+
+Inner Join (SOURCEOpsAlternates)
+
+LOAD
+*
+Resident Min_Alt_Cont_Cost
+;
+///$tab Store and Cleanup
+DROP Table Min_Alt_Cont_Cost;
+//drop Table account_contracts;
+//drop Table user_categories;
+
+
+//STORE Alternatives into '$(vRootFileLocation)$(vQVDs)Alternates_Segment_$(v_doc_num).qvd';
+//drop Table Alternatives;
+
+STORE SOURCEOpsAlternates into '$(vRootFileLocation)$(vQVDs)SOURCEOpsAlternates_Segment_$(v_doc_num).qvd';  // PMOD QVD removed by Sumit 04082020
+drop Table SOURCEOpsAlternates;
+
+
+
+EXIT SCRIPT; 
+///$tab SOURCE Ops Alternate
+
+Min_Alt_Cont_Cost:
+LOAD 
+%Alternate_Product_Key,
+[Alternative CIN],
+Min([Alternative Contract Cost]) as Min_Alt_Cont_Cost
+
+from
+ '$(vRootFileLocation)$(vQVDs)Alternates_Segment_$(v_doc_num).qvd' (qvd) 
+Where 
+Match([Target Contract Type], 'Primary SOURCE', 'All SOURCE')
+
+group by
+%Alternate_Product_Key,
+[Alternative CIN]
+;
+
+Inner Join (Min_Alt_Cont_Cost)
+
+LOAD 
+%Alternate_Product_Key,
+FirstSortedValue( [Alternative CIN],Min_Alt_Cont_Cost) as [Alternative CIN]
+
+Resident Min_Alt_Cont_Cost
+
+group by
+%Alternate_Product_Key
+;
+
+NoConcatenate
+
+SOURCEOpsAlternates:
+
+LOAD [Alternative CIN], 
+     %Alternate_Product_Key, 
+     Alternate_Price_Key, 
+     [Cardinal Priority Rank],  
+     [Alternative Contract #], 
+     [Alternative Contract Name], 
+     [Alternative Contract Cost], 
+     [Alternative Contract Start Date], 
+     [Alternative Contract Expiration Date], 
+//     [Alternative Substitution Id], 
+     [Target Contract Type], 
+     [Alternative Source Contract], 
+     [Alternative 340B Contract], 
+     [340B Target Contract Type], 
+     [340B Target Contract Name], 
+     cin_cntrct_alternate, 
+     [Alternative Form], 
+     [Alternative Generic Name], 
+     [Alternative Manufacturer], 
+     [Alternative Mfr], 
+     [Alternative NDC], 
+     [Alternative Package Qty], 
+     [Alternative Package Size], 
+     [Alternative DEA Schedule#], 
+     [Alternative Size], 
+     [Alternative Strength], 
+     [Alternative Trade Name], 
+     Min_Alt_Cont_Cost 							as Min_Alt_Cont_Cost_Contract_Ops, 
+     Min_Alternative_CIN,
+     sap_customer_num
+     
+
+from
+ '$(vRootFileLocation)$(vQVDs)Alternates_Segment_$(v_doc_num).qvd' (qvd) // PMOD QVD removed by Sumit 04082020
+Where 
+Match([Target Contract Type], 'Primary SOURCE', 'All SOURCE')
+;
+
+Inner Join (SOURCEOpsAlternates)
+
+LOAD	[Alternative CIN],
+		%Alternate_Product_Key,
+		Min_Alt_Cont_Cost 	
+
+Resident Min_Alt_Cont_Cost
+;
+
+
+///$tab Map Loads
+//Alternate_Product_Key_Lookup:
+//Mapping LOAD Distinct
+//	CIN as CORP_ITEM_NUM 
+//	,[Alternative Product Code]
+//from
+//	'$(vRootFileLocation)$(vQVDs)Product_All.qvd'
+//(qvd)
+////RESIDENT Product_All
+//WHERE len(trim([Alternative Product Code]))>0;
+///$tab User Categories Load
+////***********************************************************
+//// load the Account from the Contract Ops entitlement tables
+////***********************************************************
+//user_categories:
+//load Distinct
+//     Upper(USER_ID) as USER_ID
+//     ,AccountSelector
+//     ,[Segment #]
+//from
+// '$(vRootFileLocation)$(vQVDs)user_categories_contracts_opps_$(v_doc_num).qvd' (qvd)
+//; 
+// //$(v_doc_num)
+//
+////Concatenate
+//
+////load Distinct
+////     Upper(USER_ID) as USER_ID
+////     ,AccountSelector
+////     ,[Segment #]
+////from
+//// '$(vRootFileLocation)$(vQVDs)user_categories_SOURCE_opps_$(v_doc_num).qvd' (qvd)
+////; 
+///$tab Contract
+///**********************************************************
+//* This script uses tables from the Ship_to and Products tabs to build
+//*   the account_contracts contract items table. 
+//* 1. Load \Acct_Cntrct_Group_Rlt_D1, account-contracts relation table
+//* 2. Join with the Ship_to_Account table to get the most recent ACCT_KEY_NUM. This will be 
+//*    when the records are added to Invoice_line.
+//* 3. Join with the Group_Contract data - to get contract name and contract categories.
+//* 4. Join with the contract items - Active_dds_contracts
+//**********************************************************/
+//
+////*****************************************************************************************************
+//trace "*********** Loading account_contracts table";
+////*****************************************************************************************************
+//account_contracts:
+//load Distinct
+//    CNTRCT_GROUP_NUM //as [Contract #]
+//   ,START_DTE 
+//   ,END_DTE  
+//   ,SHIP_TO_LOCATION_NUM
+//   ,SHIP_TO_CUSTOMER_NUM    
+//from
+//	'$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd' (qvd)
+//// Only load acct-contract records for accounts that have been loaded
+//where exists(AccountSelector, SHIP_TO_LOCATION_NUM & '-' & SHIP_TO_CUSTOMER_NUM)
+//   and 
+//   Date(END_DTE,'MM/DD/YYYY') >= '$(v_today)' // Only load current contracts
+//;
+//
+//// Left join to preserve all account contracts
+//left join(account_contracts)
+//load distinct
+//    [Contract #] as CNTRCT_GROUP_NUM
+//    ,CORP_ITEM_NUM
+//	,[Contract Start Date]
+//    ,[Contract Expiration Date]  
+//    ,Max([Contract Cost]) as [Contract Cost]
+//from  
+//	'$(vRootFileLocation)$(vQVDs)Active_Dds_Contracts.qvd' (qvd)
+//where Exists(CNTRCT_GROUP_NUM, [Contract #])
+//group by  [Contract #] 
+//    ,CORP_ITEM_NUM
+//	,[Contract Start Date]
+//    ,[Contract Expiration Date]
+//;
+//
+//
+//Alternates_Staging:
+//Load  *,
+//	SHIP_TO_LOCATION_NUM &'-' & SHIP_TO_CUSTOMER_NUM &'-'& [Alternative Product Code] as %Alternate_Product_Key
+//	,SHIP_TO_LOCATION_NUM &'-' & SHIP_TO_CUSTOMER_NUM &'-'& [Alternative CIN] as Alternate_Price_Key
+//	//use this to limit the returned result so it does not show the same product from the same contract
+//	,[Alternative CIN] &'|'& [Alternative Contract #]  as cin_cntrct_alternate 
+//WHERE Len(Trim([Alternative Product Code])) >0;
+//LOAD SHIP_TO_LOCATION_NUM
+//	,SHIP_TO_CUSTOMER_NUM
+//	//grabs the alt product code aka - Substitution Key
+//	,Applymap('Alternate_Product_Key_Lookup',CORP_ITEM_NUM,'') as [Alternative Product Code]
+//	,CORP_ITEM_NUM as [Alternative CIN]
+//	,CNTRCT_GROUP_NUM as [Alternative Contract #]
+//	,[Contract Cost] as [Alternative Contract Cost]
+//	,[Contract Start Date] as [Alternative Contract Start Date]
+//    ,[Contract Expiration Date] as [Alternative Contract Expiration Date]
+//RESIDENT account_contracts;
+//
+//
+//// Add contract level data by joining on CNTRCT_GROUP_KEY_NUM
+//left join(Alternates_Staging)
+//load distinct
+//    //CNTRCT_GROUP_KEY_NUM 
+//    [Contract #] as [Alternative Contract #]
+////    ,[Contract #] as [Target Contract #]
+////    ,[Contract Name] as [Target Contract Name]
+//    ,[Contract Name] as [Alternative Contract Name]
+//    ,[Contract Name] as [340B Target Contract Name]
+//    ,if(Match(CNTRCT_GROUP_AFLTN_NUM,'779'), 'Y','N') as [Alternative Source Contract]
+//    ,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), 'Y','N') as [Alternative 340B Contract]
+//    ,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), '340B Contract','Non-340B Contract') as [340B Target Contract Type]
+//    ,[Contract Type] //as [Target Contract Type]  
+//    ,if(Match(CNTRCT_GROUP_AFLTN_NUM,'779'), 'SOURCE'
+//    	,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), '340B Contract' 
+//    		,if(match ([Contract Type] ,'Primary') ,'Primary' , 'Ancillary' )) ) as [Target Contract Type]  
+//FROM
+//    '$(vRootFileLocation)$(vQVDs)Contract_Group_Contracts.qvd' (qvd)
+//;
+///$tab Alternate Products
+//NoConcatenate
+//Alternatives:
+//LOAD %Alternate_Product_Key,
+//    Alternate_Price_Key,
+//	[Alternative Contract #],
+//	[Alternative Contract Name],
+//	[Alternative Contract Cost],
+//    [Alternative CIN],
+//	[Alternative Contract Start Date],
+//    [Alternative Contract Expiration Date],
+//	[Alternative Product Code] as [Alternative Substitution Id], 
+//    [Target Contract Type],
+////    [Target Contract Type Full],
+////    [Target Contract #],
+////    [Target Contract Name],
+//    [Alternative Source Contract],
+//    [Alternative 340B Contract],
+//    [340B Target Contract Type],
+//    [340B Target Contract Name],
+//	cin_cntrct_alternate
+////	1 as Alternative_Counter
+//RESIDENT Alternates_Staging
+//where 
+//Date([Alternative Contract Expiration Date],'MM/DD/YYYY') >= '$(v_today)' // Only load current contracts
+//;
+//Drop Table Alternates_Staging;
+//
+//// Required that Alternatives be Active items.
+//INNER JOIN (Alternatives) //_Temp)
+//load CIN  as [Alternative CIN]  
+//    ,Form as [Alternative Form]
+//    ,[Generic Name] as [Alternative Generic Name] 
+//    ,Manufacturer as [Alternative Manufacturer]
+//    ,Mfr as [Alternative Mfr]
+//    ,NDC as [Alternative NDC]
+//    ,[Package Qty] as [Alternative Package Qty]
+//    ,[Package Size]  as [Alternative Package Size]
+//    ,"DEA Schedule #" as [Alternative DEA Schedule#]
+//    ,Size as [Alternative Size]
+//    ,Strength as [Alternative Strength]
+//    ,[Trade Name] as [Alternative Trade Name]
+//FROM '$(vRootFileLocation)$(vQVDs)Product_All.qvd' (qvd)
+//WHERE [Product Active Status] = 'A' 
+//	and [Current Version-hist] = 'Y'
+//;    
+//
+//
+//NoConcatenate
+////Inner Join (Alternatives)
+//
+//Min_Alt_Cont_Cost:
+//LOAD 
+//%Alternate_Product_Key,
+//[Alternative CIN],
+////Max([Alternative Contract #]) as Max_Alt_Cont_#,
+//Min([Alternative Contract Cost]) as Min_Alt_Cont_Cost
+//Resident Alternatives
+//
+//group by
+//%Alternate_Product_Key,
+//[Alternative CIN]
+//
+//;
+//
+//
+//Inner Join (Min_Alt_Cont_Cost)
+//
+//LOAD 
+//%Alternate_Product_Key,
+//FirstSortedValue( [Alternative CIN],Min_Alt_Cont_Cost) as Min_Alternative_CIN
+//
+//Resident Min_Alt_Cont_Cost
+//
+//group by
+//%Alternate_Product_Key
+//;
+//
+//
+//Inner Join (Alternatives)
+//
+//LOAD
+//*
+//Resident Min_Alt_Cont_Cost
+//;
+//
+//
+//DROP Table Min_Alt_Cont_Cost; 

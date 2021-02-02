@@ -1,0 +1,92 @@
+﻿///$tab Main
+SET ThousandSep=',';
+SET DecimalSep='.';
+SET MoneyThousandSep=',';
+SET MoneyDecimalSep='.';
+SET MoneyFormat='$#,##0.00;($#,##0.00)';
+SET TimeFormat='h:mm:ss TT';
+SET DateFormat='M/D/YYYY';
+SET TimestampFormat='M/D/YYYY h:mm:ss[.fff] TT';
+SET MonthNames='Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec';
+SET DayNames='Mon;Tue;Wed;Thu;Fri;Sat;Sun';
+SET LongMonthNames='January;February;March;April;May;June;July;August;September;October;November;December';
+SET LongDayNames='Monday;Tuesday;Wednesday;Thursday;Friday;Saturday;Sunday';
+SET FirstWeekDay=6;
+SET BrokenWeeks=1;
+SET ReferenceDay=0;
+SET FirstMonthOfYear=1;
+SET CollationLocale='en-US';
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+LET vQVDs='\QVDs\';
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+///$tab AR2000
+
+AR2000_Temp:
+
+LOAD	hdp_xfm_stp																as HDP_XFM_STP, 
+     	trim(num(bill_to_location_num))&'-'&trim(num(bill_to_customer_num)) 	as bill_to_key, 
+     	sap_bill_to_customer_num												as SAP_BILL_TO_CUSTOMER_NUM, 
+     	acct_nam 																as ACCT_NAM, 
+     	city 																	as CITY, 
+     	state 																	as STATE, 
+     	posting_dte																as POSTING_DATE, 
+    	transct_num 															as TRNSCT_ID, 
+     	ar_due_dte																as AR_DUE_DATE, 
+     	oblg_type_3_desc,
+     	open_amt_dlr															as OPEN_AMT_DLR, 
+     	hdp_xfm_dte_part														as HDP_XFM_DTE_PART
+
+FROM
+'$(vRootFileLocation)$(vQVDs)BUS_ORDER_EXPRESS_RPT.qvd'
+(qvd);
+
+Left Join (AR2000_Temp)
+	
+LOAD BILL_TO_LOCATION_NUM&'-'&BILL_TO_CUSTOMER_NUM 	as bill_to_key, 
+     SHIP_TO_LOCATION_NUM&'-'&SHIP_TO_CUSTOMER_NUM 	as Accountselector
+FROM
+	//'\\cardinalhealth.net\applications\OH001\QlikView\Stage\1_PD_QLKDATA\PD_QlikView_Files\QVDs\Ship_To_Account.qvd'(qvd)
+	
+	'\\wpec5009nac01.cardinalhealth.net\ecomm-advrpt-pr-qlikview-stg\Stage\1_PD_QLKDATA\PD_QlikView_Files\QVDs\Ship_To_Account.qvd'(qvd)
+	
+//where
+//	CURR_VRSN_FLG='Y'	
+;
+
+NoConcatenate
+
+AR_2000:
+
+LOAD	Distinct
+		Accountselector&'-'&trim(num(TRNSCT_ID)) as [Invoice Key],
+		Accountselector,
+		trim(num(TRNSCT_ID)) as TRNSCT_NUM,
+	 	OPEN_AMT_DLR,
+		HDP_XFM_DTE_PART
+		
+Resident AR2000_Temp;
+
+Inner Join (AR_2000)
+
+LOAD	Distinct 
+		[Invoice Key],
+		MaxString (HDP_XFM_DTE_PART) as HDP_XFM_DTE_PART
+		
+Resident AR_2000
+Group by [Invoice Key];
+
+
+DROP Table AR2000_Temp;
+
+STORE AR_2000 into '$(vRootFileLocation)$(vQVDs)AR2000.qvd';
+
+drop Table AR_2000;	

@@ -1,0 +1,1326 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for SHIP_TO_ACCOUNT information.
+ *   
+ * 
+ * Sources:
+ *  Teradata
+ *	TPT Extract
+ *
+ * Outputs:
+ *   Ship_To_Account.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+/**********************************************************
+Setup the root directory and the needed include files for
+this application.
+
+Changelog:
+3.6.2014 jeremy.fourman
+-Added this block.
+-Added Util.qvs include
+6.3.2014 jeremy.fourman
+- Removed include of meta data file.
+**********************************************************/
+
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+//ODBC CONNECT TO PD_SDW_Prod;
+
+
+//ODBC CONNECT TO PD_SDW_Stg;
+///$tab CVS Accounts
+//
+//cvs_ship_to:
+//LOAD ACCT_KEY_NUM,
+//    ACCT_NAM,
+//    CURR_SHIP_TO_CUSTOMER_NUM,
+//    CURR_SHIP_TO_LOCATION_NUM,
+//    CURR_SHIP_TO_LOCATION_NUM&'-'&CURR_SHIP_TO_CUSTOMER_NUM as AccountSelector
+//    ;
+//SQL SELECT "ACCT_KEY_NUM",
+//    "ACCT_NAM",
+//    "CURR_SHIP_TO_CUSTOMER_NUM",
+//    "CURR_SHIP_TO_LOCATION_NUM"
+//FROM 
+//	VIEWS.SHIP_TO_ACCOUNT
+//WHERE
+//ACCT_NAM like ('%CVS%')
+////AND
+////CURR_VRSN_FLG='Y'
+//;
+//
+//right keep
+//LOAD DC_NUM, 
+//     ACCT_NUM, 
+//     //xpharm_added_key as AccountSelector
+//     DC_NUM&'-'&ACCT_NUM as AccountSelector
+//FROM
+//'$(vRootFileLocation)$(vQVDs)XPharm_Added.qvd'
+//(qvd);
+//
+//DROP Fields ACCT_NAM,CURR_SHIP_TO_CUSTOMER_NUM,CURR_SHIP_TO_LOCATION_NUM,DC_NUM,ACCT_NUM,AccountSelector;
+//
+
+
+Ship_To_Account:
+load
+	capitalize(POS_RPT_STORE_NAM) as [POS_RPT_STORE_NAM] 
+	 ,capitalize(CURR_SR_MIDDLE_INIT_TXT) as [CURR_SR_MIDDLE_INIT_TXT]
+	 ,capitalize(CURR_SR_FIRST_NAM) as [CURR_SR_FIRST_NAM]
+	 ,capitalize(CURR_SR_LAST_NAM) as [CURR_SR_LAST_NAM]
+	 ,CURR_SR_NUM
+	 ,capitalize(CUSTOMER_TYPE_DESC) as [CUSTOMER_TYPE_DESC]
+	 ,CUSTOMER_TYPE_CDE
+	 ,DC_ZIP
+	 ,DC_STATE
+	 ,capitalize(DC_CITY) as [DC_CITY]
+	 ,capitalize(DC_ADDR2_TXT) as [DC_ADDR2_TXT]
+	 ,capitalize(DC_ADDR_TXT) as [DC_ADDR_TXT]
+	 ,capitalize(DC_NAM) as [DC Name]
+	 ,CARD_ACCT_GROUP_NUM
+	 ,SALE_REP_NUM
+	 ,SALE_REP_KEY_NUM
+	 ,ROW_UPDATE_USER_ID
+	 ,upper(date(date#(ROW_UPDATE_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')) as [ROW_UPDATE_STP] 
+	 ,ROW_ADD_USER_ID
+	 ,upper(date(date#(ROW_ADD_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')) as [ROW_ADD_STP]  
+	 ,CURR_SHIP_TO_CUSTOMER_NUM as [Account #]
+	 ,CURR_SHIP_TO_LOCATION_NUM as [DC #]
+	 ,CURR_SHIP_TO_LOCATION_NUM & '-' & CURR_SHIP_TO_CUSTOMER_NUM as [AccountSelector]
+	 ,if(VRSN_END_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(VRSN_END_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [VRSN_END_DTE]
+	 ,if(VRSN_START_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(VRSN_START_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [VRSN_START_DTE] 
+	 ,CURR_VRSN_FLG
+	 ,capitalize(CLASS_DESC) as [CLASS_DESC]
+	 ,CLASS_CDE
+//	 ,if(STATE_PHARM_EXT_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(STATE_PHARM_EXT_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [STATE_PHARM_EXT_DTE] 
+//	 ,if(STATE_PHARM_LIC_EXP_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(STATE_PHARM_LIC_EXP_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [STATE_PHARM_LIC_EXP_DTE]
+     ,[STATE_PHARM_EXT_DTE]
+     ,[STATE_PHARM_LIC_EXP_DTE]
+	 ,STATE_PHARM_LIC_ID
+	 ,capitalize(ACCT_CLASS_DESC) as [Accounting Class]
+	 ,ACCT_CLASS_CDE as [Accounting Code]
+	 ,HIN_ID
+//	 ,if(DEA_EXT_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(DEA_EXT_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [Account DEA Extension Date]
+//	 ,if(DEA_EXP_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(DEA_EXP_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [Account DEA Expiration Date]
+     ,DEA_EXT_DTE as [Account DEA Extension Date]
+     ,DEA_EXP_DTE as [Account DEA Expiration Date]
+	 ,DEA_NUM as [Account DEA #]
+	 ,capitalize(SALE_REP_MIDDLE_INIT_TXT) as [SALE_REP_MIDDLE_INIT_TXT]
+	 ,capitalize(SALE_REP_FIRST_NAM) as [SALE_REP_FIRST_NAM]
+	 ,capitalize(SALE_REP_LAST_NAM) as [SALE_REP_LAST_NAM]
+	 ,if(len(trim(SALE_REP_MIDDLE_INIT_TXT))=0,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))
+	 ,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_MIDDLE_INIT_TXT)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))) as [Sales Rep Name]
+	 ,capitalize(ACCT_STAT_DESC) as [Active Account Status]
+	 ,BILL_TO_CUSTOMER_NUM
+	 ,BILL_TO_LOCATION_NUM
+	 ,BILL_TO_ZIP as [Bill-to Zip Code]
+	 ,BILL_TO_STATE as [Bill-to State]
+	 ,capitalize(BILL_TO_CITY) as [Bill-to City]
+	 ,capitalize(BILL_TO_ADDR2_TXT) as [Bill-to Address 2]
+	 ,capitalize(BILL_TO_ADDR_TXT) as [Bill-to Address]
+	 ,capitalize(BILL_TO_CUSTOMER_NAM) as [Bill-to Name]
+	 ,SHIP_TO_CUSTOMER_NUM
+	 ,SHIP_TO_LOCATION_NUM
+	 ,ZIP as [Account Zip Code]
+	 ,STATE as [Account State]
+	 ,capitalize(CITY) as [Account City]
+	 ,capitalize(ADDR2_TXT) as [Account Address 2]
+	 ,capitalize(ADDR_TXT) as [Account Address]
+	 ,capitalize(ACCT2_NAM) as [Account Name 2]
+	 ,ACCT_KEY_NUM
+	 ,ACCT_NAM
+	 ,Capitalize(ACCT_NAM) as [Account Name]
+	 ,SHIP_TO_GLN_ID
+	 ,BILL_TO_GLN_ID
+	 ,EDI_867_GLN_DISP_FLG
+	 
+	 //////////////// **************************** Added by Dicky Mohanty on 08/21 *************************************** ////////////////////
+	 
+	 ,STORE_ID as [Store Numbers]
+	 ,capitalize(ACCT_STAT_CDE) as [Status]
+	 ,if(len(trim(SALE_REP_MIDDLE_INIT_TXT))=0,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))
+	 ,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_MIDDLE_INIT_TXT)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))) as [Sales Rep]
+	 ,capitalize(PHONE_NUM) as [Account Phone]
+	 ,capitalize(PRIM_CNTCT_NAM) as [Shipping Contact Name]
+	 ,capitalize(PRIM_CNTCT_PHONE_NUM)  as [Shipping Contact Phone]
+	 ,capitalize(MSTR_PRIM_CNTCT_NAM) as [Billing Contact Name]
+	 ,capitalize(MSTR_PRIM_CNTCT_PHONE_NUM) as [Billing Contact Phone]
+	 ,SCHED_2_ITEM_ALLOW_FLG as [DEA Schedule 2]
+     ,SCHED_2N_ITEM_ALLOW_FLG as [DEA Schedule 2N]
+     ,SCHED_3_ITEM_ALLOW_FLG as [DEA Schedule 3]
+     ,SCHED_3N_ITEM_ALLOW_FLG as [DEA Schedule 3N]
+     ,SCHED_4_ITEM_ALLOW_FLG as [DEA Schedule 4]
+     ,SCHED_5_ITEM_ALLOW_FLG as [DEA Schedule 5]
+     ,STATE_PHARM_RX_LIC_EXP_DTE as [State Pharmacy Other Expiration Date]
+     ,STATE_PHARM_RX_LIC_EXT_DTE as [State Pharmacy Other Extension Date]
+     ,STATE_PHARM_RX_LIC_ID as [State Pharmacy Other License ID]
+     ,AR2000_TERMS_DESC as [Payment Terms]
+     ,CURR_AR_BLNCE_DLR as [Current AR Balance]
+     ,LAST_PYMT_DLR as [Last Payment Amount]
+     ,LAST_PYMT_DTE as [Last Payment Date]
+     ,CREDIT_LMT_DLR as [Credit Limit]
+     ,COD_ADD_ON_DLR as [COD Add on Amount]
+     ,DISC_PCT as [Discount %]
+     ,DISC_PAY_DAY_QTY as [Discount Paid Days]
+     ,COD_CDE as [COD Code]
+     ,PRE_PAY_CDE
+     ,STMNT_FREQ_CDE
+     ,ACCT_MEMO_NAM as [Account Memo]
+     ,ACCT_ALIAS_NAM as [Account Alias],
+     SAP_CUSTOMER_NUM,
+     SAP_PAYER_NUM,
+     SAP_CUSTOMER_NAM,
+     SAP_PAYER_NAM
+where Exists (ACCT_KEY_NUM)     
+;
+
+SQL
+
+SELECT 
+
+	"ACCT2_NAM",
+	"ACCT_MEMO_NAM",
+	"ACCT_ALIAS_NAM",
+    "ACCT_CLASS_CDE",
+    "ACCT_CLASS_DESC",
+    "ACCT_KEY_NUM",
+    "ACCT_MAINT_RESP_CDE",
+    "ACCT_MAINT_RESP_DESC",
+    "ACCT_NAM",
+    "ACCT_STAT_CDE",
+    "ACCT_STAT_DESC",
+    "ACT_DTE",
+    "ADDL_TEMP_CREDIT_AVAIL_DLR",
+    "ADDL_TEMP_CREDIT_END_DTE",
+    "ADDL_TEMP_CREDIT_START_DTE",
+    "ADDR2_TXT",
+    "ADDR_TXT",
+    "ADMIN_FEE_REASON_CDE",
+    "ADMIN_FEE_REASON_DESC",
+    "ADMIN_UPCHG_PCT",
+    "AR2000_TERMS_DESC",
+    "AR2000_TERMS_ID",
+    "AWP_BASE_CDE",
+    "AWP_BASE_DESC",
+    "BACK_ORDER_ALLOW_CDE",
+    "BACK_ORDER_ALLOW_DESC",
+    "BACK_ORDER_RLY_REQ_CDE",
+    "BACK_ORDER_RLY_REQ_DESC",
+    "BEST_PRICE_OVER_ALL_FLG",
+    "BILL_TO_ACT_DTE",
+    "BILL_TO_ADDR2_TXT",
+    "BILL_TO_ADDR_TXT",
+    "BILL_TO_CITY",
+    "BILL_TO_CUSTOMER2_NAM",
+    "BILL_TO_CUSTOMER_NAM",
+    "BILL_TO_CUSTOMER_NUM",
+    "BILL_TO_DBA_NAM",
+    "BILL_TO_EMAIL_ADDR_2_TXT",
+    "BILL_TO_EMAIL_ADDR_3_TXT",
+    "BILL_TO_EMAIL_ADDR_4_TXT",
+    "BILL_TO_EMAIL_ADDR_TXT",
+    "BILL_TO_FAX_NUM",
+    "BILL_TO_GLN_ID",
+    "BILL_TO_INACT_DTE",
+    "BILL_TO_LOCATION_NUM",
+    "BILL_TO_PHONE_NUM",
+    "BILL_TO_PRIM_CNTCT_NAM",
+    "BILL_TO_PRIM_CNTCT_PHONE_NUM",
+    "BILL_TO_SCNDRY_CNTCT_NAM",
+    "BILL_TO_SCNDRY_CNTCT_PHONE_NUM",
+    "BILL_TO_STATE",
+    "BILL_TO_ZIP",
+    "BRAND_C2_PRIM_FLG",
+    "BRAND_RX_PRIM_FLG",
+    "BRAND_SCHED_PRIM_FLG",
+    "BRKRG_FLG",
+    "CARD_ACCT_GROUP_NUM",
+    "CARRIER_CDE",
+    "CARRIER_DESC",
+    "CENT_PRICE_FLG",
+    "CIM_AUTO_SEND_ORDER_FLG",
+    "CIM_LAST_ORDER_DTE",
+    "CIM_RORDR_THRSH_PCT",
+    "CIM_SCRIPT_RANK_CDE",
+    "CIM_SCRIPT_RANK_DESC",
+    "CIM_STORE_STAT_CDE",
+    "CIM_STORE_STAT_DESC",
+    CITY,
+    "CLASS_CDE",
+    "CLASS_DESC",
+    "CLBCK_WITH_OMIT_REQ_FLG",
+    "CNTRCT_FEE_POLICY_340B_CDE",
+    "CNTRCT_NONRX_PURCH_MARKUP_PCT",
+    "CNTRCT_RX_PURCH_MARKUP_PCT",
+    CNTRY,
+    "CNTY_ID",
+    "COD_ADD_ON_DLR",
+    "COD_CDE",
+    "COD_DESC",
+    "COMMON_LOCATION_CUSTOMER_NUM",
+    "COMMON_LOCATION_NAM",
+    "COMMON_LOCATION_NUM",
+    "COMMON_OWNER_CUSTOMER_NUM",
+    "COMMON_OWNER_LOCATION_NUM",
+    "COMMON_OWNER_NAM",
+    "CONSIGN_END_DTE",
+    "CONSIGN_ID",
+    "CONSIGN_START_DTE",
+    "CONSIGN_TYPE_CDE",
+    "CONSIGN_TYPE_DESC",
+    "CREDIT_HOLD_FLG",
+    "CREDIT_LMT_CHK_FLG",
+    "CREDIT_LMT_DLR",
+    "CREDIT_LMT_EXCD_CDE",
+    "CREDIT_LMT_EXCD_DESC",
+    "CRM_BSNS_PRTNR_ID",
+    "CRSPND_CUSTOMER_SHIP_TO_NUM",
+    "CRSPND_LOCATION_NUM",
+    "CURR_AR_BLNCE_DLR",
+    "CURR_PSE_EMP_ID",
+    "CURR_PSE_ID",
+    "CURR_PSE_NAM",
+    "CURR_SHIP_TO_CUSTOMER_NUM",
+    "CURR_SHIP_TO_LOCATION_NUM",
+    "CURR_SR_ADDR2_TXT",
+    "CURR_SR_ADDR_TXT",
+    "CURR_SR_CELL_PHONE_NUM",
+    "CURR_SR_CITY",
+    "CURR_SR_CNTRY",
+    "CURR_SR_EMP_ID",
+    "CURR_SR_END_DTE",
+    "CURR_SR_FIRST_NAM",
+    "CURR_SR_IPS_REGION_ID",
+    "CURR_SR_KEY_NUM",
+    "CURR_SR_LAST_NAM",
+    "CURR_SR_LEVEL_NUM",
+    "CURR_SR_MIDDLE_INIT_TXT",
+    "CURR_SR_MNGR_EMP_ID",
+    "CURR_SR_MNGR_NAM",
+    "CURR_SR_NUM",
+    "CURR_SR_PAGER_NUM",
+    "CURR_SR_PHONE_NUM",
+    "CURR_SR_RESP_DESC",
+    "CURR_SR_RESP_ID",
+    "CURR_SR_STATE",
+    "CURR_SR_SVC_LOCATION_NUM",
+    "CURR_SR_TITLE_TXT",
+    "CURR_SR_VOICE_MAIL_EXT_NUM",
+    "CURR_SR_VOICE_MAIL_NUM",
+    "CURR_SR_VP_EMP_ID",
+    "CURR_SR_VP_NAM",
+    "CURR_SR_ZIP",
+    "CURR_VRSN_FLG",
+    "CUSTOMER_COST_BASE_CDE",
+    "CUSTOMER_COST_BASE_DESC",
+    "CUSTOMER_PURCH_PROG_CDE",
+    "CUSTOMER_PURCH_PROG_DESC",
+    "CUSTOMER_TYPE_CDE",
+    "CUSTOMER_TYPE_DESC",
+    "DAY_OF_WEEK_NAM",
+    "DBA_NAM",
+    "DC_ACT_STAT_ID",
+    "DC_ADDR2_TXT",
+    "DC_ADDR_TXT",
+    "DC_BRKRG_FLG",
+    "DC_BSNS_UNIT_CDE",
+    "DC_BSNS_UNIT_DESC",
+    "DC_CITY",
+    "DC_DEA_LIC_NUM",
+    "DC_DESC_ABBR_TXT",
+    "DC_GROUP_CDE",
+    "DC_GROUP_DESC",
+    "DC_HIN_ID",
+    "DC_HLTH_SCTR_CDE",
+    "DC_HLTH_SCTR_DESC",
+    "DC_MAIN_FLR_SQR_FTG_QTY",
+    "DC_MZN_SQR_FTG_QTY",
+    "DC_NAM",
+    "DC_OPRTN_ACTIVE_FLG",
+    "DC_PHONE_NUM",
+    "DC_PICK_MTHD_DESC",
+    "DC_PRFL_ID",
+    "DC_REGION_CDE",
+    "DC_REGION_DESC",
+    "DC_REMOTE_OUTQ_ID",
+    "DC_SQR_FTG_QTY",
+    "DC_SRC_SYSTEM_CDE",
+    "DC_SRC_SYSTEM_DESC",
+    "DC_STATE",
+    "DC_SYSTEM_CDE",
+    "DC_SYSTEM_NAM",
+    "DC_TEMP_HOUR_RATE_DLR",
+    "DC_ZIP",
+    "DEA_EXP_DTE",
+    "DEA_EXT_DTE",
+    "DEA_NUM",
+    "DEL_FLG",
+    "DISC_PAY_DAY_QTY",
+    "DISC_PCT",
+    "DIST_CUSTOMER_NUM",
+    "DLVRY_INSTR_TXT",
+    "DPLCT_ORDER_CHK_CDE",
+    "DPLCT_ORDER_CHK_DESC",
+    "EDI_867_GLN_DISP_FLG",
+    "ELCTR_RETAIL_PRICE_RSTRCT_FLG",
+    "EMAIL_ADDR_2_TXT",
+    "EMAIL_ADDR_3_TXT",
+    "EMAIL_ADDR_4_TXT",
+    "EMAIL_ADDR_TXT",
+    "ENTPR_ACCT_NUM",
+    "EXT_DTE_ALLOW_CDE",
+    "EXT_DTE_ALLOW_DESC",
+    "FRONT_END_SQR_FTG_RANGE_TXT",
+    "GEN_C2_PRIM_FLG",
+    "GEN_RX_PRIM_FLG",
+    "GEN_SCHED_PRIM_FLG",
+    "HIN_ID",
+    "HIN_LOCATION_ID",
+    "HRSA_ID",
+    "HSCSM_AC_SHIP_TO_CUSTOMER_ID",
+    "INACT_DTE",
+    "INVOICE_COPY_RQRD_QTY",
+    "INVOICE_STORE_PLAN_MARKUP_PCT",
+    "LAST_CHK_ID",
+    "LAST_PYMT_DLR",
+    "LAST_PYMT_DTE",
+    "LOCATION_CUSTOMER_CMBN_NUM",
+    "MIN_CHRG_DLR",
+    "MIN_ORDER_CHK_TYPE_CDE",
+    "MIN_ORDER_CHK_TYPE_DESC",
+    "MIN_ORDER_DLR",
+    "MKT_SGMNT_CDE",
+    "MKT_SGMNT_CLASS_CDE",
+    "MKT_SGMNT_CLASS_DESC",
+    "MKT_SGMNT_DESC",
+    "MQ_SERIES_FLG",
+    "MRNG_ADD_ON_CALL_FLG",
+    "MSTR_ACT_DTE",
+    "MSTR_ADDR2_TXT",
+    "MSTR_ADDR_TXT",
+    "MSTR_CITY",
+    "MSTR_CUSTOMER2_NAM",
+    "MSTR_CUSTOMER_NAM",
+    "MSTR_CUSTOMER_NUM",
+    "MSTR_EMAIL_ADDR_TXT",
+    "MSTR_FAX_NUM",
+    "MSTR_INACT_DTE",
+    "MSTR_LOCATION_NUM",
+    "MSTR_PHONE_NUM",
+    "MSTR_PRIM_CNTCT_NAM",
+    "MSTR_PRIM_CNTCT_PHONE_NUM",
+    "MSTR_SCNDRY_CNTCT_NAM",
+    "MSTR_SCNDRY_CNTCT_PHONE_NUM",
+    "MSTR_STATE",
+    "MSTR_ZIP",
+    "MTRX_CDE",
+    "MTRX_NAM",
+    "NABP_ID",
+    "NET_DUE_PAY_DAY_QTY",
+    "NET_PRICE_CDE",
+    "NET_PRICE_DESC",
+    "NEW_ACCT_REASON_CDE",
+    "NEW_ACCT_REASON_DESC",
+    "NON_RX_PRIM_FLG",
+    "NTNL_ACCT_FLG",
+    "OBSRV_DST_FLG",
+    "ORDER_EXPR_FLG",
+    "ORIGIN_CDE",
+    "ORIGIN_DESC",
+    "PARENT_HRSA_ID",
+    "PAY_TO_AFLTN_DESC",
+    "PAY_TO_AFLTN_NUM",
+    "PDAC_COMMON_OWNER_CUSTOMER_NUM",
+    "PDAC_COMMON_OWNER_LOCATION_NUM",
+    "PDAC_COMMON_OWNER_NAM",
+    "PDAC_COMMON_SITE_CUSTOMER_NUM",
+    "PDAC_COMMON_SITE_LOCATION_NUM",
+    "PDAC_COMMON_SITE_NAM",
+    "PDMA_LTR_SIGN_FLG",
+    "PHONE_NUM",
+    "PO_ID_RQRD_FLG",
+    "POS_FRONT_END_MNGR_NAM",
+    "POS_LEADER_MSI_ID",
+    "POS_LOCATION_CTGRY_TXT",
+    "POS_RPT_END_DTE",
+    "POS_RPT_START_DTE",
+    "POS_RPT_STORE_NAM",
+    "POS_RX_FILL_DLY_RANGE_TXT",
+    "POS_RX_SALE_PCT",
+    "POS_SGMNT_ID",
+    "POS_STORE_CNTCT_NAM",
+    "PRE_PAY_CDE",
+    "PRE_PAY_DESC",
+    "PRICE_CMNT_TXT",
+    "PRICE_PLAN_END_DTE",
+    "PRICE_PLAN_START_DTE",
+    "PRIM_CNTCT_NAM",
+    "PRIM_CNTCT_PHONE_NUM",
+    "PRIM_DCSN_MKR_DESC",
+    "PRIM_DCSN_MKR_NUM",
+    "PROCESS_TYPE_CDE",
+    "PROCESS_TYPE_DESC",
+    "PROD_AWP_CTLG_COPY_QTY",
+    "PROD_COST_CTLG_COPY_QTY",
+    "PROD_PRICE_CTLG_COPY_QTY",
+    "PROMO_DEAL_FLG",
+    "PRVD_TECH_340B_CDE",
+    "PSE_EMP_ID",
+    "PSE_ID",
+    "PSE_NAM",
+    "PURCH_CUSTOMER_TYPE_CDE",
+    "PURCH_CUSTOMER_TYPE_DESC",
+    "QC_CHK_RQRD_FLG",
+    "QC_EXP_DTE",
+    "QC_REQ_BY_NAM",
+    "REG_DLVRY_FEE_DLR",
+    "RESALE_ID",
+    "RESALE_ID_EXP_DTE",
+    "RESALE_ID_EXT_DTE",
+    "RETAIL_WEB_ORDER_FLG",
+    "ROW_ADD_STP",
+    "ROW_ADD_USER_ID",
+    "ROW_UPDATE_STP",
+    "ROW_UPDATE_USER_ID",
+    "SALE_AGR_END_DTE",
+    "SALE_AGR_START_DTE",
+    "SALE_REP_ADDR2_TXT",
+    "SALE_REP_ADDR_TXT",
+    "SALE_REP_CELL_PHONE_NUM",
+    "SALE_REP_CITY",
+    "SALE_REP_CNTRY",
+    "SALE_REP_EMP_ID",
+    "SALE_REP_END_DTE",
+    "SALE_REP_FIRST_NAM",
+    "SALE_REP_IPS_REGION_ID",
+    "SALE_REP_KEY_NUM",
+    "SALE_REP_LAST_NAM",
+    "SALE_REP_LEVEL_NUM",
+    "SALE_REP_MIDDLE_INIT_TXT",
+    "SALE_REP_MNGR_EMP_ID",
+    "SALE_REP_MNGR_NAM",
+    "SALE_REP_NUM",
+    "SALE_REP_PAGER_NUM",
+    "SALE_REP_PHONE_NUM",
+    "SALE_REP_RESP_DESC",
+    "SALE_REP_RESP_ID",
+    "SALE_REP_STATE",
+    "SALE_REP_SVC_LOCATION_NUM",
+    "SALE_REP_TITLE_TXT",
+    "SALE_REP_VOICE_MAIL_EXT_NUM",
+    "SALE_REP_VOICE_MAIL_NUM",
+    "SALE_REP_VP_EMP_ID",
+    "SALE_REP_VP_NAM",
+    "SALE_REP_ZIP",
+    "SCHED_2_ITEM_ALLOW_FLG",
+    "SCHED_2N_ITEM_ALLOW_FLG",
+    "SCHED_3_ITEM_ALLOW_FLG",
+    "SCHED_3N_ITEM_ALLOW_FLG",
+    "SCHED_4_ITEM_ALLOW_FLG",
+    "SCHED_5_ITEM_ALLOW_FLG",
+    "SCNDRY_CNTCT_NAM",
+    "SCNDRY_CNTCT_PHONE_NUM",
+    "SCTR_CDE",
+    "SCTR_DESC",
+    "SHIP_TO_CUSTOMER_NUM",
+    "SHIP_TO_FAX_NUM",
+    "SHIP_TO_GLN_ID",
+    "SHIP_TO_LOCATION_NUM",
+    "SKILL_GRP_DESC",
+    "SKILL_GRP_ID",
+    "SKILL_GRP_KEY_NUM",
+    "SPCLTY_DESC",
+    "SPCLTY_ID",
+    "SPD_BSNS_SGMNT_DESC",
+    "SPD_BSNS_SGMNT_ID",
+    "SPD_BSNS_UNIT_DESC",
+    "SPD_BSNS_UNIT_ID",
+    "SPOL_ACCT_ALIAS_NAM",
+    "SQR_FTG_RANGE_TXT",
+    "STAND_PO_ID",
+    STATE,
+    "STATE_PHARM_EXT_DTE",
+    "STATE_PHARM_LIC_EXP_DTE",
+    "STATE_PHARM_LIC_ID",
+    "STATE_PHARM_RX_LIC_EXP_DTE",
+    "STATE_PHARM_RX_LIC_EXT_DTE",
+    "STATE_PHARM_RX_LIC_ID",
+    "STMNT_FREQ_CDE",
+    "STMNT_FREQ_DESC",
+    "STORE_ID",
+    "STORE_INVOICE_PLAN_DESC",
+    "STORE_INVOICE_PLAN_ID",
+    "SUPPLY_RLT_CDE",
+    "SUPPLY_RLT_DESC",
+    "SVC_REP_SALE_REP_NUM",
+    "TERMS_BASE_FROM_CDE",
+    "TERMS_BASE_FROM_DESC",
+    "THIRD_PARTY_INFO_RSTRCT_FLG",
+    "TIM_ZONE_CDE",
+    "TIM_ZONE_DESC",
+    "TYPE_340B_CDE",
+    "VRSN_END_DTE",
+    "VRSN_START_DTE",
+    "WEEK_DLVRY_QTY",
+    "WEEK_PAY_DAY_OF_WEEK_CDE",
+    ZIP,
+    SAP_CUSTOMER_NUM,
+    SAP_PAYER_NUM,
+    SAP_CUSTOMER_NAM,
+    SAP_PAYER_NAM
+FROM 
+	VIEWS.SHIP_TO_ACCOUNT 
+WHERE 
+	ACCT_NAM like '%cvs%' 
+//	AND
+//	CURR_VRSN_FLG = 'Y' 
+	AND CAST(VRSN_END_DTE as char(10))> cast(add_months(current_date, -35) as char(10))	
+;
+
+
+//DROP Table cvs_ship_to;
+
+
+
+///$tab Ship_To_Account
+
+concatenate (Ship_To_Account)
+ load
+	capitalize(POS_RPT_STORE_NAM) as [POS_RPT_STORE_NAM] 
+	 ,capitalize(CURR_SR_MIDDLE_INIT_TXT) as [CURR_SR_MIDDLE_INIT_TXT]
+	 ,capitalize(CURR_SR_FIRST_NAM) as [CURR_SR_FIRST_NAM]
+	 ,capitalize(CURR_SR_LAST_NAM) as [CURR_SR_LAST_NAM]
+	 ,CURR_SR_NUM
+	 ,capitalize(CUSTOMER_TYPE_DESC) as [CUSTOMER_TYPE_DESC]
+	 ,CUSTOMER_TYPE_CDE
+	 ,DC_ZIP
+	 ,DC_STATE
+	 ,capitalize(DC_CITY) as [DC_CITY]
+	 ,capitalize(DC_ADDR2_TXT) as [DC_ADDR2_TXT]
+	 ,capitalize(DC_ADDR_TXT) as [DC_ADDR_TXT]
+	 ,capitalize(DC_NAM) as [DC Name]
+	 ,CARD_ACCT_GROUP_NUM
+	 ,SALE_REP_NUM
+	 ,SALE_REP_KEY_NUM
+	 ,ROW_UPDATE_USER_ID
+	 ,upper(date(date#(ROW_UPDATE_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')) as [ROW_UPDATE_STP] 
+	 ,ROW_ADD_USER_ID
+	 ,upper(date(date#(ROW_ADD_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')) as [ROW_ADD_STP]  
+	 ,CURR_SHIP_TO_CUSTOMER_NUM as [Account #]
+	 ,CURR_SHIP_TO_LOCATION_NUM as [DC #]
+	 ,CURR_SHIP_TO_LOCATION_NUM & '-' & CURR_SHIP_TO_CUSTOMER_NUM as [AccountSelector]
+	 ,if(VRSN_END_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(VRSN_END_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [VRSN_END_DTE]
+	 ,if(VRSN_START_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(VRSN_START_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [VRSN_START_DTE] 
+	 ,CURR_VRSN_FLG
+	 ,capitalize(CLASS_DESC) as [CLASS_DESC]
+	 ,CLASS_CDE
+//	 ,if(STATE_PHARM_EXT_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(STATE_PHARM_EXT_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [STATE_PHARM_EXT_DTE] 
+//	 ,if(STATE_PHARM_LIC_EXP_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(STATE_PHARM_LIC_EXP_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [STATE_PHARM_LIC_EXP_DTE]
+     ,[STATE_PHARM_EXT_DTE]
+     ,[STATE_PHARM_LIC_EXP_DTE]
+	 ,STATE_PHARM_LIC_ID
+	 ,capitalize(ACCT_CLASS_DESC) as [Accounting Class]
+	 ,ACCT_CLASS_CDE as [Accounting Code]
+	 ,HIN_ID
+//	 ,if(DEA_EXT_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(DEA_EXT_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [Account DEA Extension Date]
+//	 ,if(DEA_EXP_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(DEA_EXP_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [Account DEA Expiration Date]
+     ,DEA_EXT_DTE as [Account DEA Extension Date]
+     ,DEA_EXP_DTE as [Account DEA Expiration Date]
+	 ,DEA_NUM as [Account DEA #]
+	 ,capitalize(SALE_REP_MIDDLE_INIT_TXT) as [SALE_REP_MIDDLE_INIT_TXT]
+	 ,capitalize(SALE_REP_FIRST_NAM) as [SALE_REP_FIRST_NAM]
+	 ,capitalize(SALE_REP_LAST_NAM) as [SALE_REP_LAST_NAM]
+	 ,if(len(trim(SALE_REP_MIDDLE_INIT_TXT))=0,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))
+	 ,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_MIDDLE_INIT_TXT)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))) as [Sales Rep Name]
+	 ,capitalize(ACCT_STAT_DESC) as [Active Account Status]
+	 ,BILL_TO_CUSTOMER_NUM
+	 ,BILL_TO_LOCATION_NUM
+	 ,BILL_TO_ZIP as [Bill-to Zip Code]
+	 ,BILL_TO_STATE as [Bill-to State]
+	 ,capitalize(BILL_TO_CITY) as [Bill-to City]
+	 ,capitalize(BILL_TO_ADDR2_TXT) as [Bill-to Address 2]
+	 ,capitalize(BILL_TO_ADDR_TXT) as [Bill-to Address]
+	 ,capitalize(BILL_TO_CUSTOMER_NAM) as [Bill-to Name]
+	 ,SHIP_TO_CUSTOMER_NUM
+	 ,SHIP_TO_LOCATION_NUM
+	 ,ZIP as [Account Zip Code]
+	 ,STATE as [Account State]
+	 ,capitalize(CITY) as [Account City]
+	 ,capitalize(ADDR2_TXT) as [Account Address 2]
+	 ,capitalize(ADDR_TXT) as [Account Address]
+	 ,capitalize(ACCT2_NAM) as [Account Name 2]
+	 ,ACCT_KEY_NUM
+	 ,ACCT_NAM
+	 ,Capitalize(ACCT_NAM) as [Account Name]
+	 ,SHIP_TO_GLN_ID
+	 ,BILL_TO_GLN_ID
+	 ,EDI_867_GLN_DISP_FLG
+	 
+	 //////////////// **************************** Added by Dicky Mohanty on 08/21 *************************************** ////////////////////
+	 
+	 ,STORE_ID as [Store Numbers]
+	 ,capitalize(ACCT_STAT_CDE) as [Status]
+	 ,if(len(trim(SALE_REP_MIDDLE_INIT_TXT))=0,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))
+	 ,capitalize(trim(SALE_REP_FIRST_NAM)) & ' ' & capitalize(trim(SALE_REP_MIDDLE_INIT_TXT)) & ' ' & capitalize(trim(SALE_REP_LAST_NAM))) as [Sales Rep]
+	 ,capitalize(PHONE_NUM) as [Account Phone]
+	 ,capitalize(PRIM_CNTCT_NAM) as [Shipping Contact Name]
+	 ,capitalize(PRIM_CNTCT_PHONE_NUM)  as [Shipping Contact Phone]
+	 ,capitalize(MSTR_PRIM_CNTCT_NAM) as [Billing Contact Name]
+	 ,capitalize(MSTR_PRIM_CNTCT_PHONE_NUM) as [Billing Contact Phone]
+	 ,SCHED_2_ITEM_ALLOW_FLG as [DEA Schedule 2]
+     ,SCHED_2N_ITEM_ALLOW_FLG as [DEA Schedule 2N]
+     ,SCHED_3_ITEM_ALLOW_FLG as [DEA Schedule 3]
+     ,SCHED_3N_ITEM_ALLOW_FLG as [DEA Schedule 3N]
+     ,SCHED_4_ITEM_ALLOW_FLG as [DEA Schedule 4]
+     ,SCHED_5_ITEM_ALLOW_FLG as [DEA Schedule 5]
+     ,STATE_PHARM_RX_LIC_EXP_DTE as [State Pharmacy Other Expiration Date]
+     ,STATE_PHARM_RX_LIC_EXT_DTE as [State Pharmacy Other Extension Date]
+     ,STATE_PHARM_RX_LIC_ID as [State Pharmacy Other License ID]
+     ,AR2000_TERMS_DESC as [Payment Terms]
+     ,CURR_AR_BLNCE_DLR as [Current AR Balance]
+     ,LAST_PYMT_DLR as [Last Payment Amount]
+     ,LAST_PYMT_DTE as [Last Payment Date]
+     ,CREDIT_LMT_DLR as [Credit Limit]
+     ,COD_ADD_ON_DLR as [COD Add on Amount]
+     ,DISC_PCT as [Discount %]
+     ,DISC_PAY_DAY_QTY as [Discount Paid Days]
+     ,COD_CDE as [COD Code]
+     ,PRE_PAY_CDE
+     ,STMNT_FREQ_CDE
+     ,ACCT_MEMO_NAM as [Account Memo]
+     ,ACCT_ALIAS_NAM as [Account Alias],
+     SAP_CUSTOMER_NUM,
+     SAP_PAYER_NUM,
+     SAP_CUSTOMER_NAM,
+     SAP_PAYER_NAM     
+     where not Exists (ACCT_KEY_NUM)
+;
+
+SQL
+
+SELECT 
+
+	"ACCT2_NAM",
+	"ACCT_MEMO_NAM",
+	"ACCT_ALIAS_NAM",	
+    "ACCT_CLASS_CDE",
+    "ACCT_CLASS_DESC",
+    "ACCT_KEY_NUM",
+    "ACCT_MAINT_RESP_CDE",
+    "ACCT_MAINT_RESP_DESC",
+    "ACCT_NAM",
+    "ACCT_STAT_CDE",
+    "ACCT_STAT_DESC",
+    "ACT_DTE",
+    "ADDL_TEMP_CREDIT_AVAIL_DLR",
+    "ADDL_TEMP_CREDIT_END_DTE",
+    "ADDL_TEMP_CREDIT_START_DTE",
+    "ADDR2_TXT",
+    "ADDR_TXT",
+    "ADMIN_FEE_REASON_CDE",
+    "ADMIN_FEE_REASON_DESC",
+    "ADMIN_UPCHG_PCT",
+    "AR2000_TERMS_DESC",
+    "AR2000_TERMS_ID",
+    "AWP_BASE_CDE",
+    "AWP_BASE_DESC",
+    "BACK_ORDER_ALLOW_CDE",
+    "BACK_ORDER_ALLOW_DESC",
+    "BACK_ORDER_RLY_REQ_CDE",
+    "BACK_ORDER_RLY_REQ_DESC",
+    "BEST_PRICE_OVER_ALL_FLG",
+    "BILL_TO_ACT_DTE",
+    "BILL_TO_ADDR2_TXT",
+    "BILL_TO_ADDR_TXT",
+    "BILL_TO_CITY",
+    "BILL_TO_CUSTOMER2_NAM",
+    "BILL_TO_CUSTOMER_NAM",
+    "BILL_TO_CUSTOMER_NUM",
+    "BILL_TO_DBA_NAM",
+    "BILL_TO_EMAIL_ADDR_2_TXT",
+    "BILL_TO_EMAIL_ADDR_3_TXT",
+    "BILL_TO_EMAIL_ADDR_4_TXT",
+    "BILL_TO_EMAIL_ADDR_TXT",
+    "BILL_TO_FAX_NUM",
+    "BILL_TO_GLN_ID",
+    "BILL_TO_INACT_DTE",
+    "BILL_TO_LOCATION_NUM",
+    "BILL_TO_PHONE_NUM",
+    "BILL_TO_PRIM_CNTCT_NAM",
+    "BILL_TO_PRIM_CNTCT_PHONE_NUM",
+    "BILL_TO_SCNDRY_CNTCT_NAM",
+    "BILL_TO_SCNDRY_CNTCT_PHONE_NUM",
+    "BILL_TO_STATE",
+    "BILL_TO_ZIP",
+    "BRAND_C2_PRIM_FLG",
+    "BRAND_RX_PRIM_FLG",
+    "BRAND_SCHED_PRIM_FLG",
+    "BRKRG_FLG",
+    "CARD_ACCT_GROUP_NUM",
+    "CARRIER_CDE",
+    "CARRIER_DESC",
+    "CENT_PRICE_FLG",
+    "CIM_AUTO_SEND_ORDER_FLG",
+    "CIM_LAST_ORDER_DTE",
+    "CIM_RORDR_THRSH_PCT",
+    "CIM_SCRIPT_RANK_CDE",
+    "CIM_SCRIPT_RANK_DESC",
+    "CIM_STORE_STAT_CDE",
+    "CIM_STORE_STAT_DESC",
+    CITY,
+    "CLASS_CDE",
+    "CLASS_DESC",
+    "CLBCK_WITH_OMIT_REQ_FLG",
+    "CNTRCT_FEE_POLICY_340B_CDE",
+    "CNTRCT_NONRX_PURCH_MARKUP_PCT",
+    "CNTRCT_RX_PURCH_MARKUP_PCT",
+    CNTRY,
+    "CNTY_ID",
+    "COD_ADD_ON_DLR",
+    "COD_CDE",
+    "COD_DESC",
+    "COMMON_LOCATION_CUSTOMER_NUM",
+    "COMMON_LOCATION_NAM",
+    "COMMON_LOCATION_NUM",
+    "COMMON_OWNER_CUSTOMER_NUM",
+    "COMMON_OWNER_LOCATION_NUM",
+    "COMMON_OWNER_NAM",
+    "CONSIGN_END_DTE",
+    "CONSIGN_ID",
+    "CONSIGN_START_DTE",
+    "CONSIGN_TYPE_CDE",
+    "CONSIGN_TYPE_DESC",
+    "CREDIT_HOLD_FLG",
+    "CREDIT_LMT_CHK_FLG",
+    "CREDIT_LMT_DLR",
+    "CREDIT_LMT_EXCD_CDE",
+    "CREDIT_LMT_EXCD_DESC",
+    "CRM_BSNS_PRTNR_ID",
+    "CRSPND_CUSTOMER_SHIP_TO_NUM",
+    "CRSPND_LOCATION_NUM",
+    "CURR_AR_BLNCE_DLR",
+    "CURR_PSE_EMP_ID",
+    "CURR_PSE_ID",
+    "CURR_PSE_NAM",
+    "CURR_SHIP_TO_CUSTOMER_NUM",
+    "CURR_SHIP_TO_LOCATION_NUM",
+    "CURR_SR_ADDR2_TXT",
+    "CURR_SR_ADDR_TXT",
+    "CURR_SR_CELL_PHONE_NUM",
+    "CURR_SR_CITY",
+    "CURR_SR_CNTRY",
+    "CURR_SR_EMP_ID",
+    "CURR_SR_END_DTE",
+    "CURR_SR_FIRST_NAM",
+    "CURR_SR_IPS_REGION_ID",
+    "CURR_SR_KEY_NUM",
+    "CURR_SR_LAST_NAM",
+    "CURR_SR_LEVEL_NUM",
+    "CURR_SR_MIDDLE_INIT_TXT",
+    "CURR_SR_MNGR_EMP_ID",
+    "CURR_SR_MNGR_NAM",
+    "CURR_SR_NUM",
+    "CURR_SR_PAGER_NUM",
+    "CURR_SR_PHONE_NUM",
+    "CURR_SR_RESP_DESC",
+    "CURR_SR_RESP_ID",
+    "CURR_SR_STATE",
+    "CURR_SR_SVC_LOCATION_NUM",
+    "CURR_SR_TITLE_TXT",
+    "CURR_SR_VOICE_MAIL_EXT_NUM",
+    "CURR_SR_VOICE_MAIL_NUM",
+    "CURR_SR_VP_EMP_ID",
+    "CURR_SR_VP_NAM",
+    "CURR_SR_ZIP",
+    "CURR_VRSN_FLG",
+    "CUSTOMER_COST_BASE_CDE",
+    "CUSTOMER_COST_BASE_DESC",
+    "CUSTOMER_PURCH_PROG_CDE",
+    "CUSTOMER_PURCH_PROG_DESC",
+    "CUSTOMER_TYPE_CDE",
+    "CUSTOMER_TYPE_DESC",
+    "DAY_OF_WEEK_NAM",
+    "DBA_NAM",
+    "DC_ACT_STAT_ID",
+    "DC_ADDR2_TXT",
+    "DC_ADDR_TXT",
+    "DC_BRKRG_FLG",
+    "DC_BSNS_UNIT_CDE",
+    "DC_BSNS_UNIT_DESC",
+    "DC_CITY",
+    "DC_DEA_LIC_NUM",
+    "DC_DESC_ABBR_TXT",
+    "DC_GROUP_CDE",
+    "DC_GROUP_DESC",
+    "DC_HIN_ID",
+    "DC_HLTH_SCTR_CDE",
+    "DC_HLTH_SCTR_DESC",
+    "DC_MAIN_FLR_SQR_FTG_QTY",
+    "DC_MZN_SQR_FTG_QTY",
+    "DC_NAM",
+    "DC_OPRTN_ACTIVE_FLG",
+    "DC_PHONE_NUM",
+    "DC_PICK_MTHD_DESC",
+    "DC_PRFL_ID",
+    "DC_REGION_CDE",
+    "DC_REGION_DESC",
+    "DC_REMOTE_OUTQ_ID",
+    "DC_SQR_FTG_QTY",
+    "DC_SRC_SYSTEM_CDE",
+    "DC_SRC_SYSTEM_DESC",
+    "DC_STATE",
+    "DC_SYSTEM_CDE",
+    "DC_SYSTEM_NAM",
+    "DC_TEMP_HOUR_RATE_DLR",
+    "DC_ZIP",
+    "DEA_EXP_DTE",
+    "DEA_EXT_DTE",
+    "DEA_NUM",
+    "DEL_FLG",
+    "DISC_PAY_DAY_QTY",
+    "DISC_PCT",
+    "DIST_CUSTOMER_NUM",
+    "DLVRY_INSTR_TXT",
+    "DPLCT_ORDER_CHK_CDE",
+    "DPLCT_ORDER_CHK_DESC",
+    "EDI_867_GLN_DISP_FLG",
+    "ELCTR_RETAIL_PRICE_RSTRCT_FLG",
+    "EMAIL_ADDR_2_TXT",
+    "EMAIL_ADDR_3_TXT",
+    "EMAIL_ADDR_4_TXT",
+    "EMAIL_ADDR_TXT",
+    "ENTPR_ACCT_NUM",
+    "EXT_DTE_ALLOW_CDE",
+    "EXT_DTE_ALLOW_DESC",
+    "FRONT_END_SQR_FTG_RANGE_TXT",
+    "GEN_C2_PRIM_FLG",
+    "GEN_RX_PRIM_FLG",
+    "GEN_SCHED_PRIM_FLG",
+    "HIN_ID",
+    "HIN_LOCATION_ID",
+    "HRSA_ID",
+    "HSCSM_AC_SHIP_TO_CUSTOMER_ID",
+    "INACT_DTE",
+    "INVOICE_COPY_RQRD_QTY",
+    "INVOICE_STORE_PLAN_MARKUP_PCT",
+    "LAST_CHK_ID",
+    "LAST_PYMT_DLR",
+    "LAST_PYMT_DTE",
+    "LOCATION_CUSTOMER_CMBN_NUM",
+    "MIN_CHRG_DLR",
+    "MIN_ORDER_CHK_TYPE_CDE",
+    "MIN_ORDER_CHK_TYPE_DESC",
+    "MIN_ORDER_DLR",
+    "MKT_SGMNT_CDE",
+    "MKT_SGMNT_CLASS_CDE",
+    "MKT_SGMNT_CLASS_DESC",
+    "MKT_SGMNT_DESC",
+    "MQ_SERIES_FLG",
+    "MRNG_ADD_ON_CALL_FLG",
+    "MSTR_ACT_DTE",
+    "MSTR_ADDR2_TXT",
+    "MSTR_ADDR_TXT",
+    "MSTR_CITY",
+    "MSTR_CUSTOMER2_NAM",
+    "MSTR_CUSTOMER_NAM",
+    "MSTR_CUSTOMER_NUM",
+    "MSTR_EMAIL_ADDR_TXT",
+    "MSTR_FAX_NUM",
+    "MSTR_INACT_DTE",
+    "MSTR_LOCATION_NUM",
+    "MSTR_PHONE_NUM",
+    "MSTR_PRIM_CNTCT_NAM",
+    "MSTR_PRIM_CNTCT_PHONE_NUM",
+    "MSTR_SCNDRY_CNTCT_NAM",
+    "MSTR_SCNDRY_CNTCT_PHONE_NUM",
+    "MSTR_STATE",
+    "MSTR_ZIP",
+    "MTRX_CDE",
+    "MTRX_NAM",
+    "NABP_ID",
+    "NET_DUE_PAY_DAY_QTY",
+    "NET_PRICE_CDE",
+    "NET_PRICE_DESC",
+    "NEW_ACCT_REASON_CDE",
+    "NEW_ACCT_REASON_DESC",
+    "NON_RX_PRIM_FLG",
+    "NTNL_ACCT_FLG",
+    "OBSRV_DST_FLG",
+    "ORDER_EXPR_FLG",
+    "ORIGIN_CDE",
+    "ORIGIN_DESC",
+    "PARENT_HRSA_ID",
+    "PAY_TO_AFLTN_DESC",
+    "PAY_TO_AFLTN_NUM",
+    "PDAC_COMMON_OWNER_CUSTOMER_NUM",
+    "PDAC_COMMON_OWNER_LOCATION_NUM",
+    "PDAC_COMMON_OWNER_NAM",
+    "PDAC_COMMON_SITE_CUSTOMER_NUM",
+    "PDAC_COMMON_SITE_LOCATION_NUM",
+    "PDAC_COMMON_SITE_NAM",
+    "PDMA_LTR_SIGN_FLG",
+    "PHONE_NUM",
+    "PO_ID_RQRD_FLG",
+    "POS_FRONT_END_MNGR_NAM",
+    "POS_LEADER_MSI_ID",
+    "POS_LOCATION_CTGRY_TXT",
+    "POS_RPT_END_DTE",
+    "POS_RPT_START_DTE",
+    "POS_RPT_STORE_NAM",
+    "POS_RX_FILL_DLY_RANGE_TXT",
+    "POS_RX_SALE_PCT",
+    "POS_SGMNT_ID",
+    "POS_STORE_CNTCT_NAM",
+    "PRE_PAY_CDE",
+    "PRE_PAY_DESC",
+    "PRICE_CMNT_TXT",
+    "PRICE_PLAN_END_DTE",
+    "PRICE_PLAN_START_DTE",
+    "PRIM_CNTCT_NAM",
+    "PRIM_CNTCT_PHONE_NUM",
+    "PRIM_DCSN_MKR_DESC",
+    "PRIM_DCSN_MKR_NUM",
+    "PROCESS_TYPE_CDE",
+    "PROCESS_TYPE_DESC",
+    "PROD_AWP_CTLG_COPY_QTY",
+    "PROD_COST_CTLG_COPY_QTY",
+    "PROD_PRICE_CTLG_COPY_QTY",
+    "PROMO_DEAL_FLG",
+    "PRVD_TECH_340B_CDE",
+    "PSE_EMP_ID",
+    "PSE_ID",
+    "PSE_NAM",
+    "PURCH_CUSTOMER_TYPE_CDE",
+    "PURCH_CUSTOMER_TYPE_DESC",
+    "QC_CHK_RQRD_FLG",
+    "QC_EXP_DTE",
+    "QC_REQ_BY_NAM",
+    "REG_DLVRY_FEE_DLR",
+    "RESALE_ID",
+    "RESALE_ID_EXP_DTE",
+    "RESALE_ID_EXT_DTE",
+    "RETAIL_WEB_ORDER_FLG",
+    "ROW_ADD_STP",
+    "ROW_ADD_USER_ID",
+    "ROW_UPDATE_STP",
+    "ROW_UPDATE_USER_ID",
+    "SALE_AGR_END_DTE",
+    "SALE_AGR_START_DTE",
+    "SALE_REP_ADDR2_TXT",
+    "SALE_REP_ADDR_TXT",
+    "SALE_REP_CELL_PHONE_NUM",
+    "SALE_REP_CITY",
+    "SALE_REP_CNTRY",
+    "SALE_REP_EMP_ID",
+    "SALE_REP_END_DTE",
+    "SALE_REP_FIRST_NAM",
+    "SALE_REP_IPS_REGION_ID",
+    "SALE_REP_KEY_NUM",
+    "SALE_REP_LAST_NAM",
+    "SALE_REP_LEVEL_NUM",
+    "SALE_REP_MIDDLE_INIT_TXT",
+    "SALE_REP_MNGR_EMP_ID",
+    "SALE_REP_MNGR_NAM",
+    "SALE_REP_NUM",
+    "SALE_REP_PAGER_NUM",
+    "SALE_REP_PHONE_NUM",
+    "SALE_REP_RESP_DESC",
+    "SALE_REP_RESP_ID",
+    "SALE_REP_STATE",
+    "SALE_REP_SVC_LOCATION_NUM",
+    "SALE_REP_TITLE_TXT",
+    "SALE_REP_VOICE_MAIL_EXT_NUM",
+    "SALE_REP_VOICE_MAIL_NUM",
+    "SALE_REP_VP_EMP_ID",
+    "SALE_REP_VP_NAM",
+    "SALE_REP_ZIP",
+    "SCHED_2_ITEM_ALLOW_FLG",
+    "SCHED_2N_ITEM_ALLOW_FLG",
+    "SCHED_3_ITEM_ALLOW_FLG",
+    "SCHED_3N_ITEM_ALLOW_FLG",
+    "SCHED_4_ITEM_ALLOW_FLG",
+    "SCHED_5_ITEM_ALLOW_FLG",
+    "SCNDRY_CNTCT_NAM",
+    "SCNDRY_CNTCT_PHONE_NUM",
+    "SCTR_CDE",
+    "SCTR_DESC",
+    "SHIP_TO_CUSTOMER_NUM",
+    "SHIP_TO_FAX_NUM",
+    "SHIP_TO_GLN_ID",
+    "SHIP_TO_LOCATION_NUM",
+    "SKILL_GRP_DESC",
+    "SKILL_GRP_ID",
+    "SKILL_GRP_KEY_NUM",
+    "SPCLTY_DESC",
+    "SPCLTY_ID",
+    "SPD_BSNS_SGMNT_DESC",
+    "SPD_BSNS_SGMNT_ID",
+    "SPD_BSNS_UNIT_DESC",
+    "SPD_BSNS_UNIT_ID",
+    "SPOL_ACCT_ALIAS_NAM",
+    "SQR_FTG_RANGE_TXT",
+    "STAND_PO_ID",
+    STATE,
+    "STATE_PHARM_EXT_DTE",
+    "STATE_PHARM_LIC_EXP_DTE",
+    "STATE_PHARM_LIC_ID",
+    "STATE_PHARM_RX_LIC_EXP_DTE",
+    "STATE_PHARM_RX_LIC_EXT_DTE",
+    "STATE_PHARM_RX_LIC_ID",
+    "STMNT_FREQ_CDE",
+    "STMNT_FREQ_DESC",
+    "STORE_ID",
+    "STORE_INVOICE_PLAN_DESC",
+    "STORE_INVOICE_PLAN_ID",
+    "SUPPLY_RLT_CDE",
+    "SUPPLY_RLT_DESC",
+    "SVC_REP_SALE_REP_NUM",
+    "TERMS_BASE_FROM_CDE",
+    "TERMS_BASE_FROM_DESC",
+    "THIRD_PARTY_INFO_RSTRCT_FLG",
+    "TIM_ZONE_CDE",
+    "TIM_ZONE_DESC",
+    "TYPE_340B_CDE",
+    "VRSN_END_DTE",
+    "VRSN_START_DTE",
+    "WEEK_DLVRY_QTY",
+    "WEEK_PAY_DAY_OF_WEEK_CDE",
+    ZIP,
+    SAP_CUSTOMER_NUM,
+    SAP_PAYER_NUM,
+    SAP_CUSTOMER_NAM,
+    SAP_PAYER_NAM
+FROM 
+	VIEWS.SHIP_TO_ACCOUNT 
+WHERE 
+	ACCT_NAM not like '%cvs%' 
+	AND //CURR_VRSN_FLG = 'Y'  
+	((CAST(VRSN_END_DTE as char(10))> cast(add_months(current_date, -35) as char(10))) 
+   OR EXISTS (SELECT ACCT_KEY_NUM FROM VIEWS.INVOICE_LINE il 
+   WHERE il.ACCT_KEY_NUM = SHIP_TO_ACCOUNT.ACCT_KEY_NUM))	
+;
+///$tab Mapping Table
+/**********************************************************
+Create the mapping file that will assign the Account Name Selector -
+the field to be used in the Account List Boxes - to all Ship_to_Account
+records.
+
+Changelog:
+9.26.2013 warren.lea
+  Use the Ship_to_Account table instead of the NO_SCD one.
+**********************************************************/
+account_name_list_box:
+mapping
+load distinct
+  [Account #] & '-' & [DC #] as account_key
+ ,[Account Name] as account_name_list_box
+resident 
+	Ship_To_Account
+where
+  CURR_VRSN_FLG = 'Y'
+  and [Account #] = SHIP_TO_CUSTOMER_NUM
+  and [DC #]      = SHIP_TO_LOCATION_NUM
+;
+
+account_name_list:
+mapping
+load distinct
+  [Account #] & '-' & [DC #] as account_key
+ ,ACCT_NAM
+resident 
+	Ship_To_Account
+where
+  CURR_VRSN_FLG = 'Y'
+  and [Account #] = SHIP_TO_CUSTOMER_NUM
+  and [DC #]      = SHIP_TO_LOCATION_NUM
+;
+///$tab Ship_To_Account_Final
+/**********************************************************
+Apply the mapping file that will assign the Account Name Selector. 
+Concatenate the standard Ship_To_Account table with the XPharm ship_to_account data for
+added CVS and Walgreens accounts. Then store the "final" table as Ship_To_Account.qvd. 
+
+Changelog:
+6.3.2014 jeremy.fourman
+- Found that the code in the repo for the 14.6 branch was not in sync with what is present on Stage.
+- Recreated this tab to be like Stage.
+- Added in additional checks for existence of Ship_To_Account before dropping.
+- Saw a bug was present in the DEV version of Ship_To_Account and corrected.
+- Renamed tab Account Selector to Ship_To_Account_Final
+- Applied formatting and lowercased keywords
+- Added loading of Ship_To_Accounts_XPharm into Ship_To_Accounts table, this includes Contract Pharmacies.
+
+**********************************************************/
+
+Ship_To_Account_final:
+load  
+	[POS_RPT_STORE_NAM] 
+	 ,[CURR_SR_MIDDLE_INIT_TXT]
+	 ,[CURR_SR_FIRST_NAM]
+	 ,[CURR_SR_LAST_NAM]
+	 ,CURR_SR_NUM
+	 ,[CUSTOMER_TYPE_DESC]
+	 ,CUSTOMER_TYPE_CDE
+	 ,DC_ZIP
+	 ,DC_STATE
+	 ,[DC_CITY]
+	 ,[DC_ADDR2_TXT]
+	 ,[DC_ADDR_TXT]
+	 ,[DC Name]
+	 ,CARD_ACCT_GROUP_NUM
+	 ,SALE_REP_NUM
+	 ,SALE_REP_KEY_NUM
+	 ,ROW_UPDATE_USER_ID
+	 ,[ROW_UPDATE_STP] 
+	 ,ROW_ADD_USER_ID
+	 ,[ROW_ADD_STP]  
+	 ,[Account #] // CURR_SHIP_TO_CUSTOMER_NUM as
+	 ,[DC #] // CURR_SHIP_TO_LOCATION_NUM as
+	 ,[AccountSelector]
+	 ,[VRSN_END_DTE]
+	 ,[VRSN_START_DTE] 
+	 ,CURR_VRSN_FLG
+	 ,[CLASS_DESC]
+	 ,CLASS_CDE
+	 ,[STATE_PHARM_EXT_DTE] 
+	 ,[STATE_PHARM_LIC_EXP_DTE]
+	 ,STATE_PHARM_LIC_ID
+	 ,[Accounting Class]
+	 ,[Accounting Code]
+	 ,HIN_ID
+	 ,[Account DEA Extension Date]
+	 ,[Account DEA Expiration Date]
+	 ,[Account DEA #]
+	 ,[SALE_REP_MIDDLE_INIT_TXT]
+	 ,[SALE_REP_FIRST_NAM]
+	 ,[SALE_REP_LAST_NAM]
+	 ,[Sales Rep Name]
+	 ,[Active Account Status]
+	 ,BILL_TO_CUSTOMER_NUM
+	 ,BILL_TO_LOCATION_NUM
+	 ,[Bill-to Zip Code]
+	 ,[Bill-to State]
+	 ,[Bill-to City]
+	 ,[Bill-to Address 2]
+	 ,[Bill-to Address]
+	 ,[Bill-to Name]
+	 ,SHIP_TO_CUSTOMER_NUM
+	 ,SHIP_TO_LOCATION_NUM
+	 ,[Account Zip Code]
+	 ,[Account State]
+	 ,[Account City]
+	 ,[Account Address 2]
+	 ,[Account Address]
+	 ,[Account Name 2]
+	 ,ACCT_KEY_NUM
+	 ,ApplyMap('account_name_list', [Account #] & '-' & [DC #]) as ACCT_NAM
+	 ,applymap('account_name_list_box', [Account #] & '-' & [DC #]) as [Account Name]
+	 ,SHIP_TO_GLN_ID
+	 ,BILL_TO_GLN_ID
+	 ,EDI_867_GLN_DISP_FLG
+	 ,applymap('account_name_list_box', [Account #] & '-' & [DC #]) & '  ' & [DC #] & '-' & [Account #] as [Account Name Selector_1]
+	 ,capitalize(if(match(SAP_CUSTOMER_NUM, '          ') ,
+	  applymap('account_name_list_box', [Account #] & '-' & [DC #]) & '  ' & [DC #] & '-' & [Account #],
+	  applymap('account_name_list_box', [Account #] & '-' & [DC #]) & '  ' & [DC #] & '-' & [Account #] &' New ' & SAP_CUSTOMER_NUM )) 
+	  as [Account Name Selector]
+	
+	// ,capitalize(if(match(SAP_CUSTOMER_NUM, '          ') ,[Account Name]& ' ' &[DC #] & '-' & [Account #],[Account Name]& ' ' &[DC #] & '-' & [Account #] &' New ' & SAP_CUSTOMER_NUM )) 
+	// as [Account Name Selector]
+	 	
+	 	 //////////////// **************************** Added by Dicky Mohanty on 08/21 *************************************** ////////////////////
+	 
+	 ,[Store Numbers]
+	 ,[Status]
+	 ,[Sales Rep]
+	 ,[Account Phone]
+	 ,[Shipping Contact Name]
+	 ,[Shipping Contact Phone]
+	 ,[Billing Contact Name]
+	 ,[Billing Contact Phone]
+	 ,[DEA Schedule 2]
+     ,[DEA Schedule 2N]
+     ,[DEA Schedule 3]
+     ,[DEA Schedule 3N]
+     ,[DEA Schedule 4]
+     ,[DEA Schedule 5]
+     ,[State Pharmacy Other Expiration Date]
+     ,[State Pharmacy Other Extension Date]
+     ,[State Pharmacy Other License ID]
+     ,[Payment Terms]
+     ,[Current AR Balance]
+     ,[Last Payment Amount]
+     ,[Last Payment Date]
+     ,[Credit Limit]
+     ,[COD Add on Amount]
+     ,[Discount %]
+     ,[Discount Paid Days]	
+     ,[COD Code]
+     ,PRE_PAY_CDE
+     ,STMNT_FREQ_CDE
+     ,[Account Memo]
+     ,[Account Alias],
+     SAP_CUSTOMER_NUM,
+     SAP_PAYER_NUM,
+     SAP_CUSTOMER_NAM,
+     SAP_PAYER_NAM	 	
+     ,capitalize(if(match(SAP_CUSTOMER_NUM, '          ') ,applymap('account_name_list_box', [Account #] & '-' & [DC #]) & '  ' & [DC #] & '-' & [Account #],
+     applymap('account_name_list_box', [Account #] & '-' & [DC #]) & '  ' & [DC #] & '-' & [Account #] & ' ' & SAP_CUSTOMER_NUM )) as [Converted Customer] 	
+resident 
+	Ship_To_Account
+;
+
+Left Join (Ship_To_Account_final)
+
+
+LOAD	Distinct
+		SHIP_TO_LOCATION_NUM & '-' & SHIP_TO_CUSTOMER_NUM as [AccountSelector],
+		ACCT_MULTI_SITE_CDE as MSC
+
+FROM
+'$(vRootFileLocation)$(vQVDs)Acct_Multi_Site_Group.qvd'
+(qvd);
+		
+		
+if $(f_does_table_exist('Ship_To_Account')) = 'Y' then 
+	drop Table Ship_To_Account;
+endif;
+
+//*****************************************************************
+trace "************************** Creating Ship_To_Account.qvd";
+//*****************************************************************
+store Ship_To_Account_final into '$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd' (qvd);
+//store Ship_To_Account_final into '\\cardinalhealth.net\applications\OH001\QlikView\Stage\PD_QVDATA\PD_QlikView_Files\Source\Ship_To_Account_new.qvd' (qvd);
+
+trace "************************** Dropping Ship_To_Account";
+drop table Ship_To_Account_final;

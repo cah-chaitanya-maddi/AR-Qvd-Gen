@@ -1,0 +1,258 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for INVOICE_LINE information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *  Extract, DB, Time_Detail.qvd
+ *
+ * Outputs:
+ *   Invoice_Line.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ *
+ * 07/08/2013 Aaron Zechman
+ * Had to add a dash in the name so it would ignore invoice_line_slr files
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+
+//ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO [TD Production] (XUserId is LXSKQbRNFLYGO, XPassword is PTIDeBFMSDZSGXFMMLMCDZB);
+
+///$tab Map Load
+
+/********************************************
+ * Mapping for PROD_KEY_NUM
+ ********************************************/
+product_map:
+MAPPING LOAD  
+     PROD_KEY_NUM, 
+     CIN
+FROM
+'$(vRootFileLocation)$(vQVDs)Product_All.qvd'
+(qvd);
+
+/********************************************
+ * Mapping for Account#
+ ********************************************/
+account_map:
+MAPPING LOAD  
+     ACCT_KEY_NUM,
+     SHIP_TO_CUSTOMER_NUM
+     
+FROM
+'$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+(qvd);
+
+/********************************************
+ * Mapping for DC#
+ ********************************************/
+dc_map:
+MAPPING LOAD  
+     ACCT_KEY_NUM,
+     SHIP_TO_LOCATION_NUM     
+FROM
+'$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+(qvd);
+///$tab Invoice Line
+
+Current_Pricing_Account_List:
+LOAD [Account #] as AccountSelector, 
+     [Account Name]
+FROM
+'$(vRootFileLocation)$(vQVDs)GCP_Account_List.qvd'(qvd);
+
+NoConcatenate
+
+user_categories_acct:
+load distinct
+     AccountSelector
+     ,ACCT_KEY_NUM
+from
+'$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+where Exists (AccountSelector)
+and [Report Name]='PurchasesReview'	;
+	;
+
+DROP Table Current_Pricing_Account_List	;
+
+
+
+
+NoConcatenate
+
+Invoice_Line:
+
+LOAD CNTRCT_GROUP_KEY_NUM, 
+     FLG_KEY_NUM, 
+     [DEA Blank #], 
+     ACCT_KEY_NUM, 
+     SBST_OVRD_REASON_KEY_NUM, 
+     PRICE_SGMNT_KEY_NUM, 
+     RPT_LINE_SHRT_REASON_KEY_NUM, 
+     RPT_SHRT_REASON_KEY_NUM, 
+     LINE_SHRT_REASON_KEY_NUM, 
+     OVRD_SHIP_QTY, 
+     CNTRCT_KEY_NUM, 
+     CARD_OVRD_RTRN_REASON_KEY_NUM, 
+     ORDER_DTE_KEY_NUM, 
+     ORIG_ORDER_QTY, 
+     CAC_KEY_NUM, 
+     CNTRCT_FIXED_SELL_DLR, 
+     ORDER_LINE_NUM, 
+     [Order #], 
+     ROW_UPDATE_STP, 
+     ROW_ADD_STP, 
+     [Qty Multiplier], 
+     [Order Qty], 
+     [Ship Qty Amt], 
+     [Unit Price DOD], 
+     [Unit Price], 
+     [Purchase Dollars DOD], 
+     [Purchase Dollars Amt], 
+     [NIFO Cost], 
+     [PO #], 
+     [Due Date], 
+     VENDOR_RFRNC_ID, 
+     CUSTOMER_DEPT_KEY_NUM, 
+     ORDER_ENTRY_MTHD_KEY_NUM, 
+     OVRD_TYPE_KEY_NUM, 
+     CNTRCT_TYPE_KEY_NUM, 
+     RTRN_REASON_KEY_NUM, 
+     SHRT_REASON_KEY_NUM, 
+     CORP_ACCT_KEY_NUM, 
+     TRNSCT_TYPE_KEY_NUM, 
+     PROG_KEY_NUM, 
+     [Invoice Line #], 
+     [Invoice #], 
+     DIST_CENTER_KEY_NUM, 
+     DTE_KEY_NUM, 
+     SMRY_DTE, 
+     PROD_KEY_NUM, 
+     SALES_RETURNS, 
+     Contract_Flag_Group, 
+     [Invoice Counter], 
+     [Customer Item Code], 
+     CIN, 
+     [DC #], 
+     [Account #], 
+     [Contract Flag], 
+     [Contract Name], 
+     [Contract #], 
+     CSN, 
+     PCA_KEY, 
+     AMU_KEY
+FROM
+'$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line.qvd' (qvd)
+
+Where Exists (ACCT_KEY_NUM);
+
+DROP Table user_categories_acct;
+//DROP Table Invoice_Line;
+
+///$tab Final
+
+
+Final:
+
+LOAD ApplyMap('dc_map',ACCT_KEY_NUM)&'-'&ApplyMap('account_map',ACCT_KEY_NUM)&'-'&ApplyMap('product_map',PROD_KEY_NUM) as [Pricing Key],
+	 CNTRCT_GROUP_KEY_NUM, 
+     FLG_KEY_NUM, 
+     [DEA Blank #], 
+     ACCT_KEY_NUM, 
+     SBST_OVRD_REASON_KEY_NUM, 
+     PRICE_SGMNT_KEY_NUM, 
+     RPT_LINE_SHRT_REASON_KEY_NUM, 
+     RPT_SHRT_REASON_KEY_NUM, 
+     LINE_SHRT_REASON_KEY_NUM, 
+     OVRD_SHIP_QTY, 
+     CNTRCT_KEY_NUM, 
+     CARD_OVRD_RTRN_REASON_KEY_NUM, 
+     ORDER_DTE_KEY_NUM, 
+     ORIG_ORDER_QTY, 
+     CAC_KEY_NUM, 
+     CNTRCT_FIXED_SELL_DLR, 
+     ORDER_LINE_NUM, 
+     [Order #], 
+     ROW_UPDATE_STP, 
+     ROW_ADD_STP, 
+     [Qty Multiplier], 
+     [Order Qty], 
+     [Ship Qty Amt], 
+     [Unit Price DOD], 
+     [Unit Price], 
+     [Purchase Dollars DOD], 
+     [Purchase Dollars Amt], 
+     [NIFO Cost], 
+     [PO #], 
+     [Due Date], 
+     VENDOR_RFRNC_ID, 
+     CUSTOMER_DEPT_KEY_NUM, 
+     ORDER_ENTRY_MTHD_KEY_NUM, 
+     OVRD_TYPE_KEY_NUM, 
+     CNTRCT_TYPE_KEY_NUM, 
+     RTRN_REASON_KEY_NUM, 
+     SHRT_REASON_KEY_NUM, 
+     CORP_ACCT_KEY_NUM, 
+     TRNSCT_TYPE_KEY_NUM, 
+     PROG_KEY_NUM, 
+     [Invoice Line #], 
+     [Invoice #], 
+     DIST_CENTER_KEY_NUM, 
+     DTE_KEY_NUM, 
+     SMRY_DTE, 
+     PROD_KEY_NUM, 
+     SALES_RETURNS, 
+     Contract_Flag_Group, 
+     [Invoice Counter], 
+     [Customer Item Code], 
+     CIN, 
+     [DC #], 
+     [Account #], 
+     [Contract Flag], 
+     [Contract Name], 
+     [Contract #], 
+     CSN, 
+     PCA_KEY, 
+     AMU_KEY
+
+Resident Invoice_Line;
+
+STORE
+ Final
+ INTO
+'$(vRootFileLocation)$(vQVDs)Invoice_Line_Pricing.qvd' (qvd)
+;
+
+DROP Table Invoice_Line;
+DROP Table Final;

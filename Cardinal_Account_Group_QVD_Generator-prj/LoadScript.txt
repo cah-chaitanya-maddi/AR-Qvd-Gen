@@ -1,0 +1,153 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for CARDINAL_ACCOUNT_GROUP information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Cardinal_Account_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+
+//ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+ODBC CONNECT TO PD_SDW_Stg;		 //VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+///$tab Cardinal_Account_Group
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Cardinal_Account_Group';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Cardinal_Account_Group:
+LOAD
+  ROW_UPDATE_USER_ID                                                                                            as [ROW_UPDATE_USER_ID]
+ ,upper(date(date#(ROW_UPDATE_STP,'YYYY-MM-DD hh:mm:ss.ffffff'),'M/D/YYYY hh:mm:ss tt'))                        as [ROW_UPDATE_STP]  
+ ,ROW_ADD_USER_ID                                                                                               as [ROW_ADD_USER_ID]
+ ,upper(date(date#(ROW_ADD_STP,'YYYY-MM-DD hh:mm:ss.ffffff'),'M/D/YYYY hh:mm:ss tt'))                           as [ROW_ADD_STP] 
+ ,CURR_VRSN_FLG                                                                                                 as [CURR_VRSN_FLG]
+ ,IF(VRSN_END_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(VRSN_END_DTE,'YYYY/MM/DD'),'MM/DD/YYYY'))     as [VRSN_END_DTE]
+ ,IF(VRSN_START_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(VRSN_START_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [VRSN_START_DTE]
+ ,FEE_BASIS_POINT_QTY                                                                                           as [FEE_BASIS_POINT_QTY]
+ ,GROUP_TYPE_CDE                                                                                                as [GROUP_TYPE_CDE]
+ ,SMG_NUM                                                                                                       as [SMG_NUM]
+ ,AFLTN_NUM                                                                                                     as [Affiliation #]
+ ,AR_ID                                                                                                         as [AR_ID]
+ ,AR_ACCT_FLG                                                                                                   as [AR_ACCT_FLG]
+ ,CHOICE_HQ_GROUP_FLG                                                                                           as [CHOICE_HQ_GROUP_FLG]
+ ,ADMIN_FEE_FLG                                                                                                 as [ADMIN_FEE_FLG]
+ ,ROOT_CARD_ACCT_GROUP_FLG                                                                                      as [ROOT_CARD_ACCT_GROUP_FLG]
+ ,ZIP                                                                                                           as [ZIP]
+ ,STATE                                                                                                         as [STATE]
+ ,Capitalize(CITY)                                                                                              as [CITY]
+ ,FAX_NUM                                                                                                       as [FAX_NUM]
+ ,PHONE_NUM                                                                                                     as [PHONE_NUM]
+ ,Capitalize(CNTRY)                                                                                             as [CNTRY]
+ ,Capitalize(ADDR2_TXT)                                                                                         as [ADDR2_TXT]
+ ,Capitalize(ADDR_TXT)                                                                                          as [ADDR_TXT]
+ ,Capitalize(PRIM_CNTCT_TXT)                                                                                    as [PRIM_CNTCT_TXT]
+ ,ADMIN_UPCHG_PCT                                                                                               as [ADMIN_UPCHG_PCT]
+ ,PARENT_CARD_ACCT_GROUP_NUM                                                                                    as [PARENT_CARD_ACCT_GROUP_NUM]
+ ,WHSE_FLG                                                                                                      as [WHSE_FLG]
+ ,NTNL_ACCT_FLG                                                                                                 as [NTNL_ACCT_FLG]
+ ,Capitalize(CARD_ACCT_GROUP_DESC)                                                                              as [CARD_ACCT_GROUP_DESC]
+ ,CARD_ACCT_GROUP_NUM                                                                                           as [CARD_ACCT_GROUP_NUM]
+//FROM
+// '$(vExtractFileLocation)CARDINAL_ACCOUNT_GROUP-Caret.txt'
+// (txt, codepage is 1252, embedded labels, delimiter is '^', no quotes, no eof);
+;
+
+
+
+SQL 
+
+SELECT 
+
+	"ADDR2_TXT",
+    "ADDR_TXT",
+    "ADMIN_FEE_FLG",
+    "ADMIN_UPCHG_PCT",
+    "AFLTN_NUM",
+    "AR_ACCT_FLG",
+    "AR_ID",
+    "CARD_ACCT_GROUP_DESC",
+    "CARD_ACCT_GROUP_NUM",
+    "CHOICE_HQ_GROUP_FLG",
+    CITY,
+    CNTRY,
+    "CURR_VRSN_FLG",
+    "FAX_NUM",
+    "FEE_BASIS_POINT_QTY",
+    "GROUP_TYPE_CDE",
+    "NTNL_ACCT_FLG",
+    "PARENT_CARD_ACCT_GROUP_NUM",
+    "PHONE_NUM",
+    "PRIM_CNTCT_TXT",
+    "ROOT_CARD_ACCT_GROUP_FLG",
+    "ROW_ADD_STP",
+    "ROW_ADD_USER_ID",
+    "ROW_UPDATE_STP",
+    "ROW_UPDATE_USER_ID",
+    "SMG_NUM",
+    STATE,
+    "VRSN_END_DTE",
+    "VRSN_START_DTE",
+    "WHSE_FLG",
+    ZIP
+FROM VIEWS."CARDINAL_ACCOUNT_GROUP";		 //VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+
+
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE
+  Cardinal_Account_Group
+INTO
+  '$(vRootFileLocation)$(vQVDs)Cardinal_Account_Group.qvd' (qvd)
+;
+
+
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP TABLE
+  Cardinal_Account_Group
+;
+

@@ -1,0 +1,80 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ECOM_PRODUCT_LIST information.
+ *   This is the table containing the CINs for each product group. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Ecom_Product_List.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 11-17-2014 Warren Lea
+ * Created the basic QVD-Generator for this table.
+ *
+ */
+///$tab Setup
+SET ThousandSep=',';
+SET DecimalSep='.';
+SET MoneyThousandSep=',';
+SET MoneyDecimalSep='.';
+SET MoneyFormat='$#,##0.00;($#,##0.00)';
+SET TimeFormat='h:mm:ss TT';
+SET DateFormat='M/D/YYYY';
+SET TimestampFormat='M/D/YYYY h:mm:ss[.fff] TT';
+SET MonthNames='Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec';
+SET DayNames='Mon;Tue;Wed;Thu;Fri;Sat;Sun';
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\meta-data.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+
+///$tab Ship_To_Limiter
+///$tab Product_List
+//Let vTableName = '';
+
+
+product_list:
+LOAD
+  PROD_LIST_ID
+ ,CORP_ITEM_NUM       as CIN
+ ,ROW_ADD_STP    
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+;
+SQL
+SELECT
+	PROD_LIST_ID	
+	,CORP_ITEM_NUM
+	,ROW_ADD_STP	
+	,ROW_ADD_USER_ID	
+	,ROW_UPDATE_STP	
+	,ROW_UPDATE_USER_ID
+FROM
+  VIEWS.ECOM_PRODUCT_LIST
+;
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE
+  product_list
+INTO
+  '$(vRootFileLocation)$(vQVDs)Ecom_Product_List.qvd' (qvd)
+;
+
+Drop Table product_list;

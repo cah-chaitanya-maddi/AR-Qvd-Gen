@@ -1,0 +1,978 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for INVOICE_LINE Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata, Time_Detail.qvd, Invoice_Line_*.qvd
+ *
+ * Outputs:
+ *   Invoice_Line.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ 
+ * 6/13/13 Joe Roberts
+ * Added logic to pull both new records and changed records from Teradata
+ * Modified routines to concatenate new records and left join updated
+ * Ran against Prod for the first time
+ */
+///$tab Setup
+/*********************************************************************************
+Setup the generator
+
+Changelog:
+- 9.12.2013 jeremy.fourman
+  Added setup and storing of Invoice_Line_Files_to_Delete on every run.
+*********************************************************************************/
+
+
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+
+
+/******************************************************
+The following table needs to be created and stored with
+every run.
+******************************************************/
+Invoice_Line_Files_to_Delete:
+load * inline [files_to_delete,yr_mon_to_delete
+];
+
+store Invoice_Line_Files_to_Delete into 
+	  	'$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_Files_to_Delete.qvd' (qvd);
+///$tab Apply_Maps_Joins
+/********************************************
+ * Mapping for Customer Item Code
+ ********************************************/
+cac_map:
+MAPPING
+LOAD distinct
+  CAC_KEY_NUM 
+ ,[Customer Item Code]
+FROM
+  '$(vRootFileLocation)$(vQVDs)Customer_Account_Code.qvd'
+(qvd);
+
+/********************************************
+ * Mapping for RFRNC_DTE
+ ********************************************/
+date_map:
+MAPPING
+LOAD distinct
+  DTE_KEY_NUM
+ ,RFRNC_DTE
+FROM
+  '$(vRootFileLocation)$(vQVDs)Time_Detail.qvd'
+(qvd);
+
+/********************************************
+ * Mapping for CIN
+ ********************************************/
+prod_map:
+MAPPING
+LOAD distinct
+  PROD_KEY_NUM
+ ,CIN
+FROM
+  '$(vRootFileLocation)$(vQVDs)Product_All.qvd'
+(qvd);
+
+/********************************************
+ * Load Commodity Code
+ ********************************************/
+Commodity_Code:
+LOAD distinct
+ SHIP_TO_LOCATION_NUM & '-' &  SHIP_TO_CUSTOMER_NUM & '-' & CORP_ITEM_NUM as COMM_KEY
+ ,num(START_DTE) as START_DTE
+ ,num(END_DTE) as END_DTE
+ ,[CSN] 
+FROM
+  '$(vRootFileLocation)$(vQVDs)Commodity_Detail.qvd'
+(qvd);
+///$tab ship_to_account_xpharm
+/*********************************************************************************
+Create tables cotaining ACCT_KEY_NUM to load into Invoice_Line. 
+
+
+Changelog
+6.13.2014 jeremy.fourman
+- Creation
+*********************************************************************************/
+ 
+trace "**************************** Loading ship_to_account qvd"; 
+
+// 7.15.2014 warren.lea
+// The Ship_To_Account.qvd now contains all the regular accounts with CVS
+// and Walgreens filtered out, plus the accounts added in XPharm (contract pharmacies-CVS)
+// that have been added each quarter. These added accounts are in XPharm_Added.qvd. 
+// 
+
+NoConcatenate 
+xpharm_added_tmp:
+load distinct
+	DC_NUM
+   	,ACCT_NUM
+   	,DC_NUM & '-' & ACCT_NUM as xpharm_added_key
+from
+	'$(vRootFileLocation)$(vQVDs)XPharm_Added.qvd'
+(qvd)	
+;
+
+
+ship_to_account:
+ LOAD 
+ 	ACCT_KEY_NUM
+ FROM
+	'$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+(qvd)
+Where Not Exists(xpharm_added_key, [DC #] & '-' & [Account #])
+;
+
+
+Drop Table xpharm_added_tmp;
+///$tab Invoice_Line
+/*********************************************************************************
+Update Invoice_Line_YYYYMM QVDs with new records.
+
+There are cases below where we are adding where exists to only look at Ship To Accounts that we loaded prior,
+we do not want to mix in contract pharmacy data within Invoice Lines in this generator.
+See Invoice_Line_Delta_XPharm_QVD_Generator for the delta processing for XPharm records.
+The data is brought together within Tier 2 Invoice Line. 
+
+Changelog:
+- 8.1.2013 jeremy.fourman
+Removed non-needed aliasing within Invoice Line sheet. Added trace statements in 
+place of block comments. Removed un-needed block comments. Removed drop table commodity_detail 
+from within loop, it is not needed until end of script and caused a job failure.
+- 8.23.2013 jeremy.fourman
+Fixed syntax errors with checks on variables not being dollar sign expanded.
+Removing fields we no longer need to load at this time.
+Added commenting.
+- 9.03.2013 warren.lea
+When determining if a previous month needs to be deleted, use the max date from
+the new delta records and not Today's date. If no inserted delta records were found,
+then don't try to drop old qvd's. 
+- 9.05.2013 warren.lea
+Store the list of Invoice_Line files to be deleted and their year-months to a QVD
+file to be used by Dashboard QVD Generator to maintain the first year aggregated QVD.
+- 9.12.2013 jeremy.fourman
+Moved setup and storing of Invoice_Line_Files_to_Delete to happen at document load every time on Setup tab.
+- 9.17.2013 jeremy.fourman
+Renamed v_NeededYear to v_NeededYearMonth
+- 9.20.2013 jeremy.fourman
+ Removed the field [Short Invoice Code] CORP_ACCT_KEY_NUM was aliased to this
+- 9.22.2013 jeremy.fourman
+ Added more trace statements.
+ Made sure to clean up min_max_file table within the loop allowing proper setting of min/max date values on each iteration.
+- 6.3.2014 jeremy.fourman
+Added drop table statement for ship_to_account_xpharm
+Added where not exists for left join from Ship To qvd to ignore contract pharmacies
+Added and not Exists(ACCT_KEY_NUM_XPHARM, ACCT_KEY_NUM) to initial Invoice Line statment to ignore contract pharmacies
+- 6.13.2014 jeremy.fourman
+Modified initial load into Invoice_Line to be a where exists ACCT_KEY_NUM
+Modified left join into left join('Invoice_Line_$(v_FileExtension)_Temp') from Ship_To_Account.qvd to be a where exists ACCT_KEY_NUM 
+Added distinct to left join into left join('Invoice_Line_$(v_FileExtension)_Temp') from Ship_To_Account.qvd
+- 7.15.2014 warren.lea
+Changed Where clause so that only the original accounts with Walgreens and CVS filtered out, are
+added to the regular Invoice_Line QVDs. 
+The Added CVS and Walgreens invoice data is stored in Invoice_Line_XPharm.qvd.
+*********************************************************************************/
+
+
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+let vTimeStamp = Now();
+let vStart = Now();
+set vTableName = 'Invoice_Line';
+
+/********************************************
+ * Loop Thru Invoice Files and get time stamp
+ ********************************************/
+for each _file in filelist('$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_2*.qvd');
+  ListFilesTable:
+  load 
+    subfield('$(_file)','\',substringcount('$(_file)','\')+1) as [File]
+  AutoGenerate
+      1
+ ;
+next _file;
+
+/*********************************************************************************
+* Get Latest Invoice_Line QVD file
+*********************************************************************************/
+max_file:
+load
+  maxstring([File]) as max_File
+resident
+  ListFilesTable;
+
+let v_max_File = Peek('max_File',0,'max_file');
+
+drop table max_file;
+
+/********************************************
+* Get List of ROW_ADD_STP Dates
+********************************************/
+temp:
+load
+  ROW_ADD_STP as Date
+from
+  '$(vInvoiceLineRootFolderLocation)$(vQVDs)$(v_max_File)' (qvd);
+
+/********************************************
+* Get Min/Max ROW_ADD_STP Date for the last QVD file
+********************************************/
+Max_Date:
+load
+  min(Date) as min_date,
+  max(Date) as max_date;
+load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+
+while
+  not IsNull(FieldValue('Date',Iterno()))
+;
+
+drop table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+let v_last_update_stp = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+drop table Max_Date;
+
+/********************************************
+GET TIME DETAIL TO GET DTE_KEY_NUM FOR THE 
+DATE RANGE OF 4 MONTHS AGO
+********************************************/
+//temp_date_range:
+//load  
+//  DTE_KEY_NUM
+//FROM
+//'$(vRootFileLocation)$(vQVDs)Time_Detail.qvd' (qvd)
+//where
+//  RFRNC_DTE = MonthStart(AddMonths(Today(), -3))
+//;
+/***********************************************************************
+this is the DTE_KEY_NUM for the beginning of the month 3 months
+ago from the beginning of the current month. I.E. if this is 
+June 10, 2013 this will be the DTE_KEY_NUM for March 1, 2013.
+We will use this to get a base bucket of data from that date forward
+***********************************************************************/
+//Let v_max_DTE_KEY_NUM = Peek('DTE_KEY_NUM',0,'temp_date_range');
+//Drop Table temp_date_range;
+
+
+/************************************************************************************************************************************
+ * Get Inserted records only
+ * Customers e.g. CVS and Walgreens will not be loaded because of the Where Exists(ACCT_KEY_NUM) from Ship_To 
+ * The CVS and Walgreens accounts have been removed from Ship_to_Account.  
+ ************************************************************************************************************************************/
+trace "**************************** Get Invoice_Line records added since $(v_last_update_stp)";
+
+Invoice_Line:
+
+load
+  DTE_KEY_NUM
+ ,DIST_CENTER_KEY_NUM
+ ,DEA_BLANK_ID as [DEA Blank #]
+ ,INVOICE_NUM as [Invoice #]
+ ,INVOICE_LINE_NUM as [Invoice Line #]
+ ,ACCT_KEY_NUM
+ ,PROD_KEY_NUM
+ ,CNTRCT_GROUP_KEY_NUM
+ ,PROG_KEY_NUM
+ ,TRNSCT_TYPE_KEY_NUM
+ ,CORP_ACCT_KEY_NUM
+ ,FLG_KEY_NUM
+ ,SHRT_REASON_KEY_NUM
+ ,RTRN_REASON_KEY_NUM
+ ,CNTRCT_TYPE_KEY_NUM
+ ,OVRD_TYPE_KEY_NUM
+ ,ORDER_ENTRY_MTHD_KEY_NUM
+ ,CUSTOMER_DEPT_KEY_NUM
+ ,capitalize(VENDOR_RFRNC_ID) as [VENDOR_RFRNC_ID]
+ ,AR_DUE_DTE as [Due Date]
+ ,PO_ID as [PO #]
+ ,EXT_NIFO_DLR as [NIFO Cost]
+ ,EXT_SELL_DLR as [Purchase Dollars Amt]
+ ,EXT_INVOICE_DLR as [Purchase Dollars DOD]
+ ,UNIT_SELL_DLR as [Unit Price]
+ ,UNIT_INVOICE_DLR as [Unit Price DOD]
+ ,SHIP_QTY * QTY_MULT_NUM as [Ship Qty Amt]
+ ,ORDER_QTY * QTY_MULT_NUM as [Order Qty]
+ ,QTY_MULT_NUM as [Qty Multiplier]
+ ,ROW_ADD_STP
+ ,ROW_UPDATE_STP
+ ,ORDER_NUM
+ ,ORDER_LINE_NUM
+ ,CNTRCT_FIXED_SELL_DLR
+ ,CAC_KEY_NUM
+ ,ORIG_ORDER_QTY
+ ,ORDER_DTE_KEY_NUM
+ ,CARD_OVRD_RTRN_REASON_KEY_NUM
+ ,CREDIT_REBILL_REASON_KEY_NUM
+ ,CNTRCT_KEY_NUM
+ ,OVRD_SHIP_QTY
+ ,LINE_SHRT_REASON_KEY_NUM
+ ,RPT_SHRT_REASON_KEY_NUM
+ ,RPT_LINE_SHRT_REASON_KEY_NUM
+ ,OTS_TYPE_KEY_NUM
+ ,PRICE_SGMNT_KEY_NUM
+ ,SBST_OVRD_REASON_KEY_NUM
+ ,CREDIT_DETAIL_CMNT_TXT    
+ ,CREDIT_MEMO_NUM 
+ ,ORIG_PROD_KEY_NUM
+ ,ORIG_EXT_SELL_DLR as [Sub Purchase Dollars Amt]
+ ,ORIG_UNIT_SELL_DLR as [Sub Unit Price]
+ ,COGS_TYPE_KEY_NUM
+ ,if(TRNSCT_TYPE_KEY_NUM = 5 or TRNSCT_TYPE_KEY_NUM = 6, dual('Returns',1), dual('Sales',0)) as [SALES_RETURNS]
+ ,SRC_SYSTEM_NAM
+where
+ exists(ACCT_KEY_NUM)
+;
+SQL
+SELECT
+  DTE_KEY_NUM
+ ,DEA_BLANK_ID
+ ,DIST_CENTER_KEY_NUM
+ ,INVOICE_NUM
+ ,INVOICE_LINE_NUM
+ ,ACCT_KEY_NUM
+ ,PROD_KEY_NUM
+ ,CNTRCT_GROUP_KEY_NUM
+ ,PROG_KEY_NUM
+ ,TRNSCT_TYPE_KEY_NUM
+ ,CORP_ACCT_KEY_NUM
+ ,FLG_KEY_NUM
+ ,SHRT_REASON_KEY_NUM
+ ,RTRN_REASON_KEY_NUM
+ ,CNTRCT_TYPE_KEY_NUM
+ ,OVRD_TYPE_KEY_NUM
+ ,ORDER_ENTRY_MTHD_KEY_NUM
+ ,CUSTOMER_DEPT_KEY_NUM
+ ,VENDOR_RFRNC_ID
+ ,AR_DUE_DTE
+ ,PO_ID
+ ,EXT_NIFO_DLR
+ ,EXT_SELL_DLR
+ ,EXT_INVOICE_DLR
+ ,UNIT_SELL_DLR
+ ,UNIT_INVOICE_DLR
+ ,SHIP_QTY
+ ,ORDER_QTY
+ ,QTY_MULT_NUM
+ ,ROW_ADD_STP
+ ,ROW_UPDATE_STP
+ ,ORDER_NUM
+ ,ORDER_LINE_NUM
+ ,CNTRCT_FIXED_SELL_DLR
+ ,CAC_KEY_NUM
+ ,ORIG_ORDER_QTY
+ ,ORDER_DTE_KEY_NUM
+ ,CARD_OVRD_RTRN_REASON_KEY_NUM
+ ,CREDIT_REBILL_REASON_KEY_NUM
+ ,CNTRCT_KEY_NUM
+ ,OVRD_SHIP_QTY
+ ,LINE_SHRT_REASON_KEY_NUM
+ ,RPT_SHRT_REASON_KEY_NUM
+ ,RPT_LINE_SHRT_REASON_KEY_NUM
+ ,OTS_TYPE_KEY_NUM
+ ,PRICE_SGMNT_KEY_NUM
+ ,SBST_OVRD_REASON_KEY_NUM
+ ,CREDIT_DETAIL_CMNT_TXT    
+ ,CREDIT_MEMO_NUM 
+ ,ORIG_PROD_KEY_NUM     
+ ,ORIG_EXT_SELL_DLR 
+ ,ORIG_UNIT_SELL_DLR
+ ,COGS_TYPE_KEY_NUM
+ ,SRC_SYSTEM_NAM
+FROM
+  VIEWS.INVOICE_LINE
+WHERE  
+  ROW_UPDATE_STP >= cast('$(v_last_update_stp)' as timestamp)
+ // and ROW_UPDATE_STP  < ADD_MONTHS(current_date - EXTRACT(DAY FROM current_date), -14) 
+;
+
+
+/********************************************************************************
+* Get Dates from records added since the previous delta load
+********************************************************************************/
+temp:
+load
+ DTE_KEY_NUM as Date
+resident
+  Invoice_Line
+;
+
+/********************************************************************************
+* Get Max and Min date from records added since the previous delta load
+********************************************************************************/
+Max_Date:
+load
+  max(Date) as max_date
+ ,min(Date) as min_date;
+load
+  FieldValue('Date',IterNo()) as Date
+autogenerate (1)
+while
+  not IsNull(FieldValue('Date',Iterno()))
+;
+drop table temp;
+
+let vLastExecTime = Peek('max_date',0,'Max_Date');
+let vLastBeginTime = Peek('min_date',0,'Max_Date');
+
+
+
+drop table Max_Date;
+
+// Capture num of rows to insert; to be used later
+Let v_inserted_rows = NoOfRows('Invoice_Line');
+
+
+/**************************************************************************
+Are there Invoice Lines to process
+**************************************************************************/
+if(NoOfRows('Invoice_Line') > 0) then
+	
+	/************************************************************
+	* Only used to get the date once found field can be dropped
+	************************************************************/
+	left join(Invoice_Line)
+	load
+		DTE_KEY_NUM
+	  	,SMRY_NUM
+	  	,RFRNC_DTE
+	  	,Year(RFRNC_DTE) * 12 + MONTH(RFRNC_DTE) as YearMonthID
+	from
+	   	'$(vRootFileLocation)$(vQVDs)Time_Detail.qvd' (qvd)
+	where
+	   (DTE_KEY_NUM >= $(vLastBeginTime))
+	   and (DTE_KEY_NUM <= $(vLastExecTime))    
+	;
+	
+	/********************************************
+	* Used for the FOR/next Loop for Information
+	********************************************/
+	calendar_table:
+	load
+	   YearMonthID      as YearMonth
+	  ,SMRY_NUM         as Invoice_Line_File_Extension
+	  ,min(DTE_KEY_NUM) as MinDate
+	  ,max(DTE_KEY_NUM) as MaxDate
+	resident
+	   Invoice_Line
+	group by
+	   YearMonthID
+	  ,SMRY_NUM
+	;	 
+
+	min_max_month:
+	load
+	   min(YearMonth) as min_YearMonth
+	  ,max(YearMonth) as max_YearMonth
+	  ,max(Invoice_Line_File_Extension) as max_smry_num
+	resident
+	   calendar_table
+	;
+	
+	/********************************************
+	* Don't go back further than this year
+	********************************************/
+	let v_NeededYearMonth = ((Year(Today()-1)) * 12 + Month(Today()-1)) - 36;
+	trace "********** Needed Year Month is $(v_NeededYearMonth)";
+	    
+	/********************************************
+	* Set Varaibles For Looping
+	********************************************/
+	let v_MinYearMonth = Peek('min_YearMonth',0,'min_max_month');
+	let v_MaxYearMonth = Peek('max_YearMonth',0,'min_max_month');  
+	let v_maxSmryNum = Peek('max_smry_num', 0, 'min_max_month');
+	trace "********** Min Year Month is $(v_MinYearMonth) and Max Year Month is $(v_MaxYearMonth) and Max Smry Num is $(v_maxSmryNum)";
+	
+	/********************************************
+	* Check to see if need to reset v_MinYearMonth
+	********************************************/
+	if($(v_MinYearMonth) < $(v_NeededYearMonth)) then
+	   let v_MinYearMonth = $(v_NeededYearMonth);
+	endif;
+	
+	drop table min_max_month;   
+	   
+	// Convert the max SMRY_NUM into a date (using day 1)
+	let v_maxSmryNumDate = Date#(right(v_maxSmryNum,2) & '/01/' & left(v_maxSmryNum,4),'M/D/YY');
+	Trace max_YearMonth= $(v_maxSmryNum);
+
+  /************************************************************************************************************************************
+  * For each month in the range
+  ************************************************************************************************************************************/
+  for counter = $(v_MinYearMonth) to $(v_MaxYearMonth)
+  
+  trace "********** Counter is $(counter)";  
+  
+    min_max_file:
+    noconcatenate
+    load
+      Invoice_Line_File_Extension as File_Extension
+     ,MinDate as Mindte
+     ,MaxDate as maxdte
+    resident
+      calendar_table
+    where
+      YearMonth = $(counter)
+    ;
+
+    let v_FileExtension = Peek('File_Extension',0,'min_max_file');
+    let v_Min_DTE_KEY_NUM = Peek('Mindte',0,'min_max_file');
+    let v_Max_DTE_KEY_NUM = Peek('maxdte',0,'min_max_file');
+    
+    trace "********** Min DTE_KEY_NUM is $(v_Min_DTE_KEY_NUM) and Max DTE_KEY_NUM is $(v_Max_DTE_KEY_NUM)";
+    
+    if len('$(v_FileExtension)') <> 0 then
+     
+    let vTimeStamp = Now();
+    let vStart = Now();
+    set vTableName = 'Invoice_Line_$(v_FileExtension)'; 
+    
+    //resident load new records 
+    'Invoice_Line_$(v_FileExtension)_Temp':
+    load
+	  DTE_KEY_NUM & '-' & ACCT_KEY_NUM & '-' & PROD_KEY_NUM & '-' & [Invoice #] & '-' & [Invoice Line #] as PRIMARY_KEY
+      ,SBST_OVRD_REASON_KEY_NUM
+      ,[DEA Blank #]
+      ,PRICE_SGMNT_KEY_NUM
+      ,RPT_LINE_SHRT_REASON_KEY_NUM
+      ,RPT_SHRT_REASON_KEY_NUM
+      ,OTS_TYPE_KEY_NUM
+      ,LINE_SHRT_REASON_KEY_NUM
+      ,OVRD_SHIP_QTY
+      ,CNTRCT_GROUP_KEY_NUM   
+      ,CNTRCT_KEY_NUM
+      ,CARD_OVRD_RTRN_REASON_KEY_NUM
+      ,CREDIT_REBILL_REASON_KEY_NUM
+      ,ORDER_DTE_KEY_NUM
+      ,ORIG_ORDER_QTY
+      ,CAC_KEY_NUM
+      ,CNTRCT_FIXED_SELL_DLR
+      ,ORDER_LINE_NUM  
+      ,ORDER_NUM   
+      ,ROW_UPDATE_STP 
+      ,ROW_ADD_STP
+      ,[Qty Multiplier]   
+      ,[Order Qty]      
+      ,[Ship Qty Amt]      
+      ,[Unit Price DOD]          
+      ,[Unit Price]              
+      ,[Purchase Dollars DOD]
+      ,[Purchase Dollars Amt]
+      ,[Sub Purchase Dollars Amt]
+      ,[Sub Unit Price]
+      ,[NIFO Cost]
+      ,[PO #]
+      ,[Due Date]
+      ,VENDOR_RFRNC_ID
+      ,PROD_KEY_NUM   
+      ,CUSTOMER_DEPT_KEY_NUM
+      ,ORDER_ENTRY_MTHD_KEY_NUM
+      ,OVRD_TYPE_KEY_NUM
+      ,CNTRCT_TYPE_KEY_NUM
+      ,RTRN_REASON_KEY_NUM
+      ,SHRT_REASON_KEY_NUM
+      ,FLG_KEY_NUM
+      ,CORP_ACCT_KEY_NUM
+      ,TRNSCT_TYPE_KEY_NUM
+      ,PROG_KEY_NUM
+      ,ACCT_KEY_NUM
+      ,[Invoice Line #]
+      ,[Invoice #]
+      ,DIST_CENTER_KEY_NUM
+      ,DTE_KEY_NUM
+      ,SALES_RETURNS
+      ,CREDIT_DETAIL_CMNT_TXT    
+	  ,CREDIT_MEMO_NUM 
+	  ,ORIG_PROD_KEY_NUM
+	  ,COGS_TYPE_KEY_NUM
+      ,1 as [Contract_Flag_Group] 
+      ,if([Invoice Line #] = 1, 1, 0) as [Invoice Counter]
+      ,applymap('cac_map',CAC_KEY_NUM) as [Customer Item Code]
+      ,num(applymap('date_map',DTE_KEY_NUM)) as [RFRNC_DTE] 
+      ,applymap('prod_map',PROD_KEY_NUM) as [CIN]
+     resident
+        Invoice_Line
+     where
+       [DTE_KEY_NUM] >= $(v_Min_DTE_KEY_NUM)
+       and [DTE_KEY_NUM] <= $(v_Max_DTE_KEY_NUM)
+      ;
+
+     trace "****************************  Join in Ship To Account Information";
+     
+	 left join('Invoice_Line_$(v_FileExtension)_Temp')
+     load distinct
+        ACCT_KEY_NUM
+       ,[DC #]
+       ,[Account #]
+      from
+        '$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+      (qvd)
+	  ;
+  
+      trace "**************************** Join in Flag Information";
+      
+	  left join('Invoice_Line_$(v_FileExtension)_Temp')
+      load
+        FLG_KEY_NUM
+       ,if([Contract Flag]='Y','On Contract','Off Contract') as [Contract Flag]
+      from
+        '$(vRootFileLocation)$(vQVDs)Flag.qvd'
+      (qvd)
+	  ;
+
+      trace "**************************** Join in Contract Group Information ON CNTRCT_GROUP_KEY_NUM";
+      left join('Invoice_Line_$(v_FileExtension)_Temp')
+      load 
+         CNTRCT_GROUP_KEY_NUM    /*CNTRCT_GROUP_KEY_NUM and CNTRCT_KEY_NUM*/
+        ,CNTRCT_KEY_NUM
+       ,[Contract Name]
+       ,[Contract #]
+      from
+        //'$(vRootFileLocation)$(vQVDs)CONTRACT_GROUP.qvd' (qvd)
+        '$(vRootFileLocation)$(vQVDs)contracts.qvd' (qvd)       /*Replace with CONTRACT Table*/
+      where
+        exists(CNTRCT_GROUP_KEY_NUM)
+       and exists(CNTRCT_KEY_NUM)
+      ;
+      
+      trace "**************************** Create Invoice Line";
+      
+	  'Invoice_Line_$(v_FileExtension)':
+      noconcatenate
+      load
+        [DC #] & '-' & [Account #] & '-' & CIN as COMM_KEY
+       ,*
+      resident
+        'Invoice_Line_$(v_FileExtension)_Temp'
+      ;
+      
+      trace "**************************** Removing Invoice Line Temp";	  
+      drop table 'Invoice_Line_$(v_FileExtension)_Temp';
+     
+      
+	  trace "**************************** Interval Match Dates";            
+	  
+      left join ('Invoice_Line_$(v_FileExtension)')
+      IntervalMatch (RFRNC_DTE,COMM_KEY)
+      load
+        START_DTE,
+        END_DTE,
+        COMM_KEY
+      resident
+        Commodity_Code;
+
+      trace "**************************** Get Records with Match and Left Join CSN";       
+      
+	  IL_MATCH:
+      noconcatenate
+      load
+        *
+      resident
+        'Invoice_Line_$(v_FileExtension)'
+      where
+        isnull([START_DTE]) <> -1;   
+
+      left join(IL_MATCH)
+      load 
+        COMM_KEY
+       ,START_DTE
+       ,END_DTE
+       ,[CSN]
+      resident
+        Commodity_Code;
+
+      trace "**************************** Create NULL CSN for those that did not match";
+       
+      IL_NO_MATCH:
+      noconcatenate
+      load
+        *,
+        null() as [CSN]
+      resident
+        'Invoice_Line_$(v_FileExtension)'
+      where
+        isnull([START_DTE]) = -1;
+
+      trace "**************************** Cleaning up temp Invoice Line";
+      drop table 'Invoice_Line_$(v_FileExtension)';
+
+      /********************************************
+       * Create Invoice Line by Matching and Not Matching Tables
+       ********************************************/  
+      'Invoice_Line_$(v_FileExtension)':
+      noconcatenate
+      load
+        *
+      resident
+        IL_MATCH;
+  
+      concatenate('Invoice_Line_$(v_FileExtension)')
+      load
+        *
+      resident
+        IL_NO_MATCH;
+
+      trace "**************************** Drop Matching and Non Matching Tables";
+      drop table IL_NO_MATCH, IL_MATCH;
+
+      trace "**************************** Drop Fields that are not needed";
+      drop field RFRNC_DTE, COMM_KEY, START_DTE, END_DTE from Invoice_Line_$(v_FileExtension);         
+     
+      /**************************************************
+       * If there is a qvd then concatenate the records
+       **************************************************/  
+      if (not isNull(qvdCreateTime('$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_$(v_FileExtension).qvd'))) then 
+        
+        concatenate ('Invoice_Line_$(v_FileExtension)')
+        load
+          CNTRCT_GROUP_KEY_NUM
+         ,[DEA Blank #] 
+         ,FLG_KEY_NUM
+         ,ACCT_KEY_NUM        
+         ,SBST_OVRD_REASON_KEY_NUM
+         ,PRICE_SGMNT_KEY_NUM 
+         ,RPT_LINE_SHRT_REASON_KEY_NUM
+         ,RPT_SHRT_REASON_KEY_NUM
+         ,OTS_TYPE_KEY_NUM
+         ,LINE_SHRT_REASON_KEY_NUM
+         ,OVRD_SHIP_QTY
+         ,CNTRCT_KEY_NUM        
+         ,CARD_OVRD_RTRN_REASON_KEY_NUM
+         ,CREDIT_REBILL_REASON_KEY_NUM
+         ,ORDER_DTE_KEY_NUM
+         ,ORIG_ORDER_QTY
+         ,CAC_KEY_NUM
+         ,CNTRCT_FIXED_SELL_DLR
+         ,ORDER_LINE_NUM
+         ,ORDER_NUM
+         ,ROW_UPDATE_STP
+         ,ROW_ADD_STP
+         ,[Qty Multiplier]
+         ,[Order Qty]
+         ,[Ship Qty Amt]
+         ,[Unit Price DOD]
+         ,[Unit Price]
+         ,[Purchase Dollars DOD]
+         ,[Purchase Dollars Amt]
+         ,[Sub Purchase Dollars Amt]
+         ,[Sub Unit Price]
+         ,[NIFO Cost]
+         ,[PO #]
+         ,[Due Date]
+         ,VENDOR_RFRNC_ID
+         ,CUSTOMER_DEPT_KEY_NUM
+         ,ORDER_ENTRY_MTHD_KEY_NUM
+         ,OVRD_TYPE_KEY_NUM
+         ,CNTRCT_TYPE_KEY_NUM
+         ,RTRN_REASON_KEY_NUM
+         ,SHRT_REASON_KEY_NUM
+         ,TRNSCT_TYPE_KEY_NUM
+         ,PROG_KEY_NUM
+         ,[Invoice Line #]
+         ,[Invoice #]
+         ,DIST_CENTER_KEY_NUM
+         ,DTE_KEY_NUM
+         ,PROD_KEY_NUM
+         ,SALES_RETURNS
+         ,Contract_Flag_Group
+         ,[Invoice Counter]
+         ,[Customer Item Code]
+         ,CIN
+         ,[DC #]
+         ,[Account #]
+         ,[Contract Flag]
+         ,[Contract Name]
+         ,[Contract #]
+         ,CSN
+         ,CORP_ACCT_KEY_NUM
+         ,ORIG_PROD_KEY_NUM
+         ,COGS_TYPE_KEY_NUM
+       from
+          '$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_$(v_FileExtension).qvd' (qvd)
+		where
+		  not exists([PRIMARY_KEY], DTE_KEY_NUM & '-' & ACCT_KEY_NUM & '-' & PROD_KEY_NUM & '-' & [Invoice #] & '-' & [Invoice Line #])
+		  ;
+          
+      endif;    
+ 
+      drop field PRIMARY_KEY;
+ 
+     trace "**************************** Storing Invoice Line QVD";        
+      store
+        'Invoice_Line_$(v_FileExtension)'
+      into
+        '$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_$(v_FileExtension).qvd' (qvd)
+      ;
+	  
+      drop table 'Invoice_Line_$(v_FileExtension)';
+      
+    endif; //len('$(v_FileExtension)') <> 0
+	
+  /********************************************** End of for each month in the range */
+  
+//  	if noofrows('min_max_file') > 0 and not isnull(TableNumber('min_max_file')) > 0 then
+//  		drop table min_max_file;
+//	endif;
+	drop table min_max_file;
+  next   
+ 
+endif;  //NoOfRows('Invoice_Line') <> 0
+
+
+trace "**************************** dropping no longer needed tables";
+if noofrows('Invoice_Line') > 0 and not isnull(TableNumber('Invoice_Line')) > 0 then
+  drop table Invoice_Line;
+endif;
+
+if noofrows('ListFileTable') > 0 and not isnull(TableNumber('ListFileTable')) > 0 then
+  drop table ListFileTable;
+endif;
+
+if noofrows('ListFilesTable') > 0 and not isnull(TableNumber('ListFilesTable')) > 0 then
+  drop table ListFilesTable;
+endif;
+
+if noofrows('Commodity_Code') > 0 and not isnull(TableNumber('Commodity_Code')) > 0 then
+  drop table Commodity_Code;
+endif;
+
+
+if noofrows('calendar_table') and not isnull(TableNumber('calendar_table')) > 0 then
+  drop table calendar_table;
+endif;
+
+if noofrows('Invoice_Line_$(v_FileExtension)') > 0 and not isnull(TableNumber('Invoice_Line_$(v_FileExtension)')) > 0 then
+  drop table 'Invoice_Line_$(v_FileExtension)';
+endif;
+     
+if noofrows('ship_to_account_xpharm') > 0 and not isnull(TableNumber('ship_to_account_xpharm')) > 0 then
+  drop table ship_to_account_xpharm;
+endif;  
+
+if noofrows('ship_to_account') > 0 and not isnull(TableNumber('ship_to_account')) > 0 then
+  drop table ship_to_account;
+endif;
+
+/****************************************************************************************
+ * Loop Thru Invoice Files and get time stamp
+ * Delete physical files that are more than 36 months older than the current postings.
+ ****************************************************************************************/
+// If new inserted records were found, then check if a new month has been entered.
+trace Number of Invoice Lines rows= $(v_inserted_rows) max_YearMonth= $(v_maxSmryNumDate);
+
+	  	
+if($(v_inserted_rows) > 0) then
+	
+	for each _file in filelist('$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_2*.qvd');
+	  ListFileTable:
+	  load 
+	    subfield('$(_file)','\',substringcount('$(_file)','\')+1) as [File]
+	   ,floor(num(date(filetime('$(_file)'),'M/D/YYYY'))) as [FileTime]
+	   ,Replace(Replace(subfield('$(_file)','\',substringcount('$(_file)','\')+1),'Invoice_Line_',''),'.qvd','') as YYYYMM
+	  AutoGenerate
+	      1
+	  ;
+	next _file;
+	
+	// v_maxSmryNumDate is the latest inserted record SMRY_NUM value converted into a date.
+	let v_YYYYMM_Begin = Year(addmonths(v_maxSmryNumDate,-36)) * 100 + month(addmonths(v_maxSmryNumDate,-36));
+	//let v_YYYYMM_Begin = Year(addmonths(Today(),-36)) * 100 + month(addmonths(Today(),-36));
+	
+	if(NoOfRows('ListFileTable') > 0) then
+	  // Identify Invoice_Line QVDs that are older than 36 months from the latest inserted record
+	  FilesToDelete:
+	  noconcatenate
+	  load
+	    concat(chr(39) & File & chr(39),',') as files_to_delete  
+	  resident
+	    ListFileTable
+	  where
+	    YYYYMM < $(v_YYYYMM_Begin)
+	  ;
+	
+	  let vCurrField = 'files_to_delete';
+	  let v_FilesToDelete = FieldValue('$(vCurrField)',1);
+	  //let v_cnt_files_to_delete = NoOfRows('FilesToDelete');
+	  files_to_delete:
+	  load
+	    count(files_to_delete) as num_records
+	  resident
+	    FilesToDelete;
+	  		
+	  // Identify Invoice_Line QVDs that are older than 36 months from the latest 
+	  //   inserted record.
+	  
+	  concatenate (Invoice_Line_Files_to_Delete)
+	  load
+	    File as files_to_delete  
+	    ,YYYYMM as yr_mon_to_delete
+	  resident
+	    ListFileTable
+	  where
+	    YYYYMM < $(v_YYYYMM_Begin)
+	  ;
+	  		
+	  // Store off the FilesToDelete names and year-months
+	  // This QVD will be used by the Dashboard QVD Generator to know when to 
+	  // aggregate the first year of invoice_line data. 
+	  store Invoice_Line_Files_to_Delete into 
+	  	'$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_Files_to_Delete.qvd' (qvd);
+	  
+	  
+	  if noofrows('files_to_delete') > 0 and not isnull(TableNumber('files_to_delete')) > 0 then
+	  	drop table files_to_delete;
+	  	drop table FilesToDelete;
+	  	
+	    for each File in $(v_FilesToDelete)
+	      execute cmd.exe /c del "$(vInvoiceLineRootFolderLocation)QVDs\$(File)" /q;
+	    next
+	    
+	  endif;  
+	  
+	endif;
+
+endif;
+
+drop table ListFileTable;
+drop table Invoice_Line_Files_to_Delete;

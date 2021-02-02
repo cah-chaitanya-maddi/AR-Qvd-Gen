@@ -1,0 +1,125 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for CONTRACT_GROUP information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata/Extract
+ *
+ * Outputs:
+ *   Contract_Group_D1.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+//ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+ODBC CONNECT TO PD_SDW_Stg;		//VIEWS Changes by Sumit 11/06/2020 ARR 262-264
+///$tab Ship_To_Limiter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+              //*****************************************************************
+              trace "************************** DEV LOAD: Active_Dds_Contracts  table";
+              //*****************************************************************
+              Ship_To_Limiter:
+              load Distinct
+                     //ACCT_KEY_NUM as ACCT_KEY_NUM_FILTER 
+                     AccountSelector as AccountSelector_Limiter
+              from
+                     '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+                     (qvd)
+              ;
+      
+              Inner Join (Ship_To_Limiter)
+              load distinct
+                  CNTRCT_GROUP_NUM as CNTRCT_GROUP_NUM_Limiter
+              from
+                     '$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd'
+              (qvd)
+              // Only load acct-contract records for accounts that have been loaded
+              where exists(AccountSelector_Limiter, SHIP_TO_LOCATION_NUM & '-' & SHIP_TO_CUSTOMER_NUM)
+              ;
+
+endif; 
+///$tab Contract_Group_D1
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Contract_Group_D1';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+Contract_Group_D1:
+LOAD
+  CNTRCT_GROUP_NUM                                                                                  as [Contract #]
+ ,CNTRCT_GROUP_NAM                                                                                  as [CNTRCT_GROUP_NAM]
+ ,INDVDL_CNTRCT_GROUP_FLG                                                                           as [INDVDL_CNTRCT_GROUP_FLG]
+ ,CNTRCT_GROUP_AFLTN_NUM                                                                            as [CNTRCT_GROUP_AFLTN_NUM]
+ ,CNTRCT_GROUP_STAT_CDE                                                                             as [CNTRCT_GROUP_STAT_CDE]
+ ,ROW_ADD_STP                                                                                       as [ROW_ADD_STP] 
+ ,ROW_ADD_USER_ID                                                                                   as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                                                                                    as [ROW_UPDATE_STP] 
+ ,ROW_UPDATE_USER_ID                                                                                as [ROW_UPDATE_USER_ID]
+ ,CNTRCT_GROUP_ABBR_NAM                                                                             as [CNTRCT_GROUP_ABBR_NAM]
+ ,If(Match(CNTRCT_GROUP_AFLTN_NUM,'779','998'), 'Source','Non-Source')                              as [Source Contract] 
+;
+SQL
+SELECT
+  CNTRCT_GROUP_NUM
+ ,CNTRCT_GROUP_NAM
+ ,INDVDL_CNTRCT_GROUP_FLG
+ ,CNTRCT_GROUP_AFLTN_NUM
+ ,CNTRCT_GROUP_STAT_CDE
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,CNTRCT_GROUP_ABBR_NAM
+FROM
+  VIEWS.CONTRACT_GROUP_D1
+;////VIEWS Changes by Sumit 11/06/2020 ARR 262-264
+
+/********************************************
+ * Store QVD
+ ********************************************/
+
+store Contract_Group_D1 into '$(vRootFileLocation)$(vQVDs)\Contract_Group_D1.qvd';
+
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP Table Contract_Group_D1;
+

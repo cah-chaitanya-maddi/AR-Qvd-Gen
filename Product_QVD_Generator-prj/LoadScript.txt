@@ -1,0 +1,542 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for PRODUCT information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Product.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+///$tab Product
+/*********************************************************************************
+Load in the Product extract file that is delimited with a caret. Query Teradata 
+for records that have a caret in one of the read fields. 
+
+Changelog:
+- 10.24.2013 warren.lea
+Removed fields that do not need to be loaded at this time.
+Labeled GCN as "GCN-hist"
+*********************************************************************************/
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Product';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Product:
+LOAD
+//  DEA_SUB_BASE_NUM                                  as [DEA Sub Base Num-hist]
+// ,Capitalize(MKT_DESC)                              as [Market-hist]
+// ,IF(PROD_DSCONT_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(PROD_DSCONT_DTE,'YYYY/MM/DD'),'MM/DD/YYYY'))   as [Product Discontinue Date-hist]
+// ,CGBK_PARENT_SUPPLIER_NUM                          as [CGBK Parent Supplier Num-hist]
+// ,EDI_CGBK_FLG                                      as [EDI CGBK-histEDI CGBK-hist]
+// ,Capitalize(PROD_AGR_DESC)                         as [PROD_AGR_DESC]
+// ,PROD_AGR_CDE                                      as [PROD_AGR_CDE]
+// ,Capitalize(SBST_DESC)                             as [Substitution-hist]
+// ,SBST_ID                                           as [Substitution ID-hist]
+// ,Capitalize(INVTRY_CLASS_DESC)                     as [Inventory Class-hist]
+// ,INVTRY_CLASS_ID                                   as [Inventory Class ID-hist]
+// ,Capitalize(INVTRY_TYPE_DESC)                      as [Inventory Type-hist]
+// ,INVTRY_TYPE_ID                                    as [Inventory Type ID-hist]
+// ,CH_ALTRNT_HAM_DEPT_FLG                            as [CH_ALTRNT_HAM_DEPT_FLG]
+// ,Capitalize(CH_ALTRNT_HAM_DEPT_DESC)               as [CH_ALTRNT_HAM_DEPT_DESC]
+// ,Capitalize(CH_HHC_SUB_CTGRY_DESC)                 as [CH HHC Subcategory-hist]
+// ,Capitalize(CH_SUB_CTGRY_DESC)                     as [CH Subcategory-hist]
+// ,Capitalize(CH_CTGRY_MNGR_ASSIST_NAM)              as [CH Category Mgr Assistant Name-hist]
+// ,Capitalize(CH_NON_PRIVATE_LABEL_MNGR_NAM)         as [CH_NON_PRIVATE_LABEL_MNGR_NAM]
+// ,Capitalize(CH_CTGRY_MNGR_NAM)                     as [CH_CTGRY_MNGR_NAM]
+// ,CH_ALTRNT_HAM_DEPT_NUM                            as [CH_ALTRNT_HAM_DEPT_NUM]
+// ,Capitalize(DEA_SPECIAL_ATTN_DESC)                 as [DEA Special Attention-hist]
+// ,DEA_SPECIAL_ATTN_CDE                              as [DEA Special Attention Code-hist]
+// ,SUPPLIER_CASH_DISC_WAC_PCT                        as [SUPPLIER_CASH_DISC_WAC_PCT]
+// ,PACK_AMP_DLR                                      as [Pack AMP Dollar-hist]
+// ,PACK_FFPUL_P1_DLR                                 as [PACK_FFPUL_P1_DLR]
+// ,Capitalize(INTRNL_PROD_FNC_CLASS_DESC)            as [INTRNL_PROD_FNC_CLASS_DESC]
+// ,INTRNL_PROD_FNC_CLASS_CDE                         as [INTRNL_PROD_FNC_CLASS_CDE]
+// ,Capitalize(ITEM_TYPE_DESC)                        as [Item Type-hist]
+ ITEM_TYPE_CDE                                     as [Item Type Code-hist]
+// ,FDB_HICL_SEQNO                                    as [FDB_HICL_SEQNO]
+// ,GLBL_SRC_FLG                                      as [Global Source-hist]
+// ,Capitalize(AMP_TXT)                               as [AMP-hist]
+ ,Capitalize(MULTI_SRC_IND_DESC)                    as [Multi-Source Indicator-hist]
+ ,MULTI_SRC_IND_CDE                                 as [Multi-Source Indicator Code-hist]
+// ,Capitalize(SUPPLIER_NLC_TYPE_DESC)                as [SUPPLIER_NLC_TYPE_DESC]
+// ,SUPPLIER_NLC_TYPE_CDE                             as [SUPPLIER_NLC_TYPE_CDE]
+// ,Capitalize(NLC_TYPE_DESC)                         as [NLC_TYPE_DESC]
+// ,NLC_TYPE_CDE                                      as [NLC_TYPE_CDE]
+ ,ACCUNET_QTY                                       as [Accunet Qty-hist]
+ ,FDB_OBC_EXP                                       as [FDB_OBC_EXP]
+ ,Capitalize(STRGTH_TXT)                            as [Strength-hist]
+ ,Capitalize(TRADE_NAM)                             as [Trade Name-hist]
+ ,PACK_SIZE_QTY                                     as [Package Size-hist]
+ ,Capitalize(ADDL_DESC)                             as [Additional Description-hist]
+ ,FDB_FFPUL_P1                                      as [FDB_FFPUL_P1]
+ ,FDB_CWPPKG_P1                                     as [FDB_CWPPKG_P1]
+ ,IF(FDB_BBPKG_D1='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(FDB_BBPKG_D1,'YYYY/MM/DD'),'MM/DD/YYYY'))   as [FDB_BBPKG_D1]
+ ,FDB_BBPKG_P1                                      as [FDB_BBPKG_P1]
+// ,Capitalize(BUYER_NAM)                             as [Buyer Name-hist]
+// ,BUYER_NUM                                         as [Buyer Num-hist]
+ ,Capitalize(PURCH_PROD_TYPE_DESC)                  as [Purchase Product Type-hist]
+ ,PURCH_PROD_TYPE_CDE                               as [Purchase Product Type Code-hist]
+ ,ROW_UPDATE_USER_ID                                as [ROW_UPDATE_USER_ID]
+ ,upper(date(date#(ROW_UPDATE_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt'))                        as [ROW_UPDATE_STP] 
+ ,ROW_ADD_USER_ID                                   as [ROW_ADD_USER_ID]
+ ,upper(date(date#(ROW_ADD_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt'))                           as [ROW_ADD_STP]
+ ,UPC_NUM                                           as [UPC-hist]
+ ,Capitalize(DRUG_SUBCLS_DESC)                      as [Drug Subclass-hist]
+ ,DRUG_SUBCLS_ID                                    as [Drug Subclass ID-hist]
+ ,DRUG_SUBCLS_CDE                                   as [Drug Subclass Code-hist]
+ ,Capitalize(DRUG_GROUP_DESC)                       as [Drug Group-hist]
+ ,DRUG_GROUP_ID                                     as [Drug Group ID-hist]
+ ,DRUG_GROUP_CDE                                    as [Drug Group Code-hist]
+ ,Capitalize(DRUG_CLASS_DESC)                       as [Drug Class Description-hist]
+ ,DRUG_CLASS_ID                                     as [Drug Class ID-hist]
+ ,DRUG_CLASS_CDE                                    as [Drug Class Code-hist]
+ ,Capitalize(GPI_GEN_NAM)                           as [GPI Generic Name-hist]
+ ,GPI_ID                                            as [GPI ID-hist]
+ ,PACK_QTY                                          as [Package Qty-hist]
+// ,MIN_PACK_QTY                                      as [Minimum Pack Qty-hist]
+ ,TOTAL_QTY                                         as [Total Qty-hist]
+// ,MSTR_PACK_QTY                                     as [MSTR_PACK_QTY]
+// ,CONVEN_PACK_QTY                                   as [Conventional Pack Qty-hist]
+// ,FIXED_SELL_PCT                                    as [Fixed Sell %-hist]
+// ,PRFTPK_DISC_PCT                                   as [PRFTPK_DISC_PCT]
+// ,EDLP_PCT                                          as [EDLP PCT-hist]
+// ,Capitalize(SUPPLIER_CLASS_DESC)                   as [Mfr Class-hist]
+// ,SUPPLIER_CLASS_CDE                                as [Mfr Class Code-hist]
+// ,PARENT_SUPPLIER_NUM                               as [Parent Mfr #-hist]
+// ,SUPPLIER_FAX_NUM                                  as [Mfr FAX #-hist]
+// ,SUPPLIER_PHONE_NUM                                as [Mfr Phone #-hist]
+// ,Capitalize(SUPPLIER_TYPE_DESC)                    as [Mfr Type-hist]
+// ,SUPPLIER_TYPE_CDE                                 as [Mfr Type Code-hist]
+// ,SUPPLIER_DEA_LIC_ID                               as [Mfr DEA License ID-hist]
+ ,SUPPLIER_DEA_NUM                                  as [Mfr DEA #-hist]
+// ,SUPPLIER_ZIP                                      as [Mfr Zip Code-hist]
+// ,Capitalize(SUPPLIER_STATE_NAM)                    as [Mfr State Name-hist]
+// ,SUPPLIER_STATE                                    as [Mfr State-hist]
+// ,Capitalize(SUPPLIER_CITY)                         as [Mfr City-hist]
+// ,Capitalize(SUPPLIER_ADDR2_TXT)                    as [Mfr Address 2-hist]
+// ,Capitalize(SUPPLIER_ADDR_TXT)                     as [Mfr Address-hist]
+ ,SUPPLIER_ABBR_TXT                                 as [Mfr-hist]
+ ,SUPPLIER_NAM                                      as [Manufacturer-hist]
+ ,SUPPLIER_NUM                                      as [Supplier Num-hist]
+// ,SUPPLIER_ORDER_ID                                 as [Supplier Order ID-hist]
+// ,EDI_ID                                            as [EDI ID-hist]
+// ,Capitalize(SYSTEM_NAM)                            as [System Name-hist]
+// ,SYSTEM_CDE                                        as [System Code-hist]
+// ,Capitalize(SUBCAT_DESC)                           as [Subcategory-hist]
+// ,SUBCAT_CDE                                        as [Subcategory Code-hist]
+// ,Capitalize(RTRN_RSTRCT_DESC)                      as [Return Restricted-hist]
+// ,RTRN_RSTRCT_CDE                                   as [Return Restricted Code-hist]
+ ,PRIVATE_LABEL_H_ID                                as [Private Label ID-hist]
+ ,Capitalize(PRIVATE_LABEL_DESC)                    as [Private Label Description-hist]
+ ,PRIVATE_LABEL_CDE                                 as [Private Label Code-hist]
+// ,Capitalize(NDC_KEY_DESC)                          as [NDC Key-hist]
+ ,NDC_KEY_CDE                                       as [NDC Key Code-hist]
+// ,Capitalize(INST_PACK_DESC)                        as [INST_PACK_DESC]
+// ,INST_PACK_CDE                                     as [INST_PACK_CDE]
+ ,FORM_H_ID                                         as [Form-hist]
+ ,Capitalize(FORM_DESC)                             as [Form Description-hist]
+ ,FORM_ID                                           as [Form ID-hist]
+ ,Capitalize(DEPT_DESC)                             as [Department-hist]
+ ,DEPT_CDE                                          as [Department Code-hist]
+// ,Capitalize(DEA_BASE_DESC)                         as [DEA Base-hist]
+// ,DEA_BASE_NUM                                      as [DEA Base Num-hist]
+ ,Capitalize(CTGRY_DESC)                            as [Category-hist]
+ ,CTGRY_CDE                                         as [Category Code-hist]
+ ,ACT_STAT_H_ID                                     as [Product Active Status ID-hist]
+ ,Capitalize(ACT_STAT_DESC)                         as [Product Active Status-hist]
+ ,ACT_STAT_CDE                                      as [Product Active Status Code-hist]
+ ,Capitalize(RX_TYPE_DESC)                          as [Rx Type-hist]
+ ,RX_TYPE_CDE                                       as [Rx Type Code-hist]
+ ,Capitalize(DEA_SCHED_DESC)                        as [DEA Schedule-hist]
+ ,DEA_SCHED_NUM                                     as [DEA Schedule #-hist]
+ ,Capitalize(UNIT_DOSE_DESC)                        as [Unit Dose Description-hist]
+ ,if(UNIT_DOSE_ID='UD','UD','')                     as [Unit Dose-hist]
+// ,Capitalize(NDC_IND_DESC)                          as [NDC Indicator-hist]
+// ,NDC_IND_CDE                                       as [NDC Indicator Code-hist]
+ ,capitalize(HAM_DEPT_DESC)                         as [Fineline Description-hist]
+ ,HAM_DEPT_NUM                                      as [Fineline #-hist]
+ ,Capitalize(PROD_TYPE_DESC)                        as [Drug Class-hist]
+ ,PROD_TYPE_CDE                                     as [Product Type Code-hist]
+ ,Capitalize(AHFS_DESC)                             as [AHFS Description-hist]
+ ,AHFS_NUM                                          as [AHFS #-hist]
+ ,CARD_SBST_KEY_ID                                  as [CARD_SBST_KEY_ID]
+ ,CARD_GPPC_ID                                      as [Cardinal GPPC ID-hist]
+ ,CARD_GEN_CDE_NUM                                  as [Cardinal Generic Code Num-hist]
+ ,Capitalize(CARD_GEN_IND_DESC)                     as [Cardinal Generic Indicator-hist]
+ ,CARD_GEN_IND_CDE                                  as [Cardinal Generic Indicator Code-hist]
+ ,Capitalize(GEN_PROD_IND_DESC)                     as [Generic Product Indicator-hist]
+ ,GEN_PROD_IND_CDE                                  as [Generic Product Indicator Code-hist]
+ ,GEN_IND_H_ID                                      as [Generic Indicator ID-hist]
+ ,Capitalize(GEN_IND_DESC)                          as [Generic Indicator-hist]
+// ,GEN_IND_CDE                                       as [Generic Indicator Code-hist]
+ ,Right('00000000000'& NDC_CDE,11)                  as [NDC-hist]
+ ,Capitalize(UNIT_H_DESC)                           as [U/M H-hist]
+ ,UNIT_H_CDE                                        as [Package U/M Code-hist]
+ ,Capitalize(UNIT_DESC)                             as [U/M-hist]
+ ,UNIT_CDE                                          as [U/M Code-hist]
+// ,IF(RLS_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(RLS_DTE,'YYYY/MM/DD'),'MM/DD/YYYY'))          as [RLS_DTE]
+// ,IF(RTRN_RSTRCT_EXP_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(RTRN_RSTRCT_EXP_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [Return Restricted Expiration Date-hist]  
+// ,IBT_ELIGIBLE_FLG                                  as [IBT_ELIGIBLE_FLG]
+ ,DRUG_CLASS_FLG                                    as [Drug Class Flag-hist]
+ ,NDC_UPC_FLG                                       as [NDC UPC-hist]
+// ,SPECIAL_PROG_FLG                                  as [Special Program-hist]
+ ,GEN_IND_FLG                                       as [Generic Indicator Flag-hist]
+ ,GEN_SBST_FLG                                      as [Generic Substitution-hist]
+// ,DISP_FLG                                          as [Display-hist]
+// ,SUPPLY_FLG                                        as [Supply-hist]
+ ,DEL_FLG                                           as [Deleted-hist]
+ ,CURR_VRSN_FLG                                     as [Current Version-hist]
+ ,RX_FLG                                            as [Rx-hist]
+// ,HOSP_ONLY_FLG                                     as [Hospital Only-hist]
+// ,REFRIG_FLG                                        as [Refridgerated-hist]
+// ,RSTRCT_FLG                                        as [Restricted-hist]
+// ,AIR_FRT_FLG                                       as [Air Freight-hist]
+// ,CSE_LABEL_FLG                                     as [CSE_LABEL_FLG]
+// ,ARCOS_FLG                                         as [Arcos-hist]
+ ,ACCUNET_SIZE_NUM                                  as [Total Doses-hist]
+ ,SIZE_TXT                                          as [Size-hist]
+ ,STRGTH_H_TXT                                      as [STRGTH_H_TXT]
+ ,Capitalize(STRGTH_EXT_TXT)                        as [Strength Extended-hist]
+// ,WEIGHT_NUM                                        as [Weight Num-hist]
+// ,WEIGHT_EXT_NUM                                    as [Weight Extended Num-hist]
+// ,HAZARD_ID_NUM                                     as [Hazardous ID Num-hist]
+ ,PACK_SIZE_H_ID                                    as [Pack Size ID-hist]
+// ,VOLUME_NUM                                        as [Volume Num-hist]
+// ,BASE_CDE_GMS_NUM                                  as [Base Code GMS Num-hist]
+// ,FDB_AWP_MULT_NUM                                  as [FDB_AWP_MULT_NUM]
+// ,CSE_WEIGHT_NUM                                    as [CSE_WEIGHT_NUM]
+// ,SELL_WEIGHT_NUM                                   as [Sell Weight Num-hist]
+// ,SELL_CUBE_NUM                                     as [Sell Cube Num-hist]
+// ,DP_NUM                                            as [DP_NUM]
+// ,Capitalize(CORP_DESC)                             as [Corporation]
+ ,num(CORP_ITEM_NUM,'#######')                      as [CIN]
+ ,MFG_PROD_ID                                       as [Mfg Product ID-hist]
+ ,Capitalize(GEN_NAM)                               as [Generic Name-hist]
+ ,Capitalize(PROD_NAM)                              as [Product Name-hist]
+ ,PROD_KEY_NUM                                      as [PROD_KEY_NUM]
+ ,LEFT(CARD_SBST_KEY_ID, 5)                         as [GCN-hist]
+ ,SUPPLIER_ORDER_ID						            as [Mfr Part #]    //////**** Added by Dicky Mohanty on 01/27/16
+ ,FDB_AHFS_ID
+ 
+
+
+//FROM
+//  '$(vExtractFileLocation)PRODUCT-Caret.txt'
+//  (txt, codepage is 1252, embedded labels, delimiter is '^', no quotes, no eof)
+//;
+
+FROM
+'$(vRootFileLocation)$(vQVDs)Product_Full_Extract.qvd' (qvd)
+;
+
+
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+RESIDENT
+  Product
+;
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate
+  (1)
+while
+  not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date;
+
+/********************************************
+ * Need to concatenate because of special processing
+ ********************************************/
+CONCATENATE(Product)
+LOAD
+ ITEM_TYPE_CDE                                      as [Item Type Code-hist]
+ ,Capitalize(MULTI_SRC_IND_DESC)                    as [Multi-Source Indicator-hist]
+ ,MULTI_SRC_IND_CDE                                 as [Multi-Source Indicator Code-hist]
+ ,ACCUNET_QTY                                       as [Accunet Qty-hist]
+ ,FDB_OBC_EXP                                       as [FDB_OBC_EXP]
+ ,Capitalize(STRGTH_TXT)                            as [Strength-hist]
+ ,Capitalize(TRADE_NAM)                             as [Trade Name-hist]
+ ,PACK_SIZE_QTY                                     as [Package Size-hist]
+ ,Capitalize(ADDL_DESC)                             as [Additional Description-hist]
+ ,FDB_FFPUL_P1                                      as [FDB_FFPUL_P1]
+ ,FDB_CWPPKG_P1                                     as [FDB_CWPPKG_P1]
+ ,IF(FDB_BBPKG_D1='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(FDB_BBPKG_D1,'YYYY/MM/DD'),'MM/DD/YYYY'))   as [FDB_BBPKG_D1]
+ ,FDB_BBPKG_P1                                      as [FDB_BBPKG_P1]
+ ,Capitalize(PURCH_PROD_TYPE_DESC)                  as [Purchase Product Type-hist]
+ ,PURCH_PROD_TYPE_CDE                               as [Purchase Product Type Code-hist]
+ ,ROW_UPDATE_USER_ID                                as [ROW_UPDATE_USER_ID]
+ ,upper(date(date#(ROW_UPDATE_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt'))                        as [ROW_UPDATE_STP] 
+ ,ROW_ADD_USER_ID                                   as [ROW_ADD_USER_ID]
+ ,upper(date(date#(ROW_ADD_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt'))                           as [ROW_ADD_STP]
+ ,UPC_NUM                                           as [UPC-hist]
+ ,Capitalize(DRUG_SUBCLS_DESC)                      as [Drug Subclass-hist]
+ ,DRUG_SUBCLS_ID                                    as [Drug Subclass ID-hist]
+ ,DRUG_SUBCLS_CDE                                   as [Drug Subclass Code-hist]
+ ,Capitalize(DRUG_GROUP_DESC)                       as [Drug Group-hist]
+ ,DRUG_GROUP_ID                                     as [Drug Group ID-hist]
+ ,DRUG_GROUP_CDE                                    as [Drug Group Code-hist]
+ ,Capitalize(DRUG_CLASS_DESC)                       as [Drug Class Description-hist]
+ ,DRUG_CLASS_ID                                     as [Drug Class ID-hist]
+ ,DRUG_CLASS_CDE                                    as [Drug Class Code-hist]
+ ,Capitalize(GPI_GEN_NAM)                           as [GPI Generic Name-hist]
+ ,GPI_ID                                            as [GPI ID-hist]
+ ,PACK_QTY                                          as [Package Qty-hist]
+ ,TOTAL_QTY                                         as [Total Qty-hist]
+ ,SUPPLIER_DEA_NUM                                  as [Mfr DEA #-hist]
+ ,SUPPLIER_ABBR_TXT                                 as [Mfr-hist]
+ ,SUPPLIER_NAM                                      as [Manufacturer-hist]
+ ,SUPPLIER_NUM                                      as [Supplier Num-hist]
+ ,PRIVATE_LABEL_H_ID                                as [Private Label ID-hist]
+ ,Capitalize(PRIVATE_LABEL_DESC)                    as [Private Label Description-hist]
+ ,PRIVATE_LABEL_CDE                                 as [Private Label Code-hist]
+ ,NDC_KEY_CDE                                       as [NDC Key Code-hist]
+ ,FORM_H_ID                                         as [Form-hist]
+ ,Capitalize(FORM_DESC)                             as [Form Description-hist]
+ ,FORM_ID                                           as [Form ID-hist]
+ ,Capitalize(DEPT_DESC)                             as [Department-hist]
+ ,DEPT_CDE                                          as [Department Code-hist]
+ ,Capitalize(CTGRY_DESC)                            as [Category-hist]
+ ,CTGRY_CDE                                         as [Category Code-hist]
+ ,ACT_STAT_H_ID                                     as [Product Active Status ID-hist]
+ ,Capitalize(ACT_STAT_DESC)                         as [Product Active Status-hist]
+ ,ACT_STAT_CDE                                      as [Product Active Status Code-hist]
+ ,Capitalize(RX_TYPE_DESC)                          as [Rx Type-hist]
+ ,RX_TYPE_CDE                                       as [Rx Type Code-hist]
+ ,Capitalize(DEA_SCHED_DESC)                        as [DEA Schedule-hist]
+ ,DEA_SCHED_NUM                                     as [DEA Schedule #-hist]
+ ,Capitalize(UNIT_DOSE_DESC)                        as [Unit Dose Description-hist]
+ ,if(UNIT_DOSE_ID='UD','UD','')                     as [Unit Dose-hist]
+ ,capitalize(HAM_DEPT_DESC)                         as [Fineline Description-hist]
+ ,HAM_DEPT_NUM                                      as [Fineline #-hist]
+ ,Capitalize(PROD_TYPE_DESC)                        as [Drug Class-hist]
+ ,PROD_TYPE_CDE                                     as [Product Type Code-hist]
+ ,Capitalize(AHFS_DESC)                             as [AHFS Description-hist]
+ ,AHFS_NUM                                          as [AHFS #-hist]
+ ,CARD_SBST_KEY_ID                                  as [CARD_SBST_KEY_ID]
+ ,CARD_GPPC_ID                                      as [Cardinal GPPC ID-hist]
+ ,CARD_GEN_CDE_NUM                                  as [Cardinal Generic Code Num-hist]
+ ,Capitalize(CARD_GEN_IND_DESC)                     as [Cardinal Generic Indicator-hist]
+ ,CARD_GEN_IND_CDE                                  as [Cardinal Generic Indicator Code-hist]
+ ,Capitalize(GEN_PROD_IND_DESC)                     as [Generic Product Indicator-hist]
+ ,GEN_PROD_IND_CDE                                  as [Generic Product Indicator Code-hist]
+ ,GEN_IND_H_ID                                      as [Generic Indicator ID-hist]
+ ,Capitalize(GEN_IND_DESC)                          as [Generic Indicator-hist]
+ ,Right('00000000000'& NDC_CDE,11)                  as [NDC-hist]
+ ,Capitalize(UNIT_H_DESC)                           as [U/M H-hist]
+ ,UNIT_H_CDE                                        as [Package U/M Code-hist]
+ ,Capitalize(UNIT_DESC)                             as [U/M-hist]
+ ,UNIT_CDE                                          as [U/M Code-hist]
+ ,DRUG_CLASS_FLG                                    as [Drug Class Flag-hist]
+ ,NDC_UPC_FLG                                       as [NDC UPC-hist]
+ ,GEN_IND_FLG                                       as [Generic Indicator Flag-hist]
+ ,GEN_SBST_FLG                                      as [Generic Substitution-hist]
+ ,DEL_FLG                                           as [Deleted-hist]
+ ,CURR_VRSN_FLG                                     as [Current Version-hist]
+ ,RX_FLG                                            as [Rx-hist]
+ ,ACCUNET_SIZE_NUM                                  as [Total Doses-hist]
+ ,SIZE_TXT                                          as [Size-hist]
+ ,STRGTH_H_TXT                                      as [STRGTH_H_TXT]
+ ,Capitalize(STRGTH_EXT_TXT)                        as [Strength Extended-hist]
+ ,PACK_SIZE_H_ID                                    as [Pack Size ID-hist]
+ ,num(CORP_ITEM_NUM,'#######')                      as [CIN]
+ ,MFG_PROD_ID                                       as [Mfg Product ID-hist]
+ ,Capitalize(GEN_NAM)                               as [Generic Name-hist]
+ ,Capitalize(PROD_NAM)                              as [Product Name-hist]
+ ,PROD_KEY_NUM                                      as [PROD_KEY_NUM]
+ ,LEFT(CARD_SBST_KEY_ID, 5)                         as [GCN-hist]
+ ,SUPPLIER_ORDER_ID						            as [Mfr Part #]    //////**** Added by Dicky Mohanty on 01/27/16
+ ;
+SQL
+SELECT
+  "ACCUNET_QTY",
+  "ACCUNET_SIZE_NUM",
+  "ACT_STAT_CDE",
+  "ACT_STAT_DESC",
+  "ACT_STAT_H_ID",
+  "ADDL_DESC",
+  "AHFS_DESC",
+  "AHFS_NUM",
+  "CARD_GEN_CDE_NUM",
+  "CARD_GEN_IND_CDE",
+  "CARD_GEN_IND_DESC",
+  "CARD_GPPC_ID",
+  "CARD_SBST_KEY_ID",
+  "CORP_ITEM_NUM",
+  "CTGRY_CDE",
+  "CTGRY_DESC",
+  "CURR_VRSN_FLG",
+  "DEA_SCHED_DESC",
+  "DEA_SCHED_NUM",
+  "DEL_FLG",
+  "DEPT_CDE",
+  "DEPT_DESC",
+  "DRUG_CLASS_CDE",
+  "DRUG_CLASS_DESC",
+  "DRUG_CLASS_FLG",
+  "DRUG_CLASS_ID",
+  "DRUG_GROUP_CDE",
+  "DRUG_GROUP_DESC",
+  "DRUG_GROUP_ID",
+  "DRUG_SUBCLS_CDE",
+  "DRUG_SUBCLS_DESC",
+  "DRUG_SUBCLS_ID",
+  "FDB_AWP_MULT_NUM",
+  "FDB_BBPKG_D1",
+  "FDB_BBPKG_P1",
+  "FDB_CWPPKG_P1",
+  "FDB_FFPUL_P1",
+  "FDB_HICL_SEQNO",
+  "FDB_OBC_EXP",
+  "FIXED_SELL_PCT",
+  "FORM_DESC",
+  "FORM_H_ID",
+  "FORM_ID",
+  "GEN_IND_CDE",
+  "GEN_IND_DESC",
+  "GEN_IND_FLG",
+  "GEN_IND_H_ID",
+  "GEN_NAM",
+  "GEN_PROD_IND_CDE",
+  "GEN_PROD_IND_DESC",
+  "GEN_SBST_FLG",
+  "GPI_GEN_NAM",
+  "GPI_ID",
+  "HAM_DEPT_DESC",
+  "HAM_DEPT_NUM",
+  "ITEM_TYPE_CDE",
+  "MFG_PROD_ID",
+  "MULTI_SRC_IND_CDE",
+  "MULTI_SRC_IND_DESC",
+  "NDC_CDE",
+  "NDC_KEY_CDE",
+  "NDC_UPC_FLG",
+  "PACK_QTY",
+  "PACK_SIZE_H_ID",
+  "PACK_SIZE_QTY",
+  "PRIVATE_LABEL_CDE",
+  "PRIVATE_LABEL_DESC",
+  "PRIVATE_LABEL_H_ID",
+  "PROD_KEY_NUM",
+  "PROD_NAM",
+  "PROD_TYPE_CDE",
+  "PROD_TYPE_DESC",
+  "PURCH_PROD_TYPE_CDE",
+  "PURCH_PROD_TYPE_DESC",
+  "ROW_ADD_STP",
+  "ROW_ADD_USER_ID",
+  "ROW_UPDATE_STP",
+  "ROW_UPDATE_USER_ID",
+  "RX_FLG",
+  "RX_TYPE_CDE",
+  "RX_TYPE_DESC",
+  "SBST_DESC",
+  "SBST_ID",
+  "SELL_CUBE_NUM",
+  "SELL_WEIGHT_NUM",
+  "SIZE_TXT",
+  "SPECIAL_PROG_FLG",
+  "STRGTH_EXT_TXT",
+  "STRGTH_H_TXT",
+  "STRGTH_TXT",
+  "SUPPLIER_ABBR_TXT",
+  "SUPPLIER_DEA_NUM",
+  "SUPPLIER_NAM",
+  "SUPPLIER_NUM",
+  "SUPPLIER_ORDER_ID",
+  "TOTAL_QTY",
+  "TRADE_NAM",
+  "UNIT_CDE",
+  "UNIT_DESC",
+  "UNIT_DOSE_DESC",
+  "UNIT_DOSE_ID",
+  "UNIT_H_CDE",
+  "UNIT_H_DESC",
+  "UPC_NUM"
+FROM
+  VIEWS.PRODUCT
+where PRIVATE_LABEL_H_ID like '%^%'
+//  AND (ROW_UPDATE_STP <= cast('$(vLastExecTime)' as timestamp))    Commented out due to date issue on DB
+;
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE Product into '$(vRootFileLocation)$(vQVDs)Product.qvd';
+//call store_into_qvd(vTableName, vQvdFile, 0);
+
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP Table Product;
+//call drop_table(vTableName);
+
+

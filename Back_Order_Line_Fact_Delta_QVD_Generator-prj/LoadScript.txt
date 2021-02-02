@@ -1,0 +1,111 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for INVOICE_LINE Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata, Time_Detail.qvd, Invoice_Line_*.qvd
+ *
+ * Outputs:
+ *   Invoice_Line.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ 
+ * 6/13/13 Joe Roberts
+ * Added logic to pull both new records and changed records from Teradata
+ * Modified routines to concatenate new records and left join updated
+ * Ran against Prod for the first time
+ */
+///$tab Setup
+/*********************************************************************************
+Setup the generator
+
+Changelog:
+- 9.12.2013 jeremy.fourman
+  Added setup and storing of Invoice_Line_Files_to_Delete on every run.
+*********************************************************************************/
+
+
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+//VIEWST Changes by Sumit 11/06/2020 ARR 262-283
+
+
+/******************************************************
+The following table needs to be created and stored with
+every run.
+******************************************************/
+Invoice_Line_Files_to_Delete:
+load * inline [files_to_delete,yr_mon_to_delete
+];
+
+store Invoice_Line_Files_to_Delete into 
+	  	'$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_Files_to_Delete.qvd' (qvd);
+///$tab Back_Order_Line_Fact
+
+BACK_ORDER_LINE_FACT:
+
+SELECT	
+		ORDER_DTE_KEY_NUM, 
+		DIST_CENTER_KEY_NUM, 
+		BACK_ORDER_NUM,
+		BACK_ORDER_LINE_NUM, 
+		ACCT_KEY_NUM, 
+		PROD_KEY_NUM, 
+		PO_ID, 
+		FUTURE_SHIP_DTE_KEY_NUM,
+		ORDER_CNCL_DTE_KEY_NUM, 
+		ORDER_TYPE_KEY_NUM, 
+		ORDER_LINE_TYPE_KEY_NUM,
+		BACK_ORDER_STAT_KEY_NUM, 
+		BACK_ORDER_LINE_STAT_KEY_NUM, 
+		ORDER_QTY,
+		SHIP_QTY, 
+		BACK_ORDER_ALLCT_QTY, 
+		BACK_ORDER_ALLCT_PRTY_NUM, 
+		ROW_ADD_STP,
+		ROW_ADD_USER_ID, 
+		ROW_UPDATE_STP, 
+		ROW_UPDATE_USER_ID
+//	FROM VIEWST.BACK_ORDER_LINE_FACT	ARR 315
+	FROM VIEWS.BACK_ORDER_LINE_FACT
+;
+
+
+STORE BACK_ORDER_LINE_FACT into '$(vRootFileLocation)$(vQVDs)BACK_ORDER_LINE_FACT.qvd' (qvd) ; 
+
+DROP Table BACK_ORDER_LINE_FACT; 
+
+///$tab Exit
+
+EXIT SCRIPT ; 

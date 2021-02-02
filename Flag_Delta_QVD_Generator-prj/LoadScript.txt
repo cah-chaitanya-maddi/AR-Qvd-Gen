@@ -1,0 +1,325 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for FLAG Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Flag.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+
+
+
+///$tab Flag_new
+
+Flag:
+load
+  FLG_KEY_NUM
+ ,CNTRCT_FLG as [Contract Flag]
+ ,CGBK_FLG
+ ,CGBK_RTRN_FLG
+ ,BRKRG_FLG
+ ,CONSIGN_FLG
+ ,ASV_FLG
+ ,CGBK_SPRS_FLG
+ ,ABOVE_LINE_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,ADDL_CHRG_FLG
+ ,NET_PHASE_IN_FLG
+ ,GEN_NET_FLG
+ ,COGS_FIXED_SELL_FLG
+ ,SBST_OVRD_FLG as [Override Flag]
+ ,if(SBST_OVRD_FLG= 'Y', 'Yes', 'No') as [Do Not Sub Flag]
+ ,TELESALE_FLG
+ ,CREDIT_REBILL_FLG
+ ,SOM_HOLD_FLG
+// ,DYNMC_ALLCT_FL
+ ,WHSE_CUT_FLG
+ ,EDI_CREDIT_REBILL_SPRS_FLG
+ ,PRINT_CREDIT_REBILL_SPRS_FLG
+;
+SQL
+SELECT
+  FLG_KEY_NUM
+ ,CNTRCT_FLG
+ ,CGBK_FLG
+ ,CGBK_RTRN_FLG
+ ,BRKRG_FLG
+ ,CONSIGN_FLG
+ ,ASV_FLG
+ ,CGBK_SPRS_FLG
+ ,ABOVE_LINE_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,ADDL_CHRG_FLG
+ ,NET_PHASE_IN_FLG
+ ,GEN_NET_FLG
+ ,COGS_FIXED_SELL_FLG
+ ,SBST_OVRD_FLG
+ ,TELESALE_FLG
+ ,CREDIT_REBILL_FLG
+ ,SOM_HOLD_FLG
+ //,DYNMC_ALLCT_FLG
+ ,WHSE_CUT_FLG
+ ,EDI_CREDIT_REBILL_SPRS_FLG
+ ,PRINT_CREDIT_REBILL_SPRS_FLG
+from
+	VIEWS.FLAG;
+//  VIEWST.FLAG;
+  
+  
+  store Flag INTO '$(vRootFileLocation)$(vQVDs)Flag.qvd';
+  DROP Table Flag;
+  
+  EXIT SCRIPT;
+///$tab Flag
+/**********************************************************
+Create Flag.qvd
+
+Changelog:
+8.15.2013 jeremy.fourman
+ - Removed LoadStats.qvd writing
+ - Added new cleanup for rows check
+ - Added changelog
+ - Added trace statements
+ - Added additional logic branches to account for error 'handling'
+ - General cleanup
+ - Removed field DYNMC_ALLCT_FL it caused error 8/15/2013 6:45:03 PM:       Error: Field not found - <DYNMC_ALLCT_FL>
+
+**********************************************************/
+
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+let vTimeStamp = Now();
+let vStart = Now();
+set vTableName = 'Flag';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+let vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+load
+  ROW_UPDATE_STP as Date
+from
+  '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd'
+(qvd);
+
+Max_Date:
+load
+  min(Date) as min_date,
+  max(Date) as max_date;
+load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+Drop Table temp;
+
+let vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+drop table Max_Date; 
+
+//*****************************************************************
+trace "************************** Getting changed or updated records";
+//*****************************************************************
+
+Flag_temp:
+load
+  FLG_KEY_NUM
+ ,CNTRCT_FLG as [Contract Flag]
+ ,CGBK_FLG
+ ,CGBK_RTRN_FLG
+ ,BRKRG_FLG
+ ,CONSIGN_FLG
+ ,ASV_FLG
+ ,CGBK_SPRS_FLG
+ ,ABOVE_LINE_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,ADDL_CHRG_FLG
+ ,NET_PHASE_IN_FLG
+ ,GEN_NET_FLG
+ ,COGS_FIXED_SELL_FLG
+ ,SBST_OVRD_FLG as [Override Flag]
+ ,TELESALE_FLG
+ ,CREDIT_REBILL_FLG
+ ,SOM_HOLD_FLG
+// ,DYNMC_ALLCT_FL
+ ,WHSE_CUT_FLG
+ ,EDI_CREDIT_REBILL_SPRS_FLG
+ ,PRINT_CREDIT_REBILL_SPRS_FLG
+;
+SQL
+SELECT
+  FLG_KEY_NUM
+ ,CNTRCT_FLG
+ ,CGBK_FLG
+ ,CGBK_RTRN_FLG
+ ,BRKRG_FLG
+ ,CONSIGN_FLG
+ ,ASV_FLG
+ ,CGBK_SPRS_FLG
+ ,ABOVE_LINE_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,ADDL_CHRG_FLG
+ ,NET_PHASE_IN_FLG
+ ,GEN_NET_FLG
+ ,COGS_FIXED_SELL_FLG
+ ,SBST_OVRD_FLG
+ ,TELESALE_FLG
+ ,CREDIT_REBILL_FLG
+ ,SOM_HOLD_FLG
+ //,DYNMC_ALLCT_FLG
+ ,WHSE_CUT_FLG
+ ,EDI_CREDIT_REBILL_SPRS_FLG
+ ,PRINT_CREDIT_REBILL_SPRS_FLG
+from
+  VIEWS.FLAG
+WHERE  
+  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+;
+
+
+let vDeltaRecords = NoOfRows('$(vTableName)');
+
+if $(vDeltaRecords) <> 0 then
+
+	//*****************************************************************
+	trace "************************** Found updated records";
+	//*****************************************************************
+ 
+  // Concatentate in the new records 
+  concatenate(Flag)
+  load
+    PRINT_CREDIT_REBILL_SPRS_FLG
+   ,EDI_CREDIT_REBILL_SPRS_FLG
+   ,WHSE_CUT_FLG
+   ,DYNMC_ALLCT_FLG
+   ,SOM_HOLD_FLG
+   ,CREDIT_REBILL_FLG
+   ,TELESALE_FLG
+   ,[Override Flag]
+   ,COGS_FIXED_SELL_FLG
+   ,GEN_NET_FLG
+   ,NET_PHASE_IN_FLG
+   ,ADDL_CHRG_FLG
+   ,ROW_UPDATE_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_ADD_STP
+   ,ABOVE_LINE_FLG
+   ,CGBK_SPRS_FLG
+   ,ASV_FLG
+   ,CONSIGN_FLG
+   ,BRKRG_FLG
+   ,CGBK_RTRN_FLG
+   ,CGBK_FLG
+   ,[Contract Flag]
+   ,FLG_KEY_NUM
+  from
+    '$(vRootFileLocation)$(vQVDs)Flag.qvd' (qvd)
+  where
+    not exists(FLG_KEY_NUM, FLG_KEY_NUM)
+  ;
+
+
+
+
+
+
+
+
+
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	//*****************************************************************
+	trace "************************** DEV LOAD: Creating Dev version of Flag";
+	//*****************************************************************
+	NoConcatenate
+	Flag_dev:
+	load 
+		* 
+	resident
+		Flag
+		;
+
+	store Flag_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Flag.qvd';
+	drop table Flag_dev;
+	
+	endif;
+  
+  if ScriptErrorCount = 0 then 
+  	
+  	trace "************************** Writing out Flag.qvd";
+    store Flag INTO '$(vRootFileLocation)$(vQVDs)Flag.qvd';
+    
+  else	
+	trace "************************** Errors encountered, storing of Flaq.qvd canceled";
+  endif;
+  
+end if;
+
+
+//*****************************************************************
+trace "************************** Final cleanup";
+//*****************************************************************
+let vNoOfRows = NoOfRows('Flag');
+     
+if not(isnull($(vNoOfRows))) and $(vNoOfRows) > 0 then
+ trace "************************** Removing Flag";
+ drop table Flag;
+else
+	trace "************************** No rows";
+endif;
+
+

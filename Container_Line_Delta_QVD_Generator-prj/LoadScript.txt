@@ -1,0 +1,415 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for CONTAINER_LINE Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Container_Line.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 7/26/2013 Joe Roberts
+ *
+ * Moved logic to remove Walgreens and CVS into the delta load
+ * to eliminate the need for tier_2_container_line. Since the historic
+ * loads now remove these as well we do not need tier_2_container_load 
+ * any longer.
+ *
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/17/13 Aaron Zechman
+ * Initial Creation
+ */
+
+
+
+
+
+
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Include=$(vRootFileLocation)Config\$(vEnvironment)\meta-data.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+//VIEWST Changes by Sumit 11/06/2020 ARR 262-283
+///$tab Ship_To_Account
+//*** LOAD SHIP TO ACCOUNT WITH REMOVED WALGREENS AND CVS
+Ship_To_Account:
+LOAD 
+  ACCT_KEY_NUM
+FROM
+'$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+(qvd);
+
+///$tab Ship_To_Limiter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              ACCT_KEY_NUM as ACCT_KEY_NUM_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Container_Line
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Container_Line';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vQvdFile)'
+(qvd);
+
+/*********************************************
+ * Load the date key that corresponds to the
+ * beginning of the month 3 full months ago.
+ * This key should represent the the beginning
+ * of the month, 3 months prior to the 1st day
+ * of the current month.
+*********************************************/
+//temp_max_dte_key_num:
+//LOAD
+//     DTE_KEY_NUM as max_dte_key_num
+//FROM
+// '$(vRootFileLocation)$(vQVDs)TIME_DETAIL.qvd' (qvd)
+// where
+//    RFRNC_DTE = MonthStart(AddMonths(Today(), -3))
+//;
+
+//Let v_max_DTE_KEY_NUM = Peek('max_dte_key_num',0,'temp_max_dte_key_num');
+//drop table temp_max_dte_key_num;
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date; 
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Container_Line:
+LOAD
+  CNTNR_KEY_NUM & '-' & CNTNR_LINE_NUM as [PRIMARY_KEY]
+ ,CNTNR_KEY_NUM                        as [CNTNR_KEY_NUM]
+ ,CNTNR_LINE_NUM                       as [CNTNR_LINE_NUM]
+ ,LAST_RCV_DTE_KEY_NUM                 as [LAST_RCV_DTE_KEY_NUM]
+ ,ACCT_KEY_NUM                         as [ACCT_KEY_NUM]
+ ,SHIP_DTE_KEY_NUM                     as [SHIP_DTE_KEY_NUM]
+ ,CNTNR_NUM                            as [CNTNR_NUM]
+ ,DIST_CENTER_KEY_NUM                  as [DIST_CENTER_KEY_NUM]
+ ,PROD_KEY_NUM                         as [PROD_KEY_NUM]
+ ,CNTNR_TYPE_KEY_NUM                   as [CNTNR_TYPE_KEY_NUM]
+ ,CNTNR_FLG_KEY_NUM                    as [CNTNR_FLG_KEY_NUM]
+ ,CNTNR_STAT_KEY_NUM                   as [CNTNR_STAT_KEY_NUM]
+ ,RCV_SRC_KEY_NUM                      as [RCV_SRC_KEY_NUM]
+ ,INVOICE_NUM                          as [INVOICE_NUM]
+ ,FO_NUM                               as [FO_NUM]
+ ,FO_LINE_NUM                          as [FO_LINE_NUM]
+ ,RCV_QTY                              as [RCV_QTY]
+ ,REQ_QTY                              as [REQ_QTY]
+ ,FILL_QTY                             as [FILL_QTY]
+ ,SCAN_QTY                             as [SCAN_QTY]
+ ,MANUAL_QTY                           as [MANUAL_QTY]
+ ,ACPT_QTY                             as [ACPT_QTY]
+ ,LAST_RCV_USER_ID                     as [LAST_RCV_USER_ID]
+ ,ROW_ADD_STP                          as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                      as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                       as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID                   as [ROW_UPDATE_USER_ID]
+ ,LAST_RCV_TIM                         as [LAST_RCV_TIM]
+ ,CUSTOMER_DEPT_KEY_NUM                as [CUSTOMER_DEPT_KEY_NUM]
+ ,PO_ID                                as [PO_ID]
+Where
+  Exists(ACCT_KEY_NUM)
+;
+SQL
+SELECT
+  CNTNR_KEY_NUM
+ ,CNTNR_LINE_NUM
+ ,LAST_RCV_DTE_KEY_NUM
+ ,ACCT_KEY_NUM
+ ,SHIP_DTE_KEY_NUM
+ ,CNTNR_NUM
+ ,DIST_CENTER_KEY_NUM
+ ,PROD_KEY_NUM
+ ,CNTNR_TYPE_KEY_NUM
+ ,CNTNR_FLG_KEY_NUM
+ ,CNTNR_STAT_KEY_NUM
+ ,RCV_SRC_KEY_NUM
+ ,INVOICE_NUM
+ ,FO_NUM
+ ,FO_LINE_NUM
+ ,RCV_QTY
+ ,REQ_QTY
+ ,FILL_QTY
+ ,SCAN_QTY
+ ,MANUAL_QTY
+ ,ACPT_QTY
+ ,LAST_RCV_USER_ID
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,LAST_RCV_TIM
+ ,CUSTOMER_DEPT_KEY_NUM
+   ,PO_ID
+FROM
+//  VIEWST.CONTAINER_LINE  ARR 315
+  VIEWS.CONTAINER_LINE
+WHERE  
+ // LAST_RCV_DTE_KEY_NUM > $(v_max_DTE_KEY_NUM) AND
+  (ROW_ADD_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    CNTNR_KEY_NUM
+   ,CNTNR_LINE_NUM
+   ,LAST_RCV_DTE_KEY_NUM
+   ,ACCT_KEY_NUM
+   ,SHIP_DTE_KEY_NUM
+   ,CNTNR_NUM
+   ,DIST_CENTER_KEY_NUM
+   ,PROD_KEY_NUM
+   ,CNTNR_TYPE_KEY_NUM
+   ,CNTNR_FLG_KEY_NUM
+   ,CNTNR_STAT_KEY_NUM
+   ,RCV_SRC_KEY_NUM
+   ,INVOICE_NUM
+   ,FO_NUM
+   ,FO_LINE_NUM
+   ,RCV_QTY
+   ,REQ_QTY
+   ,FILL_QTY
+   ,SCAN_QTY
+   ,MANUAL_QTY
+   ,ACPT_QTY
+   ,LAST_RCV_USER_ID
+   ,ROW_ADD_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_UPDATE_USER_ID
+   ,LAST_RCV_TIM
+   ,CUSTOMER_DEPT_KEY_NUM
+   ,PO_ID
+  FROM
+    '$(vQvdFile)' (qvd)
+;
+
+  /********************************************
+   * Since Primary Key was composite key need
+   * to drop the field
+   ********************************************/
+  DROP FIELD PRIMARY_KEY;
+
+//  /********************************************
+//   * Store New QVD, if no errors
+//   ********************************************/ 
+//	call store_into_qvd(vTableName, vQvdFile, 0);
+//    let vLastExecTime = '$(vThisExecTime)'; 
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+//  IF ScriptErrorCount = 0 THEN
+    STORE
+      Container_Line
+    INTO
+      '$(vRootFileLocation)$(vQVDs)Container_Line.qvd';
+    LET vLastExecTime = '$(vThisExecTime)'; 
+//  END IF
+  
+END IF
+
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+//call drop_table(vTableName);
+
+DROP Table Container_Line;
+DROP Table Ship_To_Account;
+
+///$tab Container_Line_Last_Rcv_time
+
+
+container_temp_1:
+LOAD 
+     CNTNR_NUM&'-'&CNTNR_LINE_NUM&'-'&INVOICE_NUM&'-'&PROD_KEY_NUM as PrimaryKey,
+     ACCT_KEY_NUM,
+     INVOICE_NUM,
+     PROD_KEY_NUM,
+     LAST_RCV_DTE_KEY_NUM,
+     CNTNR_NUM,
+     CNTNR_LINE_NUM,
+     RCV_QTY,
+     REQ_QTY, 
+     ACPT_QTY,
+     LAST_RCV_USER_ID,
+   	 LAST_RCV_TIM
+FROM
+'$(vRootFileLocation)$(vQVDs)Container_Line.qvd'
+(qvd)
+;
+
+
+Left Join (container_temp_1) 
+
+LOAD 
+
+ACCT_KEY_NUM,
+[DC #],
+[Account #] 
+
+FROM
+'$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd'
+(qvd) 
+;
+
+
+ 
+
+Inner Join (container_temp_1) 
+
+LOAD
+PrimaryKey,
+Max(LAST_RCV_TIM)as LAST_RCV_TIM
+
+Resident container_temp_1
+Group By PrimaryKey
+;
+
+
+
+NoConcatenate
+
+container_temp:
+
+LOAD
+
+     ACCT_KEY_NUM,
+     INVOICE_NUM,
+     [DC #],
+     [Account #],
+     RCV_QTY,
+     REQ_QTY, 
+     ACPT_QTY,
+     LAST_RCV_USER_ID,
+   	 LAST_RCV_TIM
+   	 
+   	 
+Resident container_temp_1
+;
+
+Left Join (container_temp) 
+
+LOAD
+     [DC #],
+     [Account #] ,   
+     INVOICE_NUM,
+     Sum(RCV_QTY) as RCV_QTY_SUM,
+     Sum(REQ_QTY) as REQ_QTY_SUM, 
+     Sum(ACPT_QTY) as ACPT_QTY_SUM
+
+
+Resident container_temp 
+Group By 
+     [DC #],
+     [Account #] ,   
+     INVOICE_NUM
+;
+
+
+
+DROP Table container_temp_1;
+
+Store container_temp INTO '$(vRootFileLocation)$(vQVDs)container_temp.qvd';
+
+DROP Table container_temp ; 
+
+
+

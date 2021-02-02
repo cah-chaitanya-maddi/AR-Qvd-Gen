@@ -1,0 +1,151 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for USER_ACCOUNT_GROUP Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   User_Account_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/17/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+//ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+ODBC CONNECT TO PD_SDW_Stg;
+//VIEWST Changes by Sumit 11/06/2020 ARR 262-270
+///$tab User_Account_Group
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'User_Account_Group';
+
+/********************************************
+ * Get All Records
+ ********************************************/
+User_Account_Group:
+LOAD
+  USER_ACCT_GROUP_NUM              as [Account Group #]
+ ,Capitalize(USER_ACCT_GROUP_DESC) as [Account Group Name]
+ ,PARENT_USER_ACCT_GROUP_NUM
+ ,BSNS_UNIT_CDE
+ ,USER_GROUP_TYPE_CDE
+ ,USER_ACCT_GROUP_CTGRY_CDE
+ ,ROW_ADD_STP 
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+;
+SQL
+SELECT
+  USER_ACCT_GROUP_NUM
+ ,USER_ACCT_GROUP_DESC
+ ,PARENT_USER_ACCT_GROUP_NUM
+ ,BSNS_UNIT_CDE
+ ,USER_GROUP_TYPE_CDE
+ ,USER_ACCT_GROUP_CTGRY_CDE
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+FROM
+  VIEWS.USER_ACCOUNT_GROUP
+//WHERE  
+//  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+//LET vDeltaRecords = NoOfRows('$(vTableName)');
+//
+//IF $(vDeltaRecords) <> 0 THEN
+//  /********************************************
+//   * Concatenate Records where not exists in
+//   * the query above
+//   ********************************************/
+//  CONCATENATE
+//  LOAD
+//    ROW_UPDATE_USER_ID
+//   ,ROW_UPDATE_STP
+//   ,ROW_ADD_USER_ID
+//   ,ROW_ADD_STP
+//   ,USER_ACCT_GROUP_CTGRY_CDE
+//   ,USER_GROUP_TYPE_CDE
+//   ,BSNS_UNIT_CDE
+//   ,PARENT_USER_ACCT_GROUP_NUM
+//   ,[Account Group Name]
+//   ,[Account Group #]
+//  FROM
+//    '$(vRootFileLocation)$(vQVDs)User_Account_Group.qvd' (qvd)
+//  WHERE
+//    NOT EXISTS([Account Group #], [Account Group #])
+//  ;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+  IF ScriptErrorCount = 0 THEN
+    STORE
+      User_Account_Group
+    INTO
+      '$(vRootFileLocation)$(vQVDs)User_Account_Group.qvd';
+    LET vLastExecTime = '$(vThisExecTime)'; 
+  END IF
+  /********************************************
+   * Store Dev QVD
+   ********************************************/
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	trace "************************** DEV LOAD: Dev copy for User_Account_Group";
+
+	store 
+		User_Account_Group 
+	into 
+		'$(vRootFileLocation)$(vQVDs)\Dev\User_Account_Group.qvd';
+	
+	endif;
+//END IF
+
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+DROP TABLE User_Account_Group;
+

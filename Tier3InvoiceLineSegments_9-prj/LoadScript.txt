@@ -1,0 +1,152 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for Tier 2 Invoice_Line information.
+ *   This table is a combination of Invoice_Line_YYYYMM, Flag, 
+ *   tables
+ * 
+ * Sources:
+ *	 Invoice_Line_*.qvd 	
+ * Outputs:
+ *   Invoice_Line.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ *
+ * 7/25/2013 Joe Roberts
+ * Removed all logic except the concatenation of all historic files into a 
+ * single Invoice Line file. All other logic moved to Invoice Line QVD
+ * generator and Invoice Line delta QVD generator.
+ *
+ * 05/01/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+/*********************************************************************************
+
+
+*********************************************************************************/
+
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+LET v_expected_max_date = date(Today()-2);
+LET v_counter=0;
+LET v_qvd_max_date = date(Today()-2);
+
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+///$tab sub reduce
+sub reduce
+
+       segment:
+       load  Distinct 
+            ACCT_KEY_NUM 
+       from 
+            '$(vRootFileLocation)$(vQVDs)user_categories_segment_$(v_doc_num).qvd' (qvd)
+       ;
+
+
+Let v_row_count = QvdNoOfRecords('$(vRootFileLocation)$(vQVDs)user_categories_segment_$(v_doc_num).qvd') ; 
+
+IF v_row_count = 0 THEN
+
+EXIT SCRIPT;
+
+
+ELSE
+
+
+       invoice_line:
+       load
+            *
+       from 
+            '$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line.qvd' (qvd)
+       where exists(ACCT_KEY_NUM)
+       ; 
+
+       Store invoice_line into '$(vInvLineSegRootFolderLocation)$(vQVDs)Invoice_Line_Segment_$(v_doc_num).qvd';
+
+       Drop Table invoice_line,segment; 
+       
+
+ENDIF;
+       
+
+end sub;
+///$tab sub check
+sub check
+
+	date_map:
+	Mapping LOAD DTE_KEY_NUM as DTE_KEY,  
+     	RFRNC_DTE
+	FROM
+		'$(vRootFileLocation)$(vQVDs)Time_Detail.qvd'
+	(qvd);
+	
+	invoice_line_temp:
+	LOAD 
+		DTE_KEY_NUM
+	FROM
+		'$(vInvLineSegRootFolderLocation)$(vQVDs)Invoice_Line_Segment_$(v_doc_num).qvd'
+	(qvd)
+	;
+	
+	invoice_line_date_temp:
+	LOAD 
+		max(DTE_KEY_NUM) as DTE_KEY
+	Resident
+		invoice_line_temp
+	;
+	
+	DROP Table invoice_line_temp;
+	
+	max_date:
+	LOAD 
+		 ApplyMap('date_map', DTE_KEY) as maxdate
+	Resident 
+		 invoice_line_date_temp
+	;
+	
+	//drop Table invoice_line_date_temp;
+	
+	let v_qvd_max_date=peek('maxdate',0,'max_date');
+	
+	trace v_qvd_max_date;
+	
+	//drop table max_date;
+	
+end sub;
+	
+///$tab execution tab
+//let v_expected_max_date = date(Today()-2);
+//let v_counter=1;
+/******************
+* First Execution
+******************/
+call reduce;
+
+call check;
+
+/**************************
+* Error Handling Execution
+***************************/
+do while ( v_qvd_max_date < v_expected_max_date and v_counter <= 3)
+	TRACE QVD was not stored with correct data. Reprocessing the QVD to get correct data;
+	TRACE Pass $(v_counter);
+	call reduce;
+	call check;
+	let v_counter = $(v_counter) + 1;
+loop;
+
+/********************************
+* Error Handling Failure Alerting
+*********************************/
+if( v_counter = 3 and v_qvd_max_date < v_expected_max_date) then
+

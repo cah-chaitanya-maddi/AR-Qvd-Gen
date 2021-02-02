@@ -1,0 +1,109 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is the Tier 2 QVD-generator for Product Group information.
+ * 
+ * Sources:
+ *   Mercury_User.qvd
+ *   Ecom_Prod_List_User_rlt.qvd
+ *   Ecom_Product_List.qvd
+ *
+ * Outputs:
+ *   Product_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 11/17/2014 Warren Lea
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+//$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+///$tab mapping_load
+// Create any mapping tables needed
+
+// Mapping file to get user_id
+USER_ID_MAPPING:
+MAPPING
+LOAD
+  MRCRY_USER_ID, 
+  USER_ID
+FROM
+  '$(vRootFileLocation)$(vQVDs)Mercury_User.qvd'
+(qvd)
+;
+
+///$tab Main
+/**********************************************************
+Load and create the new product group QVD. 
+The header table is Ecom_Prod_List_User_rlt.
+The table with the CIN items is Ecom_Product_List. 
+
+Changelog:
+- 11.17.2014 warren.lea
+ Added.
+**********************************************************/
+
+
+/***************************************************************
+ * Get Product Group Header and User Data
+ ***************************************************************/
+Trace "*** Load Product Group Header";
+
+prod_list_users:
+LOAD
+  PROD_LIST_ID
+ ,MRCRY_USER_ID
+ ,[Product Group Name]
+ ,SRC_ADD_STP
+ ,SRC_ADD_USER_ID
+ ,SRC_UPDATE_USER_ID
+ ,ApplyMap('USER_ID_MAPPING', MRCRY_USER_ID) as USER_ID
+// ,ROW_ADD_STP    
+// ,ROW_ADD_USER_ID
+// ,ROW_UPDATE_STP
+// ,ROW_UPDATE_USER_ID
+FROM
+  '$(vRootFileLocation)$(vQVDs)Ecom_Prod_List_User_Rlt.qvd'
+(qvd)
+//Where exists(MRCRY_USER_ID, MRCRY_USER_ID)
+;
+
+
+/***************************************************************
+ * Get Product List CIN Data
+ ***************************************************************/
+Left Join (prod_list_users)
+//NoConcatenate
+LOAD
+  PROD_LIST_ID
+ ,CIN
+FROM
+  '$(vRootFileLocation)$(vQVDs)Ecom_Product_List.qvd' 
+(qvd)
+;
+
+
+//*************************************************************
+// In final table, store:
+//	 [Product Group #] 
+//   CIN
+//   [Product Group Name] 
+//   User_id   
+//*************************************************************
+Store prod_list_users
+	into '$(vRootFileLocation)$(vQVDs)Product_Groups.qvd' 
+;
+
+
+DROP Table prod_list_users;

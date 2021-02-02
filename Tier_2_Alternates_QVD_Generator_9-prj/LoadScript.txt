@@ -1,0 +1,477 @@
+﻿///$tab Setup
+/**********************************************************
+Setup the root directory and the needed include files for
+this application.
+
+Changelog:
+- 5.24.2013 jeremy.fourman
+Added this block.
+
+ 04/25/2014 Sushma BV
+ Changed the Section Access Script File name to used doc level section access
+- 6.11.2013 jeremy.fourman
+Added $(Must_Include=$(vRootFileLocation)Config\Web.qvs);
+Changed the Section Access Script File name to used doc level section access
+**********************************************************/
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vDocName = replace(DocumentName(),'.qvw','');
+LET v_today = Today();
+let vQVDs = 'QVDs\';
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs); 
+//$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs); /*Cloud PROD ODBC*/ ///commented for PMOD
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+
+
+TRACE $(v_doc_num);
+
+//ODBC CONNECT TO PD_Hadoop_Hive_INT;	///commented for PMOD
+ODBC CONNECT TO PD_Hadoop_Hive_QA;
+
+//ODBC CONNECT TO PD_Hadoop_Hive_QA;
+
+
+//ODBC CONNECT TO $(vHadoopConnection); 
+
+
+///$tab Alternate_Segments
+/******************************************************************************************
+* Fecth the data from hadoop based on segment num.
+* Hadoop segments start from 0 for both normal and super users
+*******************************************************************************************/
+
+/////////////////////////////////
+// Extraction for normal users //
+/////////////////////////////////
+
+if v_doc_num < 30 then
+
+let v_seg_num = v_doc_num-1;
+
+trace v_seg_num= $(v_seg_num);
+
+PUB_PRODUCT_ELIGIBILITY:
+
+SELECT	*
+
+FROM  HIVE."pd_shared_customer"."pub_product_eligibility"
+where 
+segment_num_part = '$(v_seg_num)'
+;
+
+ENDIF;
+
+
+/////////////////////////////////
+// Extraction for super users //
+/////////////////////////////////
+
+if v_doc_num > 30 then
+
+let v_seg_num = v_doc_num-31;
+
+trace v_seg_num= $(v_seg_num);
+
+PUB_PRODUCT_ELIGIBILITY:
+
+SELECT	*
+
+FROM  HIVE."pd_shared_customer"."pub_product_eligibility"
+where 
+//hdp_xfm_dte_part > '$(v_last_execution_date)'  
+//and 
+segment_num_part = '$(v_seg_num)'
+;
+
+ENDIF;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// If there are records then Store the extracted data in Tier 1 QVD else do not save anthing and exist the esecution//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+if(NoOfRows('PUB_PRODUCT_ELIGIBILITY')>0) then
+STORE PUB_PRODUCT_ELIGIBILITY into '$(vRootFileLocation)$(vQVDs)PUB_PRODUCT_ELIGIBILITY_$(v_doc_num).qvd' ; 
+ENDIF;
+
+if(NoOfRows('PUB_PRODUCT_ELIGIBILITY')=0) then
+EXIT Script; 
+ENDIF;
+
+
+///$tab User Categories Load
+//***********************************************************
+// load the Account from the Contract Ops entitlement tables
+//***********************************************************
+user_categories:
+load Distinct
+     Upper(USER_ID) as USER_ID
+     ,AccountSelector
+     ,[Segment #]
+from
+ '$(vRootFileLocation)$(vQVDs)user_categories_contracts_opps_$(v_doc_num).qvd' (qvd)
+; 
+
+Concatenate
+
+
+load Distinct
+     Upper(USER_ID) as USER_ID
+     ,AccountSelector
+     ,[Segment #]
+from
+ '$(vRootFileLocation)$(vQVDs)user_categories_SOURCE_opps_$(v_doc_num).qvd' (qvd)
+; 
+///$tab Alternatives_New
+
+ALTERNATE_ELIGIBILITY_1:
+LOAD	ship_to_location_num &'-' & ship_to_customer_num &'-'& card_sbst_key_id						as %Alternate_Product_Key,
+	 	ship_to_location_num &'-' & ship_to_customer_num &'-'& corp_item_num	 					as Alternate_Price_Key,
+	    corp_item_num &'|'& cntrct_group_num			  											as cin_cntrct_alternate,
+ 	 	ship_to_location_num 																		as SHIP_TO_LOCATION_NUM, 
+     	ship_to_customer_num 																		as SHIP_TO_CUSTOMER_NUM, 
+     	group_prty_rank_num 																		as [Cardinal Priority Rank], 
+     	card_sbst_key_id 																			as [Alternative Product Code], 
+     	corp_item_num 																				as [Alternative CIN], 
+     	cntrct_group_num 																			as [Alternative Contract #], 
+     	contract_cost 																				as [Alternative Contract Cost], 
+     	contract_start_date 																		as [Alternative Contract Start Date], 
+     	contract_expiration_date 																	as [Alternative Contract Expiration Date],
+     	segment_num_part,
+     	sap_customer_num
+
+Resident PUB_PRODUCT_ELIGIBILITY;
+
+DROP Table PUB_PRODUCT_ELIGIBILITY;
+
+// Add contract level data by joining on CNTRCT_GROUP_KEY_NUM
+
+left join(ALTERNATE_ELIGIBILITY_1)
+load distinct
+     [Contract #] as [Alternative Contract #]
+    ,[Contract Name] as [Alternative Contract Name]
+    ,[Contract Name] as [340B Target Contract Name]
+    ,if(Match(CNTRCT_GROUP_AFLTN_NUM,'779','998'), 'Y','N') as [Alternative Source Contract]
+    ,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), 'Y','N') as [Alternative 340B Contract]
+    ,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), '340B Contract','Non-340B Contract') as [340B Target Contract Type]
+    ,[Contract Type] //as [Target Contract Type]  
+    ,if(Match([Contract #], $(vPrimarySOURCEContracts)) ,  'Primary SOURCE'     ////***** ARB-449/450. [Contract #] values are predefined in the variable vPrimarySOURCEContracts *****////
+    	,if(Match(CNTRCT_GROUP_AFLTN_NUM,'779','998'), 'All SOURCE'	
+    		,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), '340B Contract' 
+    			,if(match ([Contract Type] ,'Primary') ,'Primary' , 'Ancillary' )))) as [Target Contract Type] 
+    ,[New Contract Name] as [New Alternative Contract Name]
+     
+FROM
+    '$(vRootFileLocation)$(vQVDs)Contract_Group_Contracts.qvd' (qvd)
+;
+
+outer join (ALTERNATE_ELIGIBILITY_1)
+
+load 
+	`segment_num` as segment_num_part,
+	`hdp_xfm_dte`,
+    `hdp_src_dte`,    
+    `sap_customer_num`,
+    `corp_item_num` as [Alternative CIN],
+    `sap_buy_group_ID`,  //cntrct_group_num
+    `sap_contract_num`,
+    `sell_price_dlr`,
+    `retail_sell_price_dlr`,
+    `rebate_price_dlr`,
+    `cntrct_grp_nam`, //cntrct_grp_nam
+    `SOURCE_FLG`,
+    `Aux_FLG`,
+     sap_contract_num as [Alternative Contract #]
+    ,cntrct_grp_nam as [Alternative Contract Name]
+    ,cntrct_grp_nam as [340B Target Contract Name]
+    ,if(Match(SOURCE_FLG,'P','B'), 'Y','N') as [Alternative Source Contract]
+    ,if(Match(sap_buy_group_ID,'10985-64','10134-64','10232-SR'), 'Y','N') as [Alternative 340B Contract] 
+    ,if(Match(sap_buy_group_ID,'10985-64','10134-64','10232-SR'), '340B Contract','Non-340B Contract') as [340B Target Contract Type]
+    //,[Contract Type] //as [Target Contract Type]  
+    ,if(match ( SOURCE_FLG,'P'),  'Primary SOURCE'     
+    	,if(Match(SOURCE_FLG,'P','B'), 'All SOURCE'	
+    		,if(Match(sap_buy_group_ID,'10985-64','10134-64','10232-SR'), '340B Contract' 
+    			,if(Match(Aux_FLG,'SP') ,'Primary' 
+    			,if(Match(Aux_FLG,'SH'), 'Ancillary' ))))) as [Target Contract Type] 
+    ,cntrct_grp_nam as [New Alternative Contract Name]  
+    
+    
+    FROM
+    '$(vRootFileLocation)$(vQVDs)ACCOUNT_PROD_PRICE_SEG_BQ_$(v_doc_num).qvd' (qvd)
+;
+
+
+///$tab Alternate Products
+NoConcatenate
+ALTERNATE_ELIGIBILITY:
+LOAD %Alternate_Product_Key,
+    Alternate_Price_Key,
+//    %Alternate_Availability,
+    [Cardinal Priority Rank],
+	[Alternative Contract #],
+	[Alternative Contract Name],
+	[Alternative Contract Cost],
+    [Alternative CIN],
+	[Alternative Contract Start Date],
+    [Alternative Contract Expiration Date],
+    [Target Contract Type],
+    [Alternative Source Contract],
+    [Alternative 340B Contract],
+    [340B Target Contract Type],
+    [340B Target Contract Name],
+	cin_cntrct_alternate,
+	[New Alternative Contract Name],	//PMOD  ARR 238
+//	1 as Alternative_Counter,
+	sap_customer_num,
+	segment_num_part
+RESIDENT ALTERNATE_ELIGIBILITY_1
+where 
+Date([Alternative Contract Expiration Date],'MM/DD/YYYY') >= '$(v_today)' // Only load current contracts
+;
+Drop Table ALTERNATE_ELIGIBILITY_1;
+
+// Required that Alternatives be Active items.
+INNER JOIN (ALTERNATE_ELIGIBILITY) //_Temp)
+load Distinct
+	 CIN  as [Alternative CIN]  
+    ,Form as [Alternative Form]
+    ,[Generic Name] as [Alternative Generic Name] 
+    ,Manufacturer as [Alternative Manufacturer]
+    ,Mfr as [Alternative Mfr]
+    ,NDC as [Alternative NDC]
+    ,[Package Qty] as [Alternative Package Qty]
+    ,[Package Size]  as [Alternative Package Size]
+    ,"DEA Schedule #" as [Alternative DEA Schedule#]
+    ,Size as [Alternative Size]
+    ,Strength as [Alternative Strength]
+    ,[Trade Name] as [Alternative Trade Name]
+FROM '$(vRootFileLocation)$(vQVDs)Product_All.qvd' (qvd)
+WHERE [Product Active Status] = 'A' 
+	and [Current Version-hist] = 'Y'
+;    
+
+
+STORE ALTERNATE_ELIGIBILITY into '$(vRootFileLocation)$(vQVDs)ALTERNATE_ELIGIBILITY_$(v_doc_num).qvd';
+
+NoConcatenate
+//Inner Join (Alternatives)
+
+Min_Alt_Cont_Cost:
+LOAD 
+%Alternate_Product_Key,
+[Alternative CIN],
+//Max([Alternative Contract #]) as Max_Alt_Cont_#,
+Min([Alternative Contract Cost]) as Min_Alt_Cont_Cost
+Resident ALTERNATE_ELIGIBILITY
+
+group by
+%Alternate_Product_Key,
+[Alternative CIN]
+
+;
+
+Inner Join (Min_Alt_Cont_Cost)
+
+LOAD 
+%Alternate_Product_Key,
+FirstSortedValue( [Alternative CIN],Min_Alt_Cont_Cost) as Min_Alternative_CIN
+
+Resident Min_Alt_Cont_Cost
+
+group by
+%Alternate_Product_Key
+;
+
+
+Inner Join (ALTERNATE_ELIGIBILITY)
+
+LOAD
+*
+Resident Min_Alt_Cont_Cost
+;
+
+
+
+///$tab Store and Cleanup
+DROP Table Min_Alt_Cont_Cost;
+drop Table user_categories;
+
+
+STORE ALTERNATE_ELIGIBILITY into '$(vRootFileLocation)$(vQVDs)Alternates_Segment_BQ_$(v_doc_num).qvd';
+drop Table ALTERNATE_ELIGIBILITY;
+///$tab Map Loads
+//Alternate_Product_Key_Lookup:
+//Mapping LOAD Distinct
+//	CIN as CORP_ITEM_NUM 
+//	,[Alternative Product Code]
+//from
+//	'$(vRootFileLocation)$(vQVDs)Product_All.qvd'
+//(qvd)
+////RESIDENT Product_All
+//WHERE len(trim([Alternative Product Code]))>0;
+
+
+//Alternate_Product_Key_Lookup2:
+//Mapping LOAD Distinct
+//	PROD_KEY_NUM 
+//	,[Alternative Product Code]  //This is the substitution ID
+//from
+//	'$(vRootFileLocation)$(vQVDs)Product_All.qvd'
+//(qvd)
+//WHERE len(trim([Alternative Product Code]))>0;
+///$tab Contract
+///**********************************************************
+//* This script uses tables from the Ship_to and Products tabs to build
+//*   the account_contracts contract items table. 
+//* 1. Load \Acct_Cntrct_Group_Rlt_D1, account-contracts relation table
+//* 2. Join with the Ship_to_Account table to get the most recent ACCT_KEY_NUM. This will be 
+//*    when the records are added to Invoice_line.
+//* 3. Join with the Group_Contract data - to get contract name and contract categories.
+//* 4. Join with the contract items - Active_dds_contracts
+//**********************************************************/
+//
+////*****************************************************************************************************
+//trace "*********** Loading account_contracts table";
+////*****************************************************************************************************
+//account_contracts:
+//load Distinct
+//    CNTRCT_GROUP_NUM //as [Contract #]
+//   ,START_DTE 
+//   ,END_DTE  
+//   ,SHIP_TO_LOCATION_NUM
+//   ,SHIP_TO_CUSTOMER_NUM   
+//   ,[Cardinal Priority Rank] 
+//from
+//	'$(vRootFileLocation)$(vQVDs)Acct_Cntrct_Group_Rlt_D1.qvd' (qvd)			// Only load acct-contract records for accounts that have been loaded
+//where exists(AccountSelector, SHIP_TO_LOCATION_NUM & '-' & SHIP_TO_CUSTOMER_NUM)
+//	and 
+//   		Date(END_DTE,'MM/DD/YYYY') >= '$(v_today)' 								// Only load current contracts
+//;
+//
+//// Left join to preserve all account contracts
+//left join(account_contracts)
+//load distinct
+//    [Contract #] as CNTRCT_GROUP_NUM
+//    ,CORP_ITEM_NUM
+//	,[Contract Start Date]
+//    ,[Contract Expiration Date]  
+//    ,Max([Contract Cost]) as [Contract Cost]
+//from  
+//	'$(vRootFileLocation)$(vQVDs)Active_Dds_Contracts.qvd' (qvd)
+//where Exists(CNTRCT_GROUP_NUM, [Contract #])
+//group by  [Contract #] 
+//    ,CORP_ITEM_NUM
+//	,[Contract Start Date]
+//    ,[Contract Expiration Date]
+//;
+//
+//NoConcatenate
+//
+//invoice_line:
+//
+//load Distinct
+//	[DC #] &'-' & [Account #] & '-' & ApplyMap('Alternate_Product_Key_Lookup2',PROD_KEY_NUM,'') as %Alternate_Product_Key
+//
+//from  
+//       '$(vInvLineSegRootFolderLocation)$(vQVDs)Invoice_Line_segment_$(v_doc_num).qvd' (qvd)
+//where Exists (AccountSelector, [DC #] &'-'& [Account #])	;
+//
+//
+//NoConcatenate
+//
+//Alternates_Staging:
+//Load Distinct 
+//	 *,
+//	 SHIP_TO_LOCATION_NUM &'-' & SHIP_TO_CUSTOMER_NUM &'-'& [Alternative Product Code] as %Alternate_Product_Key
+//	,SHIP_TO_LOCATION_NUM &'-' & SHIP_TO_CUSTOMER_NUM &'-'& [Alternative CIN] as Alternate_Price_Key
+//	//use this to limit the returned result so it does not show the same product from the same contract
+//	,[Alternative CIN] &'|'& [Alternative Contract #]  as cin_cntrct_alternate 
+//WHERE 
+//	Exists (%Alternate_Product_Key, SHIP_TO_LOCATION_NUM &'-' & SHIP_TO_CUSTOMER_NUM &'-'& [Alternative Product Code])
+//and Len(Trim([Alternative Product Code])) >0;
+//
+//LOAD SHIP_TO_LOCATION_NUM
+//	,SHIP_TO_CUSTOMER_NUM
+//	,[Cardinal Priority Rank] 
+//	,Applymap('Alternate_Product_Key_Lookup',CORP_ITEM_NUM,'') as [Alternative Product Code]		//grabs the alt product code aka - Substitution Key
+//	,CORP_ITEM_NUM as [Alternative CIN]
+//	,CNTRCT_GROUP_NUM as [Alternative Contract #]
+//	,[Contract Cost] as [Alternative Contract Cost]
+//	,[Contract Start Date] as [Alternative Contract Start Date]
+//    ,[Contract Expiration Date] as [Alternative Contract Expiration Date]
+//RESIDENT account_contracts;
+//
+//DROP Table invoice_line;
+//
+//// Add contract level data by joining on CNTRCT_GROUP_KEY_NUM
+//left join(Alternates_Staging)
+//load distinct
+//    //CNTRCT_GROUP_KEY_NUM 
+//    [Contract #] as [Alternative Contract #]
+////    ,[Contract #] as [Target Contract #]
+////    ,[Contract Name] as [Target Contract Name]
+//    ,[Contract Name] as [Alternative Contract Name]
+//    ,[Contract Name] as [340B Target Contract Name]
+//    ,if(Match(CNTRCT_GROUP_AFLTN_NUM,'779','998'), 'Y','N') as [Alternative Source Contract]
+//    ,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), 'Y','N') as [Alternative 340B Contract]
+//    ,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), '340B Contract','Non-340B Contract') as [340B Target Contract Type]
+//    ,[Contract Type] //as [Target Contract Type]  
+//    ,if(Match(CNTRCT_GROUP_AFLTN_NUM,'779','998'), 'SOURCE'
+//    	,if(Match(RPT_TO_GROUP_NUM,'105','9205','29711'), '340B Contract' 
+//    		,if(match ([Contract Type] ,'Primary') ,'Primary' , 'Ancillary' )) ) as [Target Contract Type]  
+//FROM
+//    '$(vRootFileLocation)$(vQVDs)Contract_Group_Contracts.qvd' (qvd)
+//;
+
+
+//**********************extra from Alternates tab
+
+
+
+
+//
+//
+//LOAD Distinct
+//	 ship_to_location_num &'-' & ship_to_customer_num &'-'& card_sbst_key_id						as %Alternate_Product_Key,
+//	 ship_to_location_num &'-' & ship_to_customer_num &'-'& corp_item_num	 						as Alternate_Price_Key,
+////	 dte_key_num & '-' & ship_to_location_num &'-' & ship_to_customer_num &'-'& card_sbst_key_id 	as %Alternate_Availability,
+////	 dte_key_num & '-' & corp_item_num 																as %Alternate_Availability,
+//	 corp_item_num &'|'& cntrct_group_num			  												as cin_cntrct_alternate,
+//	 ship_to_location_num 																			as SHIP_TO_LOCATION_NUM, 
+//     ship_to_customer_num 																			as SHIP_TO_CUSTOMER_NUM, 
+////     dte_key_num 																					as DTE_KEY_NUM, 
+//     group_prty_rank_num 																			as [Cardinal Priority Rank], 
+//     card_sbst_key_id 																				as [Alternative Product Code], 
+//     corp_item_num 																					as [Alternative CIN], 
+////     avail_alert_cde 																				as AVAIL_ALERT_CDE, 
+////     extrnl_msg_txt 																				as EXTRNL_MSG_TXT, 
+//     cntrct_group_num 																				as [Alternative Contract #], 
+//     contract_cost 																					as [Alternative Contract Cost], 
+//     contract_start_date 																			as [Alternative Contract Start Date], 
+//     contract_expiration_date 																		as [Alternative Contract Expiration Date]
+//     
+////from  
+////	'$(vRootFileLocation)$(vQVDs)Alternatives.qvd' (qvd)
+//
+//FROM
+//[F:\Dev\1_PD_QLKDATA\PD_QlikView_Files\QVDs\Alternates_Segment_14.xlsx]
+//(ooxml, embedded labels, table is bus_product_eligibility)
+//	;
+
+//DROP Table Invoice_Line;
+
+
+
+
+//Invoice_Line:
+//
+//load Distinct
+//	[DC #] &'-' & [Account #] & '-' & ApplyMap('Alternate_Product_Key_Lookup2',PROD_KEY_NUM,'') as %Alternate_Product_Key
+//from  
+//       '$(vInvLineSegRootFolderLocation)$(vQVDs)Invoice_Line_segment_$(v_doc_num).qvd' (qvd)
+//where Exists (AccountSelector, [DC #] &'-'& [Account #])	;
+
+
+//NoConcatenate

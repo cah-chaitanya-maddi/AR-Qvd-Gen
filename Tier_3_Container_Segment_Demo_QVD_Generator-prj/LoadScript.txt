@@ -1,0 +1,117 @@
+﻿///$tab Setup
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+///$tab Main
+
+container_temp:
+LOAD 
+     ACCT_KEY_NUM,
+     INVOICE_NUM,
+     [DC #],
+     [Account #] ,
+     LAST_RCV_USER_ID,
+   	 LAST_RCV_TIM,
+     RCV_QTY,
+     REQ_QTY, 
+     ACPT_QTY,
+     RCV_QTY_SUM,
+     REQ_QTY_SUM, 
+     ACPT_QTY_SUM
+
+FROM
+'$(vRootFileLocation)$(vQVDs)container_temp.qvd'
+(qvd)
+;
+
+
+
+Let vCounter = 'demo' ; 
+
+	containerkey_temp:
+	LOAD 
+	[DC #]&'-'& [Account #]&'-'&[Invoice #] as ContainerLineKey_Temp       
+	FROM
+	'$(vInvLineSegRootFolderLocation)$(vQVDs)Invoice_Line_Segment_$(vCounter).qvd'
+	(qvd)
+	
+	;
+	
+	NoConcatenate
+	containerkey:
+	load Distinct ContainerLineKey_Temp
+	resident containerkey_temp;
+	
+	drop table containerkey_temp;
+	
+	
+	NoConcatenate
+	
+	container_temp1:
+	LOAD 
+	    
+	     [DC #]&'-'& [Account #]&'-'&INVOICE_NUM as ContainerLineKey,
+	     REQ_QTY_SUM as [Required Qty],
+	     if( RCV_QTY_SUM>=REQ_QTY_SUM, 'Received', if(ACPT_QTY_SUM=0 or IsNull(ACPT_QTY_SUM)=-1, 'Not Received', 'Partially Received')) as [Received Status],
+	     if(IsNull(RCV_QTY_SUM)=0, RCV_QTY_SUM, '0') as [Received Qty], 
+	     if(IsNull(LAST_RCV_USER_ID)=0, LAST_RCV_USER_ID, '-') as [Received By], 
+    	 num(LAST_RCV_TIM) as [Received Time]
+	     
+		Resident container_temp
+	where Exists (ContainerLineKey_Temp, [DC #]&'-'& [Account #]&'-'&INVOICE_NUM) 
+	;
+	
+	DROP Table containerkey;
+	
+
+
+	
+	NoConcatenate
+	container_recieved_by:
+	LOAD 
+		ContainerLineKey,
+		[Received By]
+	Resident container_temp1
+	where IsNull([Received By])=0;
+	
+	NoConcatenate
+	container:
+	LOAD 
+	     ContainerLineKey,
+	     [Required Qty],
+	     [Received Qty],
+	     [Received Time],
+	     [Received Status]
+	Resident container_temp1
+	;
+	
+	DROP Table container_temp1;
+	
+
+
+
+	left Join (container)
+	
+	LOAD 
+		ContainerLineKey,
+		[Received By]
+	Resident container_recieved_by;
+	
+	drop Table container_recieved_by;
+	
+	store container into '$(vRootFileLocation)$(vQVDs)Tier_2_Container_Line_$(vCounter).qvd';
+	
+	drop table container;
+
+
+
+DROP Table container_temp;

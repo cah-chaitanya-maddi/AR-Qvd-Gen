@@ -1,0 +1,250 @@
+﻿<DocInternals>
+  <AlwaysLoose></AlwaysLoose>
+  <FieldSrcTables></FieldSrcTables>
+  <TableViewData>
+    <Pos></Pos>
+    <CtlInfo>
+      <InternalView>
+        <Tables>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>491</Left>
+              <Top>238</Top>
+              <Width>100</Width>
+              <Height>172</Height>
+            </Pos>
+            <Caption>user_reort_rlt</Caption>
+          </TableViewTableWinSaveInfo>
+        </Tables>
+        <BroomPoints></BroomPoints>
+        <ConnectionPoints></ConnectionPoints>
+        <ZoomFactor>3FF0000000000000</ZoomFactor>
+      </InternalView>
+      <SourceView></SourceView>
+    </CtlInfo>
+    <Mode>0</Mode>
+  </TableViewData>
+  <Bookmarks></Bookmarks>
+  <SavedByVersion>12.20.21000.0</SavedByVersion>
+  <ForceBackEndMacroExecution>false</ForceBackEndMacroExecution>
+  <FieldTags>
+    <ScriptBased>
+      <FieldTagData>
+        <Tag>$hidden</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$system</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>User</String>
+          <String>Report Name</String>
+          <String>Is Assignment Active</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>User</String>
+          <String>Report Name</String>
+          <String>Is Assignment Active</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>Report Assignment Start Date</String>
+          <String>Report Assignment End Date</String>
+          <String>Report ID</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>Report Assignment Start Date</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>Report ID</String>
+        </FieldNames>
+      </FieldTagData>
+    </ScriptBased>
+    <Interactive>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>Due Date</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>FLG_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>Invoice #</String>
+          <String>Invoice Line #</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>Due Date</String>
+          <String>NIFO Cost</String>
+          <String>Purchase Dollars Amt</String>
+          <String>Purchase Dollars DOD</String>
+          <String>Unit Price</String>
+          <String>Unit Price DOD</String>
+          <String>Ship Qty Amt</String>
+          <String>Order Qty</String>
+          <String>Qty Multiplier</String>
+          <String>Order #</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+          <String>CAC_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>Contract #</String>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>LoadDuration</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>L02_VRSN_END_DTE</String>
+          <String>L02_VRSN_START_DTE</String>
+          <String>L02_FEE_BASIS_POINT_QTY</String>
+          <String>Affiliation #</String>
+          <String>L02_CARD_ACCT_GROUP_NUM</String>
+          <String>L01_CARD_ACCT_GROUP_NUM</String>
+          <String>L03_VRSN_END_DTE</String>
+          <String>L03_VRSN_START_DTE</String>
+          <String>L03_FEE_BASIS_POINT_QTY</String>
+          <String>L03_CARD_ACCT_GROUP_NUM</String>
+          <String>DC #</String>
+          <String>Account #</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>FLG_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>Invoice #</String>
+          <String>Invoice Line #</String>
+          <String>ACCT_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>Due Date</String>
+          <String>Ship Qty Amt</String>
+          <String>Order Qty</String>
+          <String>Qty Multiplier</String>
+          <String>Order #</String>
+          <String>CAC_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>Contract #</String>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>L02_VRSN_END_DTE</String>
+          <String>L02_VRSN_START_DTE</String>
+          <String>Affiliation #</String>
+          <String>L02_CARD_ACCT_GROUP_NUM</String>
+          <String>L01_CARD_ACCT_GROUP_NUM</String>
+          <String>L03_VRSN_END_DTE</String>
+          <String>L03_VRSN_START_DTE</String>
+          <String>L03_CARD_ACCT_GROUP_NUM</String>
+          <String>DC #</String>
+          <String>Account #</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$date</Tag>
+        <FieldNames>
+          <String>Due Date</String>
+        </FieldNames>
+      </FieldTagData>
+    </Interactive>
+  </FieldTags>
+  <FieldComments></FieldComments>
+  <TableComments></TableComments>
+  <CreatePrjFolder>false</CreatePrjFolder>
+  <LinkedTables></LinkedTables>
+  <AppObjectEntries></AppObjectEntries>
+  <GenericDimensions></GenericDimensions>
+  <GenericMeasures></GenericMeasures>
+  <GenericBookmarks></GenericBookmarks>
+  <ConnectionInfo></ConnectionInfo>
+  <GenericDerivedDefinitions></GenericDerivedDefinitions>
+  <GenericDerivedFields></GenericDerivedFields>
+  <BnfOff>false</BnfOff>
+  <CreatedAfterSingleQuoteExactSearch>false</CreatedAfterSingleQuoteExactSearch>
+</DocInternals>

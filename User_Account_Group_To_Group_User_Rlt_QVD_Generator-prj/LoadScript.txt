@@ -1,0 +1,99 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for User_Account_Group_To_Group_User_Rlt information.
+ *   Put some usefull description here.
+ *   Tier 2
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   User_Account_Group_To_Group_User_Rlt.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/10/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+///$tab User_Account_Group_To_Group_User_Rlt
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Mercury_User_Map:
+MAPPING
+LOAD
+  [Account Group #]
+ ,MRCRY_USER_ID 
+FROM
+ '$(vRootFileLocation)$(vQVDs)GROUP_USER_RLT.qvd' (qvd)
+;
+
+User_Account_Group_To_Group_User_Rlt:
+LOAD
+  USER_ACCT_GROUP_CTGRY_CDE
+ ,USER_GROUP_TYPE_CDE
+ ,BSNS_UNIT_CDE
+ ,PARENT_USER_ACCT_GROUP_NUM
+ ,[Account Group Name]
+ ,[Account Group #]
+ ,applymap('Mercury_User_Map',[Account Group #]) as MRCRY_USER_ID
+FROM
+  '$(vRootFileLocation)$(vQVDs)USER_ACCOUNT_GROUP.qvd' (qvd)
+;
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE
+  User_Account_Group_To_Group_User_Rlt
+INTO
+  '$(vRootFileLocation)$(vQVDs)User_Account_Group_To_Group_User_Rlt.qvd' (qvd)
+;
+
+/********************************************
+ * Store Dev QVD
+ ********************************************/
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+trace "************************** DEV LOAD: Dev copy for <<Table_Name>>";
+
+store 
+	User_Account_Group_To_Group_User_Rlt
+into 
+	'$(vRootFileLocation)$(vQVDs)\Dev\User_Account_Group_To_Group_User_Rlt.qvd';
+	
+endif;
+ 
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP TABLE
+  User_Account_Group_To_Group_User_Rlt
+;

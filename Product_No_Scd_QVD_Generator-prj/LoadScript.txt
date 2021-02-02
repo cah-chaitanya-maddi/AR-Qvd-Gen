@@ -1,0 +1,1231 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for PRODUCT_NO_SCD information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   td_Product_No_Scd.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+///$tab Product_No_Scd_New
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Product_No_Scd_PMOD';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Product_No_Scd:
+LOAD
+  DEA_SUB_BASE_NUM                                                                                                        as [DEA_SUB_BASE_NUM]
+ ,Capitalize(MKT_DESC)                                                                                                    as [MKT_DESC]
+ ,IF(PROD_DSCONT_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(PROD_DSCONT_DTE,'YYYY/MM/DD'),'MM/DD/YYYY'))         as [PROD_DSCONT_DTE] 
+ ,CGBK_PARENT_SUPPLIER_NUM                                                                                                as [CGBK_PARENT_SUPPLIER_NUM]
+ ,EDI_CGBK_FLG                                                                                                            as [EDI_CGBK_FLG]
+ ,capitalize(PROD_AGR_DESC)                                                                                               as [PROD_AGR_DESC]
+ ,PROD_AGR_CDE                                                                                                            as [PROD_AGR_CDE]
+ ,capitalize(SBST_DESC)                                                                                                   as [SBST_DESC]
+ ,SBST_ID                                                                                                                 as [SBST_ID]
+ ,capitalize(INVTRY_CLASS_DESC)                                                                                           as [INVTRY_CLASS_DESC]
+ ,INVTRY_CLASS_ID                                                                                                         as [INVTRY_CLASS_ID]
+ ,Capitalize(INVTRY_TYPE_DESC)                                                                                            as [INVTRY_TYPE_DESC]
+ ,INVTRY_TYPE_ID                                                                                                          as [INVTRY_TYPE_ID]
+ ,CH_ALTRNT_HAM_DEPT_FLG                                                                                                  as [CH_ALTRNT_HAM_DEPT_FLG]
+ ,Capitalize(CH_ALTRNT_HAM_DEPT_DESC)                                                                                     as [CH_ALTRNT_HAM_DEPT_DESC]
+ ,Capitalize(CH_HHC_SUB_CTGRY_DESC)                                                                                       as [CH_HHC_SUB_CTGRY_DESC]
+ ,Capitalize(CH_SUB_CTGRY_DESC)                                                                                           as [CH_SUB_CTGRY_DESC]
+ ,Capitalize(CH_CTGRY_DESC)                                                                                               as [CH_CTGRY_DESC]
+ ,Capitalize(CH_CTGRY_MNGR_ASSIST_NAM)                                                                                    as [CH_CTGRY_MNGR_ASSIST_NAM]
+ ,Capitalize(CH_NON_PRIVATE_LABEL_MNGR_NAM)                                                                               as [CH_NON_PRIVATE_LABEL_MNGR_NAM]
+ ,Capitalize(CH_CTGRY_MNGR_NAM)                                                                                           as [CH_CTGRY_MNGR_NAM]
+ ,CH_ALTRNT_HAM_DEPT_NUM                                                                                                  as [CH_ALTRNT_HAM_DEPT_NUM]
+ ,Capitalize(DEA_SPECIAL_ATTN_DESC)                                                                                       as [DEA_SPECIAL_ATTN_DESC]
+ ,DEA_SPECIAL_ATTN_CDE                                                                                                    as [DEA_SPECIAL_ATTN_CDE]
+ ,SUPPLIER_GWSA_SVC_LEVEL_FLG                                                                                             as [SUPPLIER_GWSA_SVC_LEVEL_FLG]
+ ,SUPPLIER_GWSA_RPRCR_FLG                                                                                                 as [SUPPLIER_GWSA_RPRCR_FLG]
+ ,SUPPLIER_GWSA_CNTRCT_COST_FLG                                                                                           as [SUPPLIER_GWSA_CNTRCT_COST_FLG]
+ ,SUPPLIER_GWSA_WAC_FLG                                                                                                   as [SUPPLIER_GWSA_WAC_FLG]
+ ,SUPPLIER_GWSA_NAV_SUPPLIER_FLG                                                                                          as [SUPPLIER_GWSA_NAV_SUPPLIER_FLG]
+ ,Capitalize(SUPPLIER_GWSA_GROUP_NAM)                                                                                     as [SUPPLIER_GWSA_GROUP_NAM]
+ ,SUPPLIER_GWSA_GROUP_NUM                                                                                                 as [SUPPLIER_GWSA_GROUP_NUM]
+ ,Capitalize(SUPL_GWSA_SVC_LEVEL_TYPE_DESC)                                                                               as [SUPL_GWSA_SVC_LEVEL_TYPE_DESC]
+ ,SUPL_GWSA_SVC_LEVEL_TYPE_CDE                                                                                            as [SUPL_GWSA_SVC_LEVEL_TYPE_CDE]
+ ,SUPPLIER_CASH_DISC_WAC_PCT                                                                                              as [SUPPLIER_CASH_DISC_WAC_PCT]
+ ,GWSA_EXCLSV_FLG                                                                                                         as [GWSA_EXCLSV_FLG]
+ ,GWSA_INJCT_FLG                                                                                                          as [GWSA_INJCT_FLG]
+ ,PACK_AMP_DLR                                                                                                            as [PACK_AMP_DLR]
+ ,PACK_FFPUL_P1_DLR                                                                                                       as [PACK_FFPUL_P1_DLR]
+ ,Capitalize(INTRNL_PROD_FNC_CLASS_DESC)                                                                                  as [INTRNL_PROD_FNC_CLASS_DESC]
+ ,INTRNL_PROD_FNC_CLASS_CDE                                                                                               as [INTRNL_PROD_FNC_CLASS_CDE]
+ ,Capitalize(ITEM_TYPE_DESC)                                                                                              as [ITEM_TYPE_DESC]
+ ,ITEM_TYPE_CDE                                                                                                           as [ITEM_TYPE_CDE]
+ ,FDB_HICL_SEQNO                                                                                                          as [FDB_HICL_SEQNO]
+ ,GLBL_SRC_FLG                                                                                                            as [GLBL_SRC_FLG]
+ ,Capitalize(AMP_TXT)                                                                                                     as [AMP]
+ ,Capitalize(MULTI_SRC_IND_DESC)                                                                                          as [Multi-Source Indicator]
+ ,MULTI_SRC_IND_CDE                                                                                                       as [MULTI_SRC_IND_CDE]
+ ,Capitalize(SUPPLIER_NLC_TYPE_DESC)                                                                                      as [SUPPLIER_NLC_TYPE_DESC]
+ ,SUPPLIER_NLC_TYPE_CDE                                                                                                   as [SUPPLIER_NLC_TYPE_CDE]
+ ,Capitalize(NLC_TYPE_DESC)                                                                                               as [NLC_TYPE_DESC]
+ ,NLC_TYPE_CDE                                                                                                            as [NLC_TYPE_CDE]
+ ,ACCUNET_QTY                                                                                                             as [Total Package Quantity]
+ ,FDB_OBC_EXP                                                                                                             as [FDA Therapeutic Equivalency Rating]
+ ,Capitalize(STRGTH_TXT)                                                                                                  as [Strength]
+ ,Capitalize(TRADE_NAM)                                                                                                   as [Trade Name]
+ ,PACK_SIZE_QTY                                                                                                           as [Package Size]
+ ,Capitalize(ADDL_DESC)                                                                                                   as [Product Add'l Description]
+ ,MDSP_TOTAL_PKG_QTY                                                                                                      as [MDSP_TOTAL_PKG_QTY]
+ ,Capitalize(MDSP_PKG_SIZE_UOM_ID)                                                                                        as [MDSP_PKG_SIZE_UOM_ID]
+ ,MDSP_PACK_QTY                                                                                                           as [MDSP_PACK_QTY]
+ ,MDSP_PACK_SIZE_NUM                                                                                                      as [MDSP_PACK_SIZE_NUM]
+ ,Capitalize(MDSP_THER_EQV_ID)                                                                                            as [MDSP_THER_EQV_ID]
+ ,FDB_FFPUL_P1                                                                                                            as [Federal Upper Limit]
+ ,FDB_CWPPKG_P1                                                                                                           as [FDB_CWPPKG_P1]
+ ,IF(FDB_BBPKG_D1='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(FDB_BBPKG_D1,'YYYY/MM/DD'),'MM/DD/YYYY'))               as [FDB_BBPKG_D1]
+ ,FDB_BBPKG_P1                                                                                                            as [FDB_BBPKG_P1]
+ ,Capitalize(BUYER_NAM)                                                                                                   as [BUYER_NAM]
+ ,BUYER_NUM                                                                                                               as [BUYER_NUM]
+ ,Capitalize(PURCH_PROD_TYPE_DESC)                                                                                        as [PURCH_PROD_TYPE_DESC]
+ ,PURCH_PROD_TYPE_CDE                                                                                                     as [PURCH_PROD_TYPE_CDE]
+ ,ROW_UPDATE_USER_ID                                                                                                      as [ROW_UPDATE_USER_ID]
+ ,ROW_UPDATE_STP																										  as [ROW_UPDATE_STP]
+ //,date(date#(ROW_UPDATE_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')                                           as [ROW_UPDATE_STP] 
+ ,ROW_ADD_USER_ID                                                                                                         as [ROW_ADD_USER_ID]
+ ,ROW_ADD_STP                                              																  as [ROW_ADD_STP]  
+// ,date(date#(ROW_ADD_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')                                              as [ROW_ADD_STP]  
+ ,UPC_NUM                                                                                                                 as [UPC]
+ ,Capitalize(trim(DRUG_SUBCLS_DESC))                                                                                      as [GPI Subclass Name]
+ ,DRUG_SUBCLS_ID                                                                                                          as [GPI Subclass #]
+ ,DRUG_SUBCLS_CDE                                                                                                         as [DRUG_SUBCLS_CDE]
+ ,Capitalize(trim(DRUG_GROUP_DESC))                                                                                       as [GPI Group Name]
+ ,DRUG_GROUP_ID                                                                                                           as [GPI Group #]
+ ,DRUG_GROUP_CDE                                                                                                          as [DRUG_GROUP_CDE]
+ ,Capitalize(trim(DRUG_CLASS_DESC))                                                                                       as [GPI Class Name]
+ ,DRUG_CLASS_ID                                                                                                           as [GPI Class #]
+ ,DRUG_CLASS_CDE                                                                                                          as [DRUG_CLASS_CDE]
+ ,Capitalize(GPI_GEN_NAM)                                                                                                 as [GPI Description]
+ ,GPI_ID                                                                                                                  as [GPI Code]
+ ,PACK_QTY                                                                                                                as [Package Qty]
+ ,MIN_PACK_QTY                                                                                                            as [MIN_PACK_QTY]
+ ,TOTAL_QTY                                                                                                               as [TOTAL_QTY]
+ ,MSTR_PACK_QTY                                                                                                           as [MSTR_PACK_QTY]
+ ,CONVEN_PACK_QTY                                                                                                         as [CONVEN_PACK_QTY]
+ ,FIXED_SELL_PCT                                                                                                          as [FIXED_SELL_PCT]
+ ,PRFTPK_DISC_PCT                                                                                                         as [PRFTPK_DISC_PCT]
+ ,EDLP_PCT                                                                                                                as [EDLP_PCT]
+ ,Capitalize(SUPPLIER_CLASS_DESC)                                                                                         as [Mfr Class]
+ ,SUPPLIER_CLASS_CDE                                                                                                      as [Mfr Class Code]
+ ,PARENT_SUPPLIER_NUM                                                                                                     as [Parent Mfr #]
+ ,SUPPLIER_FAX_NUM                                                                                                        as [Mfr FAX #]
+ ,SUPPLIER_PHONE_NUM                                                                                                      as [Mfr Phone #]
+ ,Capitalize(SUPPLIER_TYPE_DESC)                                                                                          as [Mfr Type]
+ ,SUPPLIER_TYPE_CDE                                                                                                       as [Mfr Type Code]
+ ,SUPPLIER_DEA_LIC_ID                                                                                                     as [Mfr DEA License ID]
+ ,SUPPLIER_DEA_NUM                                                                                                        as [Mfr DEA #]
+ ,SUPPLIER_ZIP                                                                                                            as [Mfr Zip Code]
+ ,Capitalize(SUPPLIER_STATE_NAM)                                                                                          as [Mfr State Name]
+ ,SUPPLIER_STATE                                                                                                          as [Mfr State]
+ ,Capitalize(SUPPLIER_CITY)                                                                                               as [Mfr City]
+ ,Capitalize(SUPPLIER_ADDR2_TXT)                                                                                          as [Mfr Address 2]
+ ,Capitalize(SUPPLIER_ADDR_TXT)                                                                                           as [Mfr Address]
+ ,Capitalize(SUPPLIER_ABBR_TXT)                                                                                           as [Mfr]
+ ,Capitalize(SUPPLIER_NAM)                                                                                                as [Manufacturer]
+ ,SUPPLIER_NUM                                                                                                            as [Mfr #]
+ ,Capitalize(SUPPLIER_ORDER_ID)                                                                                           as [SUPPLIER_ORDER_ID]
+ ,EDI_ID                                                                                                                  as [EDI_ID]
+ ,Capitalize(SYSTEM_NAM)                                                                                                  as [SYSTEM_NAM]
+ ,SYSTEM_CDE                                                                                                              as [SYSTEM_CDE]
+ ,Capitalize(SUBCAT_DESC)                                                                                                 as [SUBCAT_DESC]
+ ,SUBCAT_CDE                                                                                                              as [SUBCAT_CDE]
+ ,Capitalize(RTRN_RSTRCT_DESC)                                                                                            as [RTRN_RSTRCT_DESC]
+ ,RTRN_RSTRCT_CDE                                                                                                         as [RTRN_RSTRCT_CDE]
+ ,PRIVATE_LABEL_H_ID                                                                                                      as [PRIVATE_LABEL_H_ID]
+ ,Capitalize(PRIVATE_LABEL_DESC)                                                                                          as [Private Label Description]
+ ,PRIVATE_LABEL_CDE                                                                                                       as [PRIVATE_LABEL_CDE]
+ ,Capitalize(NDC_KEY_DESC)                                                                                                as [NDC_KEY_DESC]
+ ,NDC_KEY_CDE                                                                                                             as [NDC_KEY_CDE]
+ ,Capitalize(INST_PACK_DESC)                                                                                              as [INST_PACK_DESC]
+ ,INST_PACK_CDE                                                                                                           as [INST_PACK_CDE]
+ ,FORM_H_ID                                                                                                               as [Form]
+ ,Capitalize(FORM_DESC)                                                                                                   as [FORM_DESC]
+ ,Capitalize(FORM_ID)                                                                                                     as [FORM_ID]
+ ,Capitalize(DEPT_DESC)                                                                                                   as [DEPT_DESC]
+ ,DEPT_CDE                                                                                                                as [DEPT_CDE]
+ ,Capitalize(DEA_BASE_DESC)                                                                                               as [DEA Description]
+ ,DEA_BASE_NUM                                                                                                            as [DEA Base Code]
+ ,Capitalize(CTGRY_DESC)                                                                                                  as [CTGRY_DESC]
+ ,CTGRY_CDE                                                                                                               as [Drug Category]
+ ,ACT_STAT_H_ID                                                                                                           as [Product Active Status ID]
+ ,Capitalize(ACT_STAT_DESC)                                                                                               as [Product Active Status]
+ ,ACT_STAT_CDE                                                                                                            as [Product Active Status Code]
+ ,Capitalize(RX_TYPE_DESC)                                                                                                as [RX_TYPE_DESC]
+ ,RX_TYPE_CDE                                                                                                             as [RX_TYPE_CDE]
+ ,Capitalize(DEA_SCHED_DESC)                                                                                              as [DEA_SCHED_DESC]
+ ,DEA_SCHED_NUM                                                                                                           as [DEA Schedule #]
+ ,Capitalize(UNIT_DOSE_DESC)                                                                                              as [UNIT_DOSE_DESC]
+ ,UNIT_DOSE_ID                                                                                                            as [Unit Dose]
+ ,Capitalize(NDC_IND_DESC)                                                                                                as [NDC_IND_DESC]
+ ,NDC_IND_CDE                                                                                                             as [NDC_IND_CDE]
+ ,capitalize(HAM_DEPT_DESC)                                                                                               as [Fineline Description]
+ ,HAM_DEPT_NUM                                                                                                            as [Fineline #]
+ ,Capitalize(PROD_TYPE_DESC)                                                                                              as [Drug Class]
+ ,PROD_TYPE_CDE                                                                                                           as [PROD_TYPE_CDE]
+ ,Capitalize(trim(AHFS_DESC))                                                                                             as [AHFS Description]
+ ,AHFS_NUM                                                                                                                as [AHFS #]
+ ,CARD_SBST_KEY_ID                                                                                                        as [Alternative Product Code]
+ ,CARD_GPPC_ID                                                                                                            as [CARD_GPPC_ID]
+ ,CARD_GEN_CDE_NUM                                                                                                        as [CARD_GEN_CDE_NUM]
+ ,Capitalize(CARD_GEN_IND_DESC)                                                                                           as [Cardinal Generic Indicator]
+ ,CARD_GEN_IND_CDE                                                                                                        as [CARD_GEN_IND_CDE]
+ ,Capitalize(GEN_PROD_IND_DESC)                                                                                           as [GEN_PROD_IND_DESC]
+ ,GEN_PROD_IND_CDE                                                                                                        as [GEN_PROD_IND_CDE]
+ ,GEN_IND_H_ID                                                                                                            as [GEN_IND_H_ID]
+ ,Capitalize(GEN_IND_DESC)                                                                                                as [Generic Indicator]
+ ,GEN_IND_CDE                                                                                                             as [GEN_IND_CDE]
+ ,Right('00000000000'& NDC_CDE,11)                                                                                        as [NDC]
+ ,Capitalize(UNIT_H_DESC)                                                                                                 as [UNIT_H_DESC]
+ ,UNIT_H_CDE                                                                                                              as [UNIT_H_CDE]
+ ,UNIT_DESC                                                                                                               as [UOM]
+ ,UNIT_CDE                                                                                                                as [UNIT_CDE]
+ ,IF(RLS_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(RLS_DTE,'YYYY/MM/DD'),'MM/DD/YYYY'))                         as [RLS_DTE]
+ ,IF(RTRN_RSTRCT_EXP_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(RTRN_RSTRCT_EXP_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [RTRN_RSTRCT_EXP_DTE]   
+ ,IBT_ELIGIBLE_FLG                                                                                                        as [IBT_ELIGIBLE_FLG]
+ ,DRUG_CLASS_FLG                                                                                                          as [DRUG_CLASS_FLG]
+ ,NDC_UPC_FLG                                                                                                             as [NDC_UPC_FLG]
+ ,SPECIAL_PROG_FLG                                                                                                        as [SPECIAL_PROG_FLG]
+ ,GEN_IND_FLG                                                                                                             as [GEN_IND_FLG]
+ ,GEN_SBST_FLG                                                                                                            as [GEN_SBST_FLG]
+ ,DISP_FLG                                                                                                                as [DISP_FLG]
+ ,SUPPLY_FLG                                                                                                              as [SUPPLY_FLG]
+ ,DEL_FLG                                                                                                                 as [DEL_FLG]
+ ,CURR_VRSN_FLG                                                                                                           as [CURR_VRSN_FLG]
+ ,RX_FLG                                                                                                                  as [RX_FLG]
+ ,HOSP_ONLY_FLG                                                                                                           as [HOSP_ONLY_FLG]
+ ,REFRIG_FLG                                                                                                              as [REFRIG_FLG]
+ ,RSTRCT_FLG                                                                                                              as [RSTRCT_FLG]
+ ,AIR_FRT_FLG                                                                                                             as [AIR_FRT_FLG]
+ ,CSE_LABEL_FLG                                                                                                           as [CSE_LABEL_FLG]
+ ,ARCOS_FLG                                                                                                               as [ARCOS_FLG]
+ ,ACCUNET_SIZE_NUM                                                                                                        as [Total Doses]
+ ,SIZE_TXT                                                                                                                as [Size]
+ ,STRGTH_H_TXT                                                                                                            as [STRGTH_H_TXT]
+ ,Capitalize(STRGTH_EXT_TXT)                                                                                              as [STRGTH_EXT_TXT]
+ ,WEIGHT_NUM                                                                                                              as [WEIGHT_NUM]
+ ,WEIGHT_EXT_NUM                                                                                                          as [WEIGHT_EXT_NUM]
+ ,HAZARD_ID_NUM                                                                                                           as [HAZARD_ID_NUM]
+ ,PACK_SIZE_H_ID                                                                                                          as [PACK_SIZE_H_ID]
+ ,MDSP_AWP_MULT_NUM                                                                                                       as [MDSP_AWP_MULT_NUM]
+ ,VOLUME_NUM                                                                                                              as [VOLUME_NUM]
+ ,BASE_CDE_GMS_NUM                                                                                                        as [BASE_CDE_GMS_NUM]
+ ,FDB_AWP_MULT_NUM                                                                                                        as [FDB_AWP_MULT_NUM]
+ ,CSE_WEIGHT_NUM                                                                                                          as [CSE_WEIGHT_NUM]
+ ,SELL_WEIGHT_NUM                                                                                                         as [SELL_WEIGHT_NUM]
+ ,SELL_CUBE_NUM                                                                                                           as [SELL_CUBE_NUM]
+ ,DP_NUM                                                                                                                  as [DP_NUM]
+ ,Capitalize(CORP_DESC)                                                                                                   as [CORP_DESC]
+ ,CORP_ITEM_NUM                                                                                                           as [CIN]
+ ,MFG_PROD_ID                                                                                                             as [MFG_PROD_ID]
+ ,GEN_NAM                                                                                                                 as [Generic Name]
+ ,Capitalize(PROD_NAM)                                                                                                    as [PROD_NAM]
+ ,PROD_KEY_NUM                                                                                                            as [PROD_KEY_NUM]
+ ,LEFT(CARD_SBST_KEY_ID, 5)                                                                                               as [GCN] 
+ ,SUPPLIER_ORDER_ID																										  as [Mfr Part #]    //////**** Added by Dicky Mohanty on 01/27/16
+ ,FDB_AHFS_ID 
+;
+SQL
+SELECT
+  "ACCUNET_QTY",
+  "ACCUNET_SIZE_NUM",
+  "ACT_STAT_CDE",
+  "ACT_STAT_DESC",
+  "ACT_STAT_H_ID",
+  "ADDL_DESC",
+  "AHFS_DESC",
+  "AHFS_NUM",
+  "AIR_FRT_FLG",
+  "AMP_TXT",
+  "ARCOS_FLG",
+  "BASE_CDE_GMS_NUM",
+  "BUYER_NAM",
+  "BUYER_NUM",
+  "CARD_GEN_CDE_NUM",
+  "CARD_GEN_IND_CDE",
+  "CARD_GEN_IND_DESC",
+  "CARD_GPPC_ID",
+  "CARD_SBST_KEY_ID",
+  "CGBK_PARENT_SUPPLIER_NUM",
+  "CH_ALTRNT_HAM_DEPT_DESC",
+  "CH_ALTRNT_HAM_DEPT_FLG",
+  "CH_ALTRNT_HAM_DEPT_NUM",
+  "CH_CTGRY_DESC",
+  "CH_CTGRY_MNGR_ASSIST_NAM",
+  "CH_CTGRY_MNGR_NAM",
+  "CH_HHC_SUB_CTGRY_DESC",
+  "CH_NON_PRIVATE_LABEL_MNGR_NAM",
+  "CH_SUB_CTGRY_DESC",
+  "CONVEN_PACK_QTY",
+  "CORP_DESC",
+  "CORP_ITEM_NUM",
+  "CSE_LABEL_FLG",
+  "CSE_WEIGHT_NUM",
+  "CTGRY_CDE",
+  "CTGRY_DESC",
+  "CURR_VRSN_FLG",
+  "DEA_BASE_DESC",
+  "DEA_BASE_NUM",
+  "DEA_SCHED_DESC",
+  "DEA_SCHED_NUM",
+  "DEA_SPECIAL_ATTN_CDE",
+  "DEA_SPECIAL_ATTN_DESC",
+  "DEA_SUB_BASE_NUM",
+  "DEL_FLG",
+  "DEPT_CDE",
+  "DEPT_DESC",
+  "DISP_FLG",
+  "DP_NUM",
+  "DRUG_CLASS_CDE",
+  "DRUG_CLASS_DESC",
+  "DRUG_CLASS_FLG",
+  "DRUG_CLASS_ID",
+  "DRUG_GROUP_CDE",
+  "DRUG_GROUP_DESC",
+  "DRUG_GROUP_ID",
+  "DRUG_SUBCLS_CDE",
+  "DRUG_SUBCLS_DESC",
+  "DRUG_SUBCLS_ID",
+  "EDI_CGBK_FLG",
+  "EDI_ID",
+  "EDLP_PCT",
+  "FDB_AHFS_ID",
+  "FDB_AWP_MULT_NUM",
+  "FDB_BBPKG_D1",
+  "FDB_BBPKG_P1",
+  "FDB_CWPPKG_P1",
+  "FDB_FFPUL_P1",
+  "FDB_HICL_SEQNO",
+  "FDB_OBC_EXP",
+  "FIXED_SELL_PCT",
+  "FORM_DESC",
+  "FORM_H_ID",
+  "FORM_ID",
+  "GEN_IND_CDE",
+  "GEN_IND_DESC",
+  "GEN_IND_FLG",
+  "GEN_IND_H_ID",
+  "GEN_NAM",
+  "GEN_PROD_IND_CDE",
+  "GEN_PROD_IND_DESC",
+  "GEN_SBST_FLG",
+  "GLBL_SRC_FLG",
+  "GPI_GEN_NAM",
+  "GPI_ID",
+  "GWSA_EXCLSV_FLG",
+  "GWSA_INJCT_FLG",
+  "HAM_DEPT_DESC",
+  "HAM_DEPT_NUM",
+  "HAZARD_ID_NUM",
+  "HOSP_ONLY_FLG",
+  "IBT_ELIGIBLE_FLG",
+  "INST_PACK_CDE",
+  "INST_PACK_DESC",
+  "INTRNL_PROD_FNC_CLASS_CDE",
+  "INTRNL_PROD_FNC_CLASS_DESC",
+  "INVTRY_CLASS_DESC",
+  "INVTRY_CLASS_ID",
+  "INVTRY_TYPE_DESC",
+  "INVTRY_TYPE_ID",
+  "ITEM_TYPE_CDE",
+  "ITEM_TYPE_DESC",
+  "MDSP_AWP_MULT_NUM",
+  "MDSP_PACK_QTY",
+  "MDSP_PACK_SIZE_NUM",
+  "MDSP_PKG_SIZE_UOM_ID",
+  "MDSP_THER_EQV_ID",
+  "MDSP_TOTAL_PKG_QTY",
+  "MFG_PROD_ID",
+  "MIN_PACK_QTY",
+  "MKT_DESC",
+  "MSTR_PACK_QTY",
+  "MULTI_SRC_IND_CDE",
+  "MULTI_SRC_IND_DESC",
+  "NDC_CDE",
+  "NDC_IND_CDE",
+  "NDC_IND_DESC",
+  "NDC_KEY_CDE",
+  "NDC_KEY_DESC",
+  "NDC_UPC_FLG",
+  "NLC_TYPE_CDE",
+  "NLC_TYPE_DESC",
+  "PACK_AMP_DLR",
+  "PACK_FFPUL_P1_DLR",
+  "PACK_QTY",
+  "PACK_SIZE_H_ID",
+  "PACK_SIZE_QTY",
+  "PARENT_SUPPLIER_NUM",
+  "PRFTPK_DISC_PCT",
+  "PRIVATE_LABEL_CDE",
+  "PRIVATE_LABEL_DESC",
+  "PRIVATE_LABEL_H_ID",
+  "PROD_AGR_CDE",
+  "PROD_AGR_DESC",
+  "PROD_DSCONT_DTE",
+  "PROD_KEY_NUM",
+  "PROD_NAM",
+  "PROD_TYPE_CDE",
+  "PROD_TYPE_DESC",
+  "PURCH_PROD_TYPE_CDE",
+  "PURCH_PROD_TYPE_DESC",
+  "REFRIG_FLG",
+  "RLS_DTE",
+  "ROW_ADD_STP",
+  "ROW_ADD_USER_ID",
+  "ROW_UPDATE_STP",
+  "ROW_UPDATE_USER_ID",
+  "RSTRCT_FLG",
+  "RTRN_RSTRCT_CDE",
+  "RTRN_RSTRCT_DESC",
+  "RTRN_RSTRCT_EXP_DTE",
+  "RX_FLG",
+  "RX_TYPE_CDE",
+  "RX_TYPE_DESC",
+  "SBST_DESC",
+  "SBST_ID",
+  "SELL_CUBE_NUM",
+  "SELL_WEIGHT_NUM",
+  "SIZE_TXT",
+  "SPECIAL_PROG_FLG",
+  "STRGTH_EXT_TXT",
+  "STRGTH_H_TXT",
+  "STRGTH_TXT",
+  "SUBCAT_CDE",
+  "SUBCAT_DESC",
+  "SUPL_GWSA_SVC_LEVEL_TYPE_CDE",
+  "SUPL_GWSA_SVC_LEVEL_TYPE_DESC",
+  "SUPPLIER_ABBR_TXT",
+  "SUPPLIER_ADDR2_TXT",
+  "SUPPLIER_ADDR_TXT",
+  "SUPPLIER_CASH_DISC_WAC_PCT",
+  "SUPPLIER_CITY",
+  "SUPPLIER_CLASS_CDE",
+  "SUPPLIER_CLASS_DESC",
+  "SUPPLIER_DEA_LIC_ID",
+  "SUPPLIER_DEA_NUM",
+  "SUPPLIER_FAX_NUM",
+  "SUPPLIER_GWSA_CNTRCT_COST_FLG",
+  "SUPPLIER_GWSA_GROUP_NAM",
+  "SUPPLIER_GWSA_GROUP_NUM",
+  "SUPPLIER_GWSA_NAV_SUPPLIER_FLG",
+  "SUPPLIER_GWSA_RPRCR_FLG",
+  "SUPPLIER_GWSA_SVC_LEVEL_FLG",
+  "SUPPLIER_GWSA_WAC_FLG",
+  "SUPPLIER_NAM",
+  "SUPPLIER_NLC_TYPE_CDE",
+  "SUPPLIER_NLC_TYPE_DESC",
+  "SUPPLIER_NUM",
+  "SUPPLIER_ORDER_ID",
+  "SUPPLIER_PHONE_NUM",
+  "SUPPLIER_STATE",
+  "SUPPLIER_STATE_NAM",
+  "SUPPLIER_TYPE_CDE",
+  "SUPPLIER_TYPE_DESC",
+  "SUPPLIER_ZIP",
+  "SUPPLY_FLG",
+  "SYSTEM_CDE",
+  "SYSTEM_NAM",
+  "TOTAL_QTY",
+  "TRADE_NAM",
+  "UNIT_CDE",
+  "UNIT_DESC",
+  "UNIT_DOSE_DESC",
+  "UNIT_DOSE_ID",
+  "UNIT_H_CDE",
+  "UNIT_H_DESC",
+  "UPC_NUM",
+  "VOLUME_NUM",
+  "WEIGHT_EXT_NUM",
+  "WEIGHT_NUM"
+FROM
+  VIEWS."PRODUCT_NO_SCD"
+//WHERE
+//  (position('0A'XC in MKT_DESC) > 0 or PRIVATE_LABEL_H_ID like '%^%')
+//  AND (ROW_UPDATE_STP <= cast('$(vLastExecTime)' as timestamp))  Commented since date is not working correctly    
+;
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE Product_No_Scd into '$(vRootFileLocation)$(vQVDs)Product_No_Scd.qvd';
+//call store_into_qvd(vTableName, vQvdFile, 0);
+
+
+
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP Table Product_No_Scd;
+//call drop_table(vTableName);
+
+
+
+///$tab EXIT SCRIPT
+
+EXIT SCRIPT;
+///$tab Product_No_Scd
+///********************************************
+// * Set Statistics Variables
+// ********************************************/
+//LET vTimeStamp = Now();
+//LET vStart = Now();
+//SET vTableName = 'Product_No_Scd';
+//set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+//
+///********************************************
+// * Load Table into Memory
+// ********************************************/
+//Product_No_Scd:
+//LOAD
+//  DEA_SUB_BASE_NUM                                                                                                        as [DEA_SUB_BASE_NUM]
+// ,Capitalize(MKT_DESC)                                                                                                    as [MKT_DESC]
+// ,IF(PROD_DSCONT_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(PROD_DSCONT_DTE,'YYYY/MM/DD'),'MM/DD/YYYY'))         as [PROD_DSCONT_DTE] 
+// ,CGBK_PARENT_SUPPLIER_NUM                                                                                                as [CGBK_PARENT_SUPPLIER_NUM]
+// ,EDI_CGBK_FLG                                                                                                            as [EDI_CGBK_FLG]
+// ,capitalize(PROD_AGR_DESC)                                                                                               as [PROD_AGR_DESC]
+// ,PROD_AGR_CDE                                                                                                            as [PROD_AGR_CDE]
+// ,capitalize(SBST_DESC)                                                                                                   as [SBST_DESC]
+// ,SBST_ID                                                                                                                 as [SBST_ID]
+// ,capitalize(INVTRY_CLASS_DESC)                                                                                           as [INVTRY_CLASS_DESC]
+// ,INVTRY_CLASS_ID                                                                                                         as [INVTRY_CLASS_ID]
+// ,Capitalize(INVTRY_TYPE_DESC)                                                                                            as [INVTRY_TYPE_DESC]
+// ,INVTRY_TYPE_ID                                                                                                          as [INVTRY_TYPE_ID]
+// ,CH_ALTRNT_HAM_DEPT_FLG                                                                                                  as [CH_ALTRNT_HAM_DEPT_FLG]
+// ,Capitalize(CH_ALTRNT_HAM_DEPT_DESC)                                                                                     as [CH_ALTRNT_HAM_DEPT_DESC]
+// ,Capitalize(CH_HHC_SUB_CTGRY_DESC)                                                                                       as [CH_HHC_SUB_CTGRY_DESC]
+// ,Capitalize(CH_SUB_CTGRY_DESC)                                                                                           as [CH_SUB_CTGRY_DESC]
+// ,Capitalize(CH_CTGRY_DESC)                                                                                               as [CH_CTGRY_DESC]
+// ,Capitalize(CH_CTGRY_MNGR_ASSIST_NAM)                                                                                    as [CH_CTGRY_MNGR_ASSIST_NAM]
+// ,Capitalize(CH_NON_PRIVATE_LABEL_MNGR_NAM)                                                                               as [CH_NON_PRIVATE_LABEL_MNGR_NAM]
+// ,Capitalize(CH_CTGRY_MNGR_NAM)                                                                                           as [CH_CTGRY_MNGR_NAM]
+// ,CH_ALTRNT_HAM_DEPT_NUM                                                                                                  as [CH_ALTRNT_HAM_DEPT_NUM]
+// ,Capitalize(DEA_SPECIAL_ATTN_DESC)                                                                                       as [DEA_SPECIAL_ATTN_DESC]
+// ,DEA_SPECIAL_ATTN_CDE                                                                                                    as [DEA_SPECIAL_ATTN_CDE]
+// ,SUPPLIER_GWSA_SVC_LEVEL_FLG                                                                                             as [SUPPLIER_GWSA_SVC_LEVEL_FLG]
+// ,SUPPLIER_GWSA_RPRCR_FLG                                                                                                 as [SUPPLIER_GWSA_RPRCR_FLG]
+// ,SUPPLIER_GWSA_CNTRCT_COST_FLG                                                                                           as [SUPPLIER_GWSA_CNTRCT_COST_FLG]
+// ,SUPPLIER_GWSA_WAC_FLG                                                                                                   as [SUPPLIER_GWSA_WAC_FLG]
+// ,SUPPLIER_GWSA_NAV_SUPPLIER_FLG                                                                                          as [SUPPLIER_GWSA_NAV_SUPPLIER_FLG]
+// ,Capitalize(SUPPLIER_GWSA_GROUP_NAM)                                                                                     as [SUPPLIER_GWSA_GROUP_NAM]
+// ,SUPPLIER_GWSA_GROUP_NUM                                                                                                 as [SUPPLIER_GWSA_GROUP_NUM]
+// ,Capitalize(SUPL_GWSA_SVC_LEVEL_TYPE_DESC)                                                                               as [SUPL_GWSA_SVC_LEVEL_TYPE_DESC]
+// ,SUPL_GWSA_SVC_LEVEL_TYPE_CDE                                                                                            as [SUPL_GWSA_SVC_LEVEL_TYPE_CDE]
+// ,SUPPLIER_CASH_DISC_WAC_PCT                                                                                              as [SUPPLIER_CASH_DISC_WAC_PCT]
+// ,GWSA_EXCLSV_FLG                                                                                                         as [GWSA_EXCLSV_FLG]
+// ,GWSA_INJCT_FLG                                                                                                          as [GWSA_INJCT_FLG]
+// ,PACK_AMP_DLR                                                                                                            as [PACK_AMP_DLR]
+// ,PACK_FFPUL_P1_DLR                                                                                                       as [PACK_FFPUL_P1_DLR]
+// ,Capitalize(INTRNL_PROD_FNC_CLASS_DESC)                                                                                  as [INTRNL_PROD_FNC_CLASS_DESC]
+// ,INTRNL_PROD_FNC_CLASS_CDE                                                                                               as [INTRNL_PROD_FNC_CLASS_CDE]
+// ,Capitalize(ITEM_TYPE_DESC)                                                                                              as [ITEM_TYPE_DESC]
+// ,ITEM_TYPE_CDE                                                                                                           as [ITEM_TYPE_CDE]
+// ,FDB_HICL_SEQNO                                                                                                          as [FDB_HICL_SEQNO]
+// ,GLBL_SRC_FLG                                                                                                            as [GLBL_SRC_FLG]
+// ,Capitalize(AMP_TXT)                                                                                                     as [AMP]
+// ,Capitalize(MULTI_SRC_IND_DESC)                                                                                          as [Multi-Source Indicator]
+// ,MULTI_SRC_IND_CDE                                                                                                       as [MULTI_SRC_IND_CDE]
+// ,Capitalize(SUPPLIER_NLC_TYPE_DESC)                                                                                      as [SUPPLIER_NLC_TYPE_DESC]
+// ,SUPPLIER_NLC_TYPE_CDE                                                                                                   as [SUPPLIER_NLC_TYPE_CDE]
+// ,Capitalize(NLC_TYPE_DESC)                                                                                               as [NLC_TYPE_DESC]
+// ,NLC_TYPE_CDE                                                                                                            as [NLC_TYPE_CDE]
+// ,ACCUNET_QTY                                                                                                             as [Total Package Quantity]
+// ,FDB_OBC_EXP                                                                                                             as [FDA Therapeutic Equivalency Rating]
+// ,Capitalize(STRGTH_TXT)                                                                                                  as [Strength]
+// ,Capitalize(TRADE_NAM)                                                                                                   as [Trade Name]
+// ,PACK_SIZE_QTY                                                                                                           as [Package Size]
+// ,Capitalize(ADDL_DESC)                                                                                                   as [Product Add'l Description]
+// ,MDSP_TOTAL_PKG_QTY                                                                                                      as [MDSP_TOTAL_PKG_QTY]
+// ,Capitalize(MDSP_PKG_SIZE_UOM_ID)                                                                                        as [MDSP_PKG_SIZE_UOM_ID]
+// ,MDSP_PACK_QTY                                                                                                           as [MDSP_PACK_QTY]
+// ,MDSP_PACK_SIZE_NUM                                                                                                      as [MDSP_PACK_SIZE_NUM]
+// ,Capitalize(MDSP_THER_EQV_ID)                                                                                            as [MDSP_THER_EQV_ID]
+// ,FDB_FFPUL_P1                                                                                                            as [Federal Upper Limit]
+// ,FDB_CWPPKG_P1                                                                                                           as [FDB_CWPPKG_P1]
+// ,IF(FDB_BBPKG_D1='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(FDB_BBPKG_D1,'YYYY/MM/DD'),'MM/DD/YYYY'))               as [FDB_BBPKG_D1]
+// ,FDB_BBPKG_P1                                                                                                            as [FDB_BBPKG_P1]
+// ,Capitalize(BUYER_NAM)                                                                                                   as [BUYER_NAM]
+// ,BUYER_NUM                                                                                                               as [BUYER_NUM]
+// ,Capitalize(PURCH_PROD_TYPE_DESC)                                                                                        as [PURCH_PROD_TYPE_DESC]
+// ,PURCH_PROD_TYPE_CDE                                                                                                     as [PURCH_PROD_TYPE_CDE]
+// ,ROW_UPDATE_USER_ID                                                                                                      as [ROW_UPDATE_USER_ID]
+// ,date(date#(ROW_UPDATE_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')                                           as [ROW_UPDATE_STP] 
+// ,ROW_ADD_USER_ID                                                                                                         as [ROW_ADD_USER_ID]
+// ,date(date#(ROW_ADD_STP,'YYYY-MM-DD h:mm:ss.ffffff'),'M/D/YYYY h:mm:ss tt')                                              as [ROW_ADD_STP]  
+// ,UPC_NUM                                                                                                                 as [UPC]
+// ,Capitalize(trim(DRUG_SUBCLS_DESC))                                                                                      as [GPI Subclass Name]
+// ,DRUG_SUBCLS_ID                                                                                                          as [GPI Subclass #]
+// ,DRUG_SUBCLS_CDE                                                                                                         as [DRUG_SUBCLS_CDE]
+// ,Capitalize(trim(DRUG_GROUP_DESC))                                                                                       as [GPI Group Name]
+// ,DRUG_GROUP_ID                                                                                                           as [GPI Group #]
+// ,DRUG_GROUP_CDE                                                                                                          as [DRUG_GROUP_CDE]
+// ,Capitalize(trim(DRUG_CLASS_DESC))                                                                                       as [GPI Class Name]
+// ,DRUG_CLASS_ID                                                                                                           as [GPI Class #]
+// ,DRUG_CLASS_CDE                                                                                                          as [DRUG_CLASS_CDE]
+// ,Capitalize(GPI_GEN_NAM)                                                                                                 as [GPI Description]
+// ,GPI_ID                                                                                                                  as [GPI Code]
+// ,PACK_QTY                                                                                                                as [Package Qty]
+// ,MIN_PACK_QTY                                                                                                            as [MIN_PACK_QTY]
+// ,TOTAL_QTY                                                                                                               as [TOTAL_QTY]
+// ,MSTR_PACK_QTY                                                                                                           as [MSTR_PACK_QTY]
+// ,CONVEN_PACK_QTY                                                                                                         as [CONVEN_PACK_QTY]
+// ,FIXED_SELL_PCT                                                                                                          as [FIXED_SELL_PCT]
+// ,PRFTPK_DISC_PCT                                                                                                         as [PRFTPK_DISC_PCT]
+// ,EDLP_PCT                                                                                                                as [EDLP_PCT]
+// ,Capitalize(SUPPLIER_CLASS_DESC)                                                                                         as [Mfr Class]
+// ,SUPPLIER_CLASS_CDE                                                                                                      as [Mfr Class Code]
+// ,PARENT_SUPPLIER_NUM                                                                                                     as [Parent Mfr #]
+// ,SUPPLIER_FAX_NUM                                                                                                        as [Mfr FAX #]
+// ,SUPPLIER_PHONE_NUM                                                                                                      as [Mfr Phone #]
+// ,Capitalize(SUPPLIER_TYPE_DESC)                                                                                          as [Mfr Type]
+// ,SUPPLIER_TYPE_CDE                                                                                                       as [Mfr Type Code]
+// ,SUPPLIER_DEA_LIC_ID                                                                                                     as [Mfr DEA License ID]
+// ,SUPPLIER_DEA_NUM                                                                                                        as [Mfr DEA #]
+// ,SUPPLIER_ZIP                                                                                                            as [Mfr Zip Code]
+// ,Capitalize(SUPPLIER_STATE_NAM)                                                                                          as [Mfr State Name]
+// ,SUPPLIER_STATE                                                                                                          as [Mfr State]
+// ,Capitalize(SUPPLIER_CITY)                                                                                               as [Mfr City]
+// ,Capitalize(SUPPLIER_ADDR2_TXT)                                                                                          as [Mfr Address 2]
+// ,Capitalize(SUPPLIER_ADDR_TXT)                                                                                           as [Mfr Address]
+// ,Capitalize(SUPPLIER_ABBR_TXT)                                                                                           as [Mfr]
+// ,Capitalize(SUPPLIER_NAM)                                                                                                as [Manufacturer]
+// ,SUPPLIER_NUM                                                                                                            as [Mfr #]
+// ,Capitalize(SUPPLIER_ORDER_ID)                                                                                           as [SUPPLIER_ORDER_ID]
+// ,EDI_ID                                                                                                                  as [EDI_ID]
+// ,Capitalize(SYSTEM_NAM)                                                                                                  as [SYSTEM_NAM]
+// ,SYSTEM_CDE                                                                                                              as [SYSTEM_CDE]
+// ,Capitalize(SUBCAT_DESC)                                                                                                 as [SUBCAT_DESC]
+// ,SUBCAT_CDE                                                                                                              as [SUBCAT_CDE]
+// ,Capitalize(RTRN_RSTRCT_DESC)                                                                                            as [RTRN_RSTRCT_DESC]
+// ,RTRN_RSTRCT_CDE                                                                                                         as [RTRN_RSTRCT_CDE]
+// ,PRIVATE_LABEL_H_ID                                                                                                      as [PRIVATE_LABEL_H_ID]
+// ,Capitalize(PRIVATE_LABEL_DESC)                                                                                          as [Private Label Description]
+// ,PRIVATE_LABEL_CDE                                                                                                       as [PRIVATE_LABEL_CDE]
+// ,Capitalize(NDC_KEY_DESC)                                                                                                as [NDC_KEY_DESC]
+// ,NDC_KEY_CDE                                                                                                             as [NDC_KEY_CDE]
+// ,Capitalize(INST_PACK_DESC)                                                                                              as [INST_PACK_DESC]
+// ,INST_PACK_CDE                                                                                                           as [INST_PACK_CDE]
+// ,FORM_H_ID                                                                                                               as [Form]
+// ,Capitalize(FORM_DESC)                                                                                                   as [FORM_DESC]
+// ,Capitalize(FORM_ID)                                                                                                     as [FORM_ID]
+// ,Capitalize(DEPT_DESC)                                                                                                   as [DEPT_DESC]
+// ,DEPT_CDE                                                                                                                as [DEPT_CDE]
+// ,Capitalize(DEA_BASE_DESC)                                                                                               as [DEA Description]
+// ,DEA_BASE_NUM                                                                                                            as [DEA Base Code]
+// ,Capitalize(CTGRY_DESC)                                                                                                  as [CTGRY_DESC]
+// ,CTGRY_CDE                                                                                                               as [Drug Category]
+// ,ACT_STAT_H_ID                                                                                                           as [Product Active Status ID]
+// ,Capitalize(ACT_STAT_DESC)                                                                                               as [Product Active Status]
+// ,ACT_STAT_CDE                                                                                                            as [Product Active Status Code]
+// ,Capitalize(RX_TYPE_DESC)                                                                                                as [RX_TYPE_DESC]
+// ,RX_TYPE_CDE                                                                                                             as [RX_TYPE_CDE]
+// ,Capitalize(DEA_SCHED_DESC)                                                                                              as [DEA_SCHED_DESC]
+// ,DEA_SCHED_NUM                                                                                                           as [DEA Schedule #]
+// ,Capitalize(UNIT_DOSE_DESC)                                                                                              as [UNIT_DOSE_DESC]
+// ,UNIT_DOSE_ID                                                                                                            as [Unit Dose]
+// ,Capitalize(NDC_IND_DESC)                                                                                                as [NDC_IND_DESC]
+// ,NDC_IND_CDE                                                                                                             as [NDC_IND_CDE]
+// ,capitalize(HAM_DEPT_DESC)                                                                                               as [Fineline Description]
+// ,HAM_DEPT_NUM                                                                                                            as [Fineline #]
+// ,Capitalize(PROD_TYPE_DESC)                                                                                              as [Drug Class]
+// ,PROD_TYPE_CDE                                                                                                           as [PROD_TYPE_CDE]
+// ,Capitalize(trim(AHFS_DESC))                                                                                             as [AHFS Description]
+// ,AHFS_NUM                                                                                                                as [AHFS #]
+// ,CARD_SBST_KEY_ID                                                                                                        as [Alternative Product Code]
+// ,CARD_GPPC_ID                                                                                                            as [CARD_GPPC_ID]
+// ,CARD_GEN_CDE_NUM                                                                                                        as [CARD_GEN_CDE_NUM]
+// ,Capitalize(CARD_GEN_IND_DESC)                                                                                           as [Cardinal Generic Indicator]
+// ,CARD_GEN_IND_CDE                                                                                                        as [CARD_GEN_IND_CDE]
+// ,Capitalize(GEN_PROD_IND_DESC)                                                                                           as [GEN_PROD_IND_DESC]
+// ,GEN_PROD_IND_CDE                                                                                                        as [GEN_PROD_IND_CDE]
+// ,GEN_IND_H_ID                                                                                                            as [GEN_IND_H_ID]
+// ,Capitalize(GEN_IND_DESC)                                                                                                as [Generic Indicator]
+// ,GEN_IND_CDE                                                                                                             as [GEN_IND_CDE]
+// ,Right('00000000000'& NDC_CDE,11)                                                                                        as [NDC]
+// ,Capitalize(UNIT_H_DESC)                                                                                                 as [UNIT_H_DESC]
+// ,UNIT_H_CDE                                                                                                              as [UNIT_H_CDE]
+// ,UNIT_DESC                                                                                                               as [UOM]
+// ,UNIT_CDE                                                                                                                as [UNIT_CDE]
+// ,IF(RLS_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(RLS_DTE,'YYYY/MM/DD'),'MM/DD/YYYY'))                         as [RLS_DTE]
+// ,IF(RTRN_RSTRCT_EXP_DTE='2/65438/65437',date(1,'MM/DD/YYYY'),date(date#(RTRN_RSTRCT_EXP_DTE,'YYYY/MM/DD'),'MM/DD/YYYY')) as [RTRN_RSTRCT_EXP_DTE]   
+// ,IBT_ELIGIBLE_FLG                                                                                                        as [IBT_ELIGIBLE_FLG]
+// ,DRUG_CLASS_FLG                                                                                                          as [DRUG_CLASS_FLG]
+// ,NDC_UPC_FLG                                                                                                             as [NDC_UPC_FLG]
+// ,SPECIAL_PROG_FLG                                                                                                        as [SPECIAL_PROG_FLG]
+// ,GEN_IND_FLG                                                                                                             as [GEN_IND_FLG]
+// ,GEN_SBST_FLG                                                                                                            as [GEN_SBST_FLG]
+// ,DISP_FLG                                                                                                                as [DISP_FLG]
+// ,SUPPLY_FLG                                                                                                              as [SUPPLY_FLG]
+// ,DEL_FLG                                                                                                                 as [DEL_FLG]
+// ,CURR_VRSN_FLG                                                                                                           as [CURR_VRSN_FLG]
+// ,RX_FLG                                                                                                                  as [RX_FLG]
+// ,HOSP_ONLY_FLG                                                                                                           as [HOSP_ONLY_FLG]
+// ,REFRIG_FLG                                                                                                              as [REFRIG_FLG]
+// ,RSTRCT_FLG                                                                                                              as [RSTRCT_FLG]
+// ,AIR_FRT_FLG                                                                                                             as [AIR_FRT_FLG]
+// ,CSE_LABEL_FLG                                                                                                           as [CSE_LABEL_FLG]
+// ,ARCOS_FLG                                                                                                               as [ARCOS_FLG]
+// ,ACCUNET_SIZE_NUM                                                                                                        as [Total Doses]
+// ,SIZE_TXT                                                                                                                as [Size]
+// ,STRGTH_H_TXT                                                                                                            as [STRGTH_H_TXT]
+// ,Capitalize(STRGTH_EXT_TXT)                                                                                              as [STRGTH_EXT_TXT]
+// ,WEIGHT_NUM                                                                                                              as [WEIGHT_NUM]
+// ,WEIGHT_EXT_NUM                                                                                                          as [WEIGHT_EXT_NUM]
+// ,HAZARD_ID_NUM                                                                                                           as [HAZARD_ID_NUM]
+// ,PACK_SIZE_H_ID                                                                                                          as [PACK_SIZE_H_ID]
+// ,MDSP_AWP_MULT_NUM                                                                                                       as [MDSP_AWP_MULT_NUM]
+// ,VOLUME_NUM                                                                                                              as [VOLUME_NUM]
+// ,BASE_CDE_GMS_NUM                                                                                                        as [BASE_CDE_GMS_NUM]
+// ,FDB_AWP_MULT_NUM                                                                                                        as [FDB_AWP_MULT_NUM]
+// ,CSE_WEIGHT_NUM                                                                                                          as [CSE_WEIGHT_NUM]
+// ,SELL_WEIGHT_NUM                                                                                                         as [SELL_WEIGHT_NUM]
+// ,SELL_CUBE_NUM                                                                                                           as [SELL_CUBE_NUM]
+// ,DP_NUM                                                                                                                  as [DP_NUM]
+// ,Capitalize(CORP_DESC)                                                                                                   as [CORP_DESC]
+// ,CORP_ITEM_NUM                                                                                                           as [CIN]
+// ,MFG_PROD_ID                                                                                                             as [MFG_PROD_ID]
+// ,GEN_NAM                                                                                                                 as [Generic Name]
+// ,Capitalize(PROD_NAM)                                                                                                    as [PROD_NAM]
+// ,PROD_KEY_NUM                                                                                                            as [PROD_KEY_NUM]
+// ,LEFT(CARD_SBST_KEY_ID, 5)                                                                                               as [GCN] 
+// ,SUPPLIER_ORDER_ID																										  as [Mfr Part #]    //////**** Added by Dicky Mohanty on 01/27/16
+//FROM
+//  '$(vExtractFileLocation)PRODUCT_NO_SCD-Caret.txt'
+//  (txt, codepage is 1252, embedded labels, delimiter is '^', no quotes, no eof)
+//;
+//
+///********************************************
+// * Get List of Dates
+// ********************************************/
+//temp:
+//LOAD
+//  ROW_UPDATE_STP as Date
+//RESIDENT
+//  Product_No_Scd
+//;
+//
+///********************************************
+// * Get Max Date
+// ********************************************/
+//Max_Date:
+//Load
+//  max(Date) as max_date;
+//Load
+//  FieldValue('Date',IterNo()) as Date
+//autogenerate
+//  (1)
+//while
+//  not IsNull(FieldValue('Date',Iterno()));
+//
+///********************************************
+// * Drop Table
+// ********************************************/
+//Drop Table temp;
+//
+///********************************************
+// * Set vLastExecTime
+// ********************************************/
+//LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+//
+///********************************************
+// * Drop Table
+// ********************************************/
+//DROP TABLE Max_Date;
+//
+///********************************************
+// * Concatenate Table to above due to special processing
+// ********************************************/
+//CONCATENATE(Product_No_Scd)
+//LOAD
+//  DEA_SUB_BASE_NUM                          as [DEA_SUB_BASE_NUM]
+// ,Capitalize(MKT_DESC)                      as [MKT_DESC]
+// ,PROD_DSCONT_DTE                           as [PROD_DSCONT_DTE] 
+// ,CGBK_PARENT_SUPPLIER_NUM                  as [CGBK_PARENT_SUPPLIER_NUM]
+// ,EDI_CGBK_FLG                              as [EDI_CGBK_FLG]
+// ,capitalize(PROD_AGR_DESC)                 as [PROD_AGR_DESC]
+// ,PROD_AGR_CDE                              as [PROD_AGR_CDE]
+// ,capitalize(SBST_DESC)                     as [SBST_DESC]
+// ,SBST_ID                                   as [SBST_ID]
+// ,capitalize(INVTRY_CLASS_DESC)             as [INVTRY_CLASS_DESC]
+// ,INVTRY_CLASS_ID                           as [INVTRY_CLASS_ID]
+// ,Capitalize(INVTRY_TYPE_DESC)              as [INVTRY_TYPE_DESC]
+// ,INVTRY_TYPE_ID                            as [INVTRY_TYPE_ID]
+// ,CH_ALTRNT_HAM_DEPT_FLG                    as [CH_ALTRNT_HAM_DEPT_FLG]
+// ,Capitalize(CH_ALTRNT_HAM_DEPT_DESC)       as [CH_ALTRNT_HAM_DEPT_DESC]
+// ,Capitalize(CH_HHC_SUB_CTGRY_DESC)         as [CH_HHC_SUB_CTGRY_DESC]
+// ,Capitalize(CH_SUB_CTGRY_DESC)             as [CH_SUB_CTGRY_DESC]
+// ,Capitalize(CH_CTGRY_DESC)                 as [CH_CTGRY_DESC]
+// ,Capitalize(CH_CTGRY_MNGR_ASSIST_NAM)      as [CH_CTGRY_MNGR_ASSIST_NAM]
+// ,Capitalize(CH_NON_PRIVATE_LABEL_MNGR_NAM) as [CH_NON_PRIVATE_LABEL_MNGR_NAM]
+// ,Capitalize(CH_CTGRY_MNGR_NAM)             as [CH_CTGRY_MNGR_NAM]
+// ,CH_ALTRNT_HAM_DEPT_NUM                    as [CH_ALTRNT_HAM_DEPT_NUM]
+// ,Capitalize(DEA_SPECIAL_ATTN_DESC)         as [DEA_SPECIAL_ATTN_DESC]
+// ,DEA_SPECIAL_ATTN_CDE                      as [DEA_SPECIAL_ATTN_CDE]
+// ,SUPPLIER_GWSA_SVC_LEVEL_FLG               as [SUPPLIER_GWSA_SVC_LEVEL_FLG]
+// ,SUPPLIER_GWSA_RPRCR_FLG                   as [SUPPLIER_GWSA_RPRCR_FLG]
+// ,SUPPLIER_GWSA_CNTRCT_COST_FLG             as [SUPPLIER_GWSA_CNTRCT_COST_FLG]
+// ,SUPPLIER_GWSA_WAC_FLG                     as [SUPPLIER_GWSA_WAC_FLG]
+// ,SUPPLIER_GWSA_NAV_SUPPLIER_FLG            as [SUPPLIER_GWSA_NAV_SUPPLIER_FLG]
+// ,Capitalize(SUPPLIER_GWSA_GROUP_NAM)       as [SUPPLIER_GWSA_GROUP_NAM]
+// ,SUPPLIER_GWSA_GROUP_NUM                   as [SUPPLIER_GWSA_GROUP_NUM]
+// ,Capitalize(SUPL_GWSA_SVC_LEVEL_TYPE_DESC) as [SUPL_GWSA_SVC_LEVEL_TYPE_DESC]
+// ,SUPL_GWSA_SVC_LEVEL_TYPE_CDE              as [SUPL_GWSA_SVC_LEVEL_TYPE_CDE]
+// ,SUPPLIER_CASH_DISC_WAC_PCT                as [SUPPLIER_CASH_DISC_WAC_PCT]
+// ,GWSA_EXCLSV_FLG                           as [GWSA_EXCLSV_FLG]
+// ,GWSA_INJCT_FLG                            as [GWSA_INJCT_FLG]
+// ,PACK_AMP_DLR                              as [PACK_AMP_DLR]
+// ,PACK_FFPUL_P1_DLR                         as [PACK_FFPUL_P1_DLR]
+// ,Capitalize(INTRNL_PROD_FNC_CLASS_DESC)    as [INTRNL_PROD_FNC_CLASS_DESC]
+// ,INTRNL_PROD_FNC_CLASS_CDE                 as [INTRNL_PROD_FNC_CLASS_CDE]
+// ,Capitalize(ITEM_TYPE_DESC)                as [ITEM_TYPE_DESC]
+// ,ITEM_TYPE_CDE                             as [ITEM_TYPE_CDE]
+// ,FDB_HICL_SEQNO                            as [FDB_HICL_SEQNO]
+// ,GLBL_SRC_FLG                              as [GLBL_SRC_FLG]
+// ,Capitalize(AMP_TXT)                       as [AMP]
+// ,Capitalize(MULTI_SRC_IND_DESC)            as [Multi-Source Indicator]
+// ,MULTI_SRC_IND_CDE                         as [MULTI_SRC_IND_CDE]
+// ,Capitalize(SUPPLIER_NLC_TYPE_DESC)        as [SUPPLIER_NLC_TYPE_DESC]
+// ,SUPPLIER_NLC_TYPE_CDE                     as [SUPPLIER_NLC_TYPE_CDE]
+// ,Capitalize(NLC_TYPE_DESC)                 as [NLC_TYPE_DESC]
+// ,NLC_TYPE_CDE                              as [NLC_TYPE_CDE]
+// ,ACCUNET_QTY                               as [Total Package Quantity]
+// ,FDB_OBC_EXP                               as [FDA Therapeutic Equivalency Rating]
+// ,Capitalize(STRGTH_TXT)                    as [Strength]
+// ,Capitalize(TRADE_NAM)                     as [Trade Name]
+// ,PACK_SIZE_QTY                             as [Package Size]
+// ,Capitalize(ADDL_DESC)                     as [Product Add'l Description]
+// ,MDSP_TOTAL_PKG_QTY                        as [MDSP_TOTAL_PKG_QTY]
+// ,Capitalize(MDSP_PKG_SIZE_UOM_ID)          as [MDSP_PKG_SIZE_UOM_ID]
+// ,MDSP_PACK_QTY                             as [MDSP_PACK_QTY]
+// ,MDSP_PACK_SIZE_NUM                        as [MDSP_PACK_SIZE_NUM]
+// ,Capitalize(MDSP_THER_EQV_ID)              as [MDSP_THER_EQV_ID]
+// ,FDB_FFPUL_P1                              as [Federal Upper Limit]
+// ,FDB_CWPPKG_P1                             as [FDB_CWPPKG_P1]
+// ,FDB_BBPKG_D1                              as [FDB_BBPKG_D1]
+// ,FDB_BBPKG_P1                              as [FDB_BBPKG_P1]
+// ,Capitalize(BUYER_NAM)                     as [BUYER_NAM]
+// ,BUYER_NUM                                 as [BUYER_NUM]
+// ,Capitalize(PURCH_PROD_TYPE_DESC)          as [PURCH_PROD_TYPE_DESC]
+// ,PURCH_PROD_TYPE_CDE                       as [PURCH_PROD_TYPE_CDE]
+// ,ROW_UPDATE_USER_ID                        as [ROW_UPDATE_USER_ID]
+// ,ROW_UPDATE_STP                            as [ROW_UPDATE_STP] 
+// ,ROW_ADD_USER_ID                           as [ROW_ADD_USER_ID]
+// ,ROW_ADD_STP                               as [ROW_ADD_STP]  
+// ,UPC_NUM                                   as [UPC]
+// ,Capitalize(trim(DRUG_SUBCLS_DESC))        as [GPI Subclass Name]
+// ,DRUG_SUBCLS_ID                            as [GPI Subclass #]
+// ,DRUG_SUBCLS_CDE                           as [DRUG_SUBCLS_CDE]
+// ,Capitalize(trim(DRUG_GROUP_DESC))         as [GPI Group Name]
+// ,DRUG_GROUP_ID                             as [GPI Group #]
+// ,DRUG_GROUP_CDE                            as [DRUG_GROUP_CDE]
+// ,Capitalize(trim(DRUG_CLASS_DESC))         as [GPI Class Name]
+// ,DRUG_CLASS_ID                             as [GPI Class #]
+// ,DRUG_CLASS_CDE                            as [DRUG_CLASS_CDE]
+// ,Capitalize(GPI_GEN_NAM)                   as [GPI Description]
+// ,GPI_ID                                    as [GPI Code]
+// ,PACK_QTY                                  as [Package Qty]
+// ,MIN_PACK_QTY                              as [MIN_PACK_QTY]
+// ,TOTAL_QTY                                 as [TOTAL_QTY]
+// ,MSTR_PACK_QTY                             as [MSTR_PACK_QTY]
+// ,CONVEN_PACK_QTY                           as [CONVEN_PACK_QTY]
+// ,FIXED_SELL_PCT                            as [FIXED_SELL_PCT]
+// ,PRFTPK_DISC_PCT                           as [PRFTPK_DISC_PCT]
+// ,EDLP_PCT                                  as [EDLP_PCT]
+// ,Capitalize(SUPPLIER_CLASS_DESC)           as [Mfr Class]
+// ,SUPPLIER_CLASS_CDE                        as [Mfr Class Code]
+// ,PARENT_SUPPLIER_NUM                       as [Parent Mfr #]
+// ,SUPPLIER_FAX_NUM                          as [Mfr FAX #]
+// ,SUPPLIER_PHONE_NUM                        as [Mfr Phone #]
+// ,Capitalize(SUPPLIER_TYPE_DESC)            as [Mfr Type]
+// ,SUPPLIER_TYPE_CDE                         as [Mfr Type Code]
+// ,SUPPLIER_DEA_LIC_ID                       as [Mfr DEA License ID]
+// ,SUPPLIER_DEA_NUM                          as [Mfr DEA #]
+// ,SUPPLIER_ZIP                              as [Mfr Zip Code]
+// ,Capitalize(SUPPLIER_STATE_NAM)            as [Mfr State Name]
+// ,SUPPLIER_STATE                            as [Mfr State]
+// ,Capitalize(SUPPLIER_CITY)                 as [Mfr City]
+// ,Capitalize(SUPPLIER_ADDR2_TXT)            as [Mfr Address 2]
+// ,Capitalize(SUPPLIER_ADDR_TXT)             as [Mfr Address]
+// ,Capitalize(SUPPLIER_ABBR_TXT)             as [Mfr]
+// ,Capitalize(SUPPLIER_NAM)                  as [Manufacturer]
+// ,SUPPLIER_NUM                              as [Mfr #]
+// ,Capitalize(SUPPLIER_ORDER_ID)             as [SUPPLIER_ORDER_ID]
+// ,EDI_ID                                    as [EDI_ID]
+// ,Capitalize(SYSTEM_NAM)                    as [SYSTEM_NAM]
+// ,SYSTEM_CDE                                as [SYSTEM_CDE]
+// ,Capitalize(SUBCAT_DESC)                   as [SUBCAT_DESC]
+// ,SUBCAT_CDE                                as [SUBCAT_CDE]
+// ,Capitalize(RTRN_RSTRCT_DESC)              as [RTRN_RSTRCT_DESC]
+// ,RTRN_RSTRCT_CDE                           as [RTRN_RSTRCT_CDE]
+// ,PRIVATE_LABEL_H_ID                        as [PRIVATE_LABEL_H_ID]
+// ,Capitalize(PRIVATE_LABEL_DESC)            as [Private Label Description]
+// ,PRIVATE_LABEL_CDE                         as [PRIVATE_LABEL_CDE]
+// ,Capitalize(NDC_KEY_DESC)                  as [NDC_KEY_DESC]
+// ,NDC_KEY_CDE                               as [NDC_KEY_CDE]
+// ,Capitalize(INST_PACK_DESC)                as [INST_PACK_DESC]
+// ,INST_PACK_CDE                             as [INST_PACK_CDE]
+// ,FORM_H_ID                                 as [Form]
+// ,Capitalize(FORM_DESC)                     as [FORM_DESC]
+// ,Capitalize(FORM_ID)                       as [FORM_ID]
+// ,Capitalize(DEPT_DESC)                     as [DEPT_DESC]
+// ,DEPT_CDE                                  as [DEPT_CDE]
+// ,Capitalize(DEA_BASE_DESC)                 as [DEA Description]
+// ,DEA_BASE_NUM                              as [DEA Base Code]
+// ,Capitalize(CTGRY_DESC)                    as [CTGRY_DESC]
+// ,CTGRY_CDE                                 as [Drug Category]
+// ,ACT_STAT_H_ID                             as [Product Active Status ID]
+// ,Capitalize(ACT_STAT_DESC)                 as [Product Active Status]
+// ,ACT_STAT_CDE                              as [Product Active Status Code]
+// ,Capitalize(RX_TYPE_DESC)                  as [RX_TYPE_DESC]
+// ,RX_TYPE_CDE                               as [RX_TYPE_CDE]
+// ,Capitalize(DEA_SCHED_DESC)                as [DEA_SCHED_DESC]
+// ,DEA_SCHED_NUM                             as [DEA Schedule #]
+// ,Capitalize(UNIT_DOSE_DESC)                as [UNIT_DOSE_DESC]
+// ,UNIT_DOSE_ID                              as [Unit Dose]
+// ,Capitalize(NDC_IND_DESC)                  as [NDC_IND_DESC]
+// ,NDC_IND_CDE                               as [NDC_IND_CDE]
+// ,capitalize(HAM_DEPT_DESC)                 as [Fineline Description]
+// ,HAM_DEPT_NUM                              as [Fineline #]
+// ,Capitalize(PROD_TYPE_DESC)                as [Drug Class]
+// ,PROD_TYPE_CDE                             as [PROD_TYPE_CDE]
+// ,Capitalize(AHFS_DESC)                     as [AHFS Description]
+// ,AHFS_NUM                                  as [AHFS #]
+// ,CARD_SBST_KEY_ID                          as [Alternative Product Code]
+// ,CARD_GPPC_ID                              as [CARD_GPPC_ID]
+// ,CARD_GEN_CDE_NUM                          as [CARD_GEN_CDE_NUM]
+// ,Capitalize(CARD_GEN_IND_DESC)             as [Cardinal Generic Indicator]
+// ,CARD_GEN_IND_CDE                          as [CARD_GEN_IND_CDE]
+// ,Capitalize(GEN_PROD_IND_DESC)             as [GEN_PROD_IND_DESC]
+// ,GEN_PROD_IND_CDE                          as [GEN_PROD_IND_CDE]
+// ,GEN_IND_H_ID                              as [GEN_IND_H_ID]
+// ,Capitalize(GEN_IND_DESC)                  as [Generic Indicator]
+// ,GEN_IND_CDE                               as [GEN_IND_CDE]
+// ,Right('00000000000'& NDC_CDE,11)          as [NDC]
+// ,Capitalize(UNIT_H_DESC)                   as [UNIT_H_DESC]
+// ,UNIT_H_CDE                                as [UNIT_H_CDE]
+// ,UNIT_DESC                                 as [UOM]
+// ,UNIT_CDE                                  as [UNIT_CDE]
+// ,RLS_DTE                                   as [RLS_DTE]
+// ,RTRN_RSTRCT_EXP_DTE                       as [RTRN_RSTRCT_EXP_DTE]   
+// ,IBT_ELIGIBLE_FLG                          as [IBT_ELIGIBLE_FLG]
+// ,DRUG_CLASS_FLG                            as [DRUG_CLASS_FLG]
+// ,NDC_UPC_FLG                               as [NDC_UPC_FLG]
+// ,SPECIAL_PROG_FLG                          as [SPECIAL_PROG_FLG]
+// ,GEN_IND_FLG                               as [GEN_IND_FLG]
+// ,GEN_SBST_FLG                              as [GEN_SBST_FLG]
+// ,DISP_FLG                                  as [DISP_FLG]
+// ,SUPPLY_FLG                                as [SUPPLY_FLG]
+// ,DEL_FLG                                   as [DEL_FLG]
+// ,CURR_VRSN_FLG                             as [CURR_VRSN_FLG]
+// ,RX_FLG                                    as [RX_FLG]
+// ,HOSP_ONLY_FLG                             as [HOSP_ONLY_FLG]
+// ,REFRIG_FLG                                as [REFRIG_FLG]
+// ,RSTRCT_FLG                                as [RSTRCT_FLG]
+// ,AIR_FRT_FLG                               as [AIR_FRT_FLG]
+// ,CSE_LABEL_FLG                             as [CSE_LABEL_FLG]
+// ,ARCOS_FLG                                 as [ARCOS_FLG]
+// ,ACCUNET_SIZE_NUM                          as [Total Doses]
+// ,SIZE_TXT                                  as [Size]
+// ,STRGTH_H_TXT                              as [STRGTH_H_TXT]
+// ,Capitalize(STRGTH_EXT_TXT)                as [STRGTH_EXT_TXT]
+// ,WEIGHT_NUM                                as [WEIGHT_NUM]
+// ,WEIGHT_EXT_NUM                            as [WEIGHT_EXT_NUM]
+// ,HAZARD_ID_NUM                             as [HAZARD_ID_NUM]
+// ,PACK_SIZE_H_ID                            as [PACK_SIZE_H_ID]
+// ,MDSP_AWP_MULT_NUM                         as [MDSP_AWP_MULT_NUM]
+// ,VOLUME_NUM                                as [VOLUME_NUM]
+// ,BASE_CDE_GMS_NUM                          as [BASE_CDE_GMS_NUM]
+// ,FDB_AWP_MULT_NUM                          as [FDB_AWP_MULT_NUM]
+// ,CSE_WEIGHT_NUM                            as [CSE_WEIGHT_NUM]
+// ,SELL_WEIGHT_NUM                           as [SELL_WEIGHT_NUM]
+// ,SELL_CUBE_NUM                             as [SELL_CUBE_NUM]
+// ,DP_NUM                                    as [DP_NUM]
+// ,Capitalize(CORP_DESC)                     as [CORP_DESC]
+// ,CORP_ITEM_NUM                             as [CORP_ITEM_NUM]
+// ,MFG_PROD_ID                               as [MFG_PROD_ID]
+// ,GEN_NAM                                   as [Generic Name]
+// ,Capitalize(PROD_NAM)                      as [PROD_NAM]
+// ,PROD_KEY_NUM                              as [PROD_KEY_NUM]
+// ,LEFT(CARD_SBST_KEY_ID, 5)                 as [GCN] 
+// ,SUPPLIER_ORDER_ID						    as [Mfr Part #]    //////**** Added by Dicky Mohanty on 01/27/16
+//;
+//SQL
+//SELECT
+//  "ACCUNET_QTY",
+//  "ACCUNET_SIZE_NUM",
+//  "ACT_STAT_CDE",
+//  "ACT_STAT_DESC",
+//  "ACT_STAT_H_ID",
+//  "ADDL_DESC",
+//  "AHFS_DESC",
+//  "AHFS_NUM",
+//  "AIR_FRT_FLG",
+//  "AMP_TXT",
+//  "ARCOS_FLG",
+//  "BASE_CDE_GMS_NUM",
+//  "BUYER_NAM",
+//  "BUYER_NUM",
+//  "CARD_GEN_CDE_NUM",
+//  "CARD_GEN_IND_CDE",
+//  "CARD_GEN_IND_DESC",
+//  "CARD_GPPC_ID",
+//  "CARD_SBST_KEY_ID",
+//  "CGBK_PARENT_SUPPLIER_NUM",
+//  "CH_ALTRNT_HAM_DEPT_DESC",
+//  "CH_ALTRNT_HAM_DEPT_FLG",
+//  "CH_ALTRNT_HAM_DEPT_NUM",
+//  "CH_CTGRY_DESC",
+//  "CH_CTGRY_MNGR_ASSIST_NAM",
+//  "CH_CTGRY_MNGR_NAM",
+//  "CH_HHC_SUB_CTGRY_DESC",
+//  "CH_NON_PRIVATE_LABEL_MNGR_NAM",
+//  "CH_SUB_CTGRY_DESC",
+//  "CONVEN_PACK_QTY",
+//  "CORP_DESC",
+//  "CORP_ITEM_NUM",
+//  "CSE_LABEL_FLG",
+//  "CSE_WEIGHT_NUM",
+//  "CTGRY_CDE",
+//  "CTGRY_DESC",
+//  "CURR_VRSN_FLG",
+//  "DEA_BASE_DESC",
+//  "DEA_BASE_NUM",
+//  "DEA_SCHED_DESC",
+//  "DEA_SCHED_NUM",
+//  "DEA_SPECIAL_ATTN_CDE",
+//  "DEA_SPECIAL_ATTN_DESC",
+//  "DEA_SUB_BASE_NUM",
+//  "DEL_FLG",
+//  "DEPT_CDE",
+//  "DEPT_DESC",
+//  "DISP_FLG",
+//  "DP_NUM",
+//  "DRUG_CLASS_CDE",
+//  "DRUG_CLASS_DESC",
+//  "DRUG_CLASS_FLG",
+//  "DRUG_CLASS_ID",
+//  "DRUG_GROUP_CDE",
+//  "DRUG_GROUP_DESC",
+//  "DRUG_GROUP_ID",
+//  "DRUG_SUBCLS_CDE",
+//  "DRUG_SUBCLS_DESC",
+//  "DRUG_SUBCLS_ID",
+//  "EDI_CGBK_FLG",
+//  "EDI_ID",
+//  "EDLP_PCT",
+//  "FDB_AWP_MULT_NUM",
+//  "FDB_BBPKG_D1",
+//  "FDB_BBPKG_P1",
+//  "FDB_CWPPKG_P1",
+//  "FDB_FFPUL_P1",
+//  "FDB_HICL_SEQNO",
+//  "FDB_OBC_EXP",
+//  "FIXED_SELL_PCT",
+//  "FORM_DESC",
+//  "FORM_H_ID",
+//  "FORM_ID",
+//  "GEN_IND_CDE",
+//  "GEN_IND_DESC",
+//  "GEN_IND_FLG",
+//  "GEN_IND_H_ID",
+//  "GEN_NAM",
+//  "GEN_PROD_IND_CDE",
+//  "GEN_PROD_IND_DESC",
+//  "GEN_SBST_FLG",
+//  "GLBL_SRC_FLG",
+//  "GPI_GEN_NAM",
+//  "GPI_ID",
+//  "GWSA_EXCLSV_FLG",
+//  "GWSA_INJCT_FLG",
+//  "HAM_DEPT_DESC",
+//  "HAM_DEPT_NUM",
+//  "HAZARD_ID_NUM",
+//  "HOSP_ONLY_FLG",
+//  "IBT_ELIGIBLE_FLG",
+//  "INST_PACK_CDE",
+//  "INST_PACK_DESC",
+//  "INTRNL_PROD_FNC_CLASS_CDE",
+//  "INTRNL_PROD_FNC_CLASS_DESC",
+//  "INVTRY_CLASS_DESC",
+//  "INVTRY_CLASS_ID",
+//  "INVTRY_TYPE_DESC",
+//  "INVTRY_TYPE_ID",
+//  "ITEM_TYPE_CDE",
+//  "ITEM_TYPE_DESC",
+//  "MDSP_AWP_MULT_NUM",
+//  "MDSP_PACK_QTY",
+//  "MDSP_PACK_SIZE_NUM",
+//  "MDSP_PKG_SIZE_UOM_ID",
+//  "MDSP_THER_EQV_ID",
+//  "MDSP_TOTAL_PKG_QTY",
+//  "MFG_PROD_ID",
+//  "MIN_PACK_QTY",
+//  "MKT_DESC",
+//  "MSTR_PACK_QTY",
+//  "MULTI_SRC_IND_CDE",
+//  "MULTI_SRC_IND_DESC",
+//  "NDC_CDE",
+//  "NDC_IND_CDE",
+//  "NDC_IND_DESC",
+//  "NDC_KEY_CDE",
+//  "NDC_KEY_DESC",
+//  "NDC_UPC_FLG",
+//  "NLC_TYPE_CDE",
+//  "NLC_TYPE_DESC",
+//  "PACK_AMP_DLR",
+//  "PACK_FFPUL_P1_DLR",
+//  "PACK_QTY",
+//  "PACK_SIZE_H_ID",
+//  "PACK_SIZE_QTY",
+//  "PARENT_SUPPLIER_NUM",
+//  "PRFTPK_DISC_PCT",
+//  "PRIVATE_LABEL_CDE",
+//  "PRIVATE_LABEL_DESC",
+//  "PRIVATE_LABEL_H_ID",
+//  "PROD_AGR_CDE",
+//  "PROD_AGR_DESC",
+//  "PROD_DSCONT_DTE",
+//  "PROD_KEY_NUM",
+//  "PROD_NAM",
+//  "PROD_TYPE_CDE",
+//  "PROD_TYPE_DESC",
+//  "PURCH_PROD_TYPE_CDE",
+//  "PURCH_PROD_TYPE_DESC",
+//  "REFRIG_FLG",
+//  "RLS_DTE",
+//  "ROW_ADD_STP",
+//  "ROW_ADD_USER_ID",
+//  "ROW_UPDATE_STP",
+//  "ROW_UPDATE_USER_ID",
+//  "RSTRCT_FLG",
+//  "RTRN_RSTRCT_CDE",
+//  "RTRN_RSTRCT_DESC",
+//  "RTRN_RSTRCT_EXP_DTE",
+//  "RX_FLG",
+//  "RX_TYPE_CDE",
+//  "RX_TYPE_DESC",
+//  "SBST_DESC",
+//  "SBST_ID",
+//  "SELL_CUBE_NUM",
+//  "SELL_WEIGHT_NUM",
+//  "SIZE_TXT",
+//  "SPECIAL_PROG_FLG",
+//  "STRGTH_EXT_TXT",
+//  "STRGTH_H_TXT",
+//  "STRGTH_TXT",
+//  "SUBCAT_CDE",
+//  "SUBCAT_DESC",
+//  "SUPL_GWSA_SVC_LEVEL_TYPE_CDE",
+//  "SUPL_GWSA_SVC_LEVEL_TYPE_DESC",
+//  "SUPPLIER_ABBR_TXT",
+//  "SUPPLIER_ADDR2_TXT",
+//  "SUPPLIER_ADDR_TXT",
+//  "SUPPLIER_CASH_DISC_WAC_PCT",
+//  "SUPPLIER_CITY",
+//  "SUPPLIER_CLASS_CDE",
+//  "SUPPLIER_CLASS_DESC",
+//  "SUPPLIER_DEA_LIC_ID",
+//  "SUPPLIER_DEA_NUM",
+//  "SUPPLIER_FAX_NUM",
+//  "SUPPLIER_GWSA_CNTRCT_COST_FLG",
+//  "SUPPLIER_GWSA_GROUP_NAM",
+//  "SUPPLIER_GWSA_GROUP_NUM",
+//  "SUPPLIER_GWSA_NAV_SUPPLIER_FLG",
+//  "SUPPLIER_GWSA_RPRCR_FLG",
+//  "SUPPLIER_GWSA_SVC_LEVEL_FLG",
+//  "SUPPLIER_GWSA_WAC_FLG",
+//  "SUPPLIER_NAM",
+//  "SUPPLIER_NLC_TYPE_CDE",
+//  "SUPPLIER_NLC_TYPE_DESC",
+//  "SUPPLIER_NUM",
+//  "SUPPLIER_ORDER_ID",
+//  "SUPPLIER_PHONE_NUM",
+//  "SUPPLIER_STATE",
+//  "SUPPLIER_STATE_NAM",
+//  "SUPPLIER_TYPE_CDE",
+//  "SUPPLIER_TYPE_DESC",
+//  "SUPPLIER_ZIP",
+//  "SUPPLY_FLG",
+//  "SYSTEM_CDE",
+//  "SYSTEM_NAM",
+//  "TOTAL_QTY",
+//  "TRADE_NAM",
+//  "UNIT_CDE",
+//  "UNIT_DESC",
+//  "UNIT_DOSE_DESC",
+//  "UNIT_DOSE_ID",
+//  "UNIT_H_CDE",
+//  "UNIT_H_DESC",
+//  "UPC_NUM",
+//  "VOLUME_NUM",
+//  "WEIGHT_EXT_NUM",
+//  "WEIGHT_NUM"
+//FROM
+//  VIEWS."PRODUCT_NO_SCD"
+//WHERE
+//  (position('0A'XC in MKT_DESC) > 0 or PRIVATE_LABEL_H_ID like '%^%')
+////  AND (ROW_UPDATE_STP <= cast('$(vLastExecTime)' as timestamp))  Commented since date is not working correctly    
+//;
+//
+///********************************************
+// * Store In-Memory Table into QVD
+// ********************************************/
+//STORE Product_No_Scd into '$(vRootFileLocation)$(vQVDs)Product_No_Scd.qvd';
+////call store_into_qvd(vTableName, vQvdFile, 0);
+//
+//
+//
+///********************************************
+// * Free up memory
+// ********************************************/
+//DROP Table Product_No_Scd;
+////call drop_table(vTableName);
+//
+//

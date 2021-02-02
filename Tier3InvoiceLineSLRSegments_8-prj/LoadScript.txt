@@ -1,0 +1,74 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for Tier 2 Invoice_Line information.
+ *   This table is a combination of Invoice_Line_YYYYMM, Flag, 
+ *   tables
+ * 
+ * Sources:
+ *	 Invoice_Line_*.qvd 	
+ * Outputs:
+ *   Invoice_Line.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ *
+ * 7/25/2013 Joe Roberts
+ * Removed all logic except the concatenation of all historic files into a 
+ * single Invoice Line file. All other logic moved to Invoice Line QVD
+ * generator and Invoice Line delta QVD generator.
+ *
+ * 05/01/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+/*********************************************************************************
+Setup environment specific variables.
+Load in defaults for formatting of currency,dates and numbers.
+
+Changelog:
+- 10.2.2013 jeremy.fourman
+Removed inclusion of Web settings, those are for UI components only.
+*********************************************************************************/
+
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+//$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+//$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+//TRACE v_doc_num;
+
+//exit script;
+///$tab User Line Segment
+
+//For v_segment_no = 1 to 4
+
+	segment:
+	load  Distinct 
+	     ACCT_KEY_NUM 
+	from 
+	     '$(vRootFileLocation)$(vQVDs)user_categories_segment_$(v_doc_num).qvd' (qvd)
+	;
+
+
+	invoice_line_slr:
+	load
+	     *
+	from 
+	     '$(vRootFileLocation)$(vQVDs)Invoice_Line_SLR.qvd' (qvd)
+	where exists(ACCT_KEY_NUM)
+	; 
+
+	Store invoice_line_slr into '$(vRootFileLocation)$(vQVDs)Invoice_Line_SLR_Segment_$(v_doc_num).qvd';
+
+	Drop Table invoice_line_slr,segment; 
+
+//next v_segment_no;

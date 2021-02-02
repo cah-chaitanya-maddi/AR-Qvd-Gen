@@ -1,0 +1,254 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for COMMODITY_DETAIL Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Commodity_Detail.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Ship to Filter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM as SHIP_TO_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Commodity_Detail
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Commodity_Detail';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get Latest Date from QVD
+ ********************************************/
+Max_Date:
+LOAD
+  max(ROW_UPDATE_STP) as max_date
+FROM
+  '$(vQvdFile)' (qvd)
+;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date;
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Commodity_Detail:
+LOAD
+  CORP_ITEM_NUM & '-' & SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM as [PRIMARY_KEY]
+ ,SHIP_TO_CUSTOMER_NUM                                                    as [SHIP_TO_CUSTOMER_NUM]
+ ,SHIP_TO_LOCATION_NUM                                                    as [SHIP_TO_LOCATION_NUM]
+ ,CORP_ITEM_NUM                                                           as [CORP_ITEM_NUM]
+ ,START_DTE                                                               as [START_DTE]
+ ,CMDTY_CDE                                                               as [CSN]
+ ,END_DTE                                                                 as [END_DTE]
+ ,CURR_FLG                                                                as [CURR_FLG]
+ ,ROW_ADD_STP                                                             as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                                                         as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                                                          as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID                                                      as [ROW_UPDATE_USER_ID]
+ ,CTGRY_CDE                                                               as [CTGRY_CDE]
+ ,Capitalize(CTGRY_DESC)                                                  as [CTGRY_DESC]
+ ,Capitalize(USER_DFN_FIELD_1_LABEL_NAM)                                  as [USER_DFN_FIELD_1_LABEL_NAM]
+ ,Capitalize(USER_DFN_FIELD_1_TXT)                                        as [USER_DFN_FIELD_1_TXT]
+ ,Capitalize(USER_DFN_FIELD_2_LABEL_NAM)                                  as [USER_DFN_FIELD_2_LABEL_NAM]
+ ,Capitalize(USER_DFN_FIELD_2_TXT)                                        as [USER_DFN_FIELD_2_TXT]
+ ,FRMLRY_FLG                                                              as [FRMLRY_FLG]
+ ,DO_NOT_SUB_FLG                                                          as [DO_NOT_SUB_FLG]
+ ,MSG_TXT                                                                 as [MSG_TXT]
+ ,MIN_SUPPLY_DAY_QTY                                                      as [MIN_SUPPLY_DAY_QTY]
+ ,MAX_SUPPLY_DAY_QTY                                                      as [MAX_SUPPLY_DAY_QTY]
+ ,PRJCT_MTHLY_USAGE_QTY                                                   as [PRJCT_MTHLY_USAGE_QTY]
+ ,PRJCT_USAGE_EXP_DTE                                                     as [PRJCT_USAGE_EXP_DTE]
+ ,RORDR_POINT_QTY                                                         as [RORDR_POINT_QTY]
+ ,RORDR_QTY                                                               as [RORDR_QTY]
+;
+SQL
+SELECT
+  SHIP_TO_CUSTOMER_NUM
+ ,SHIP_TO_LOCATION_NUM
+ ,CORP_ITEM_NUM
+ ,START_DTE
+ ,CMDTY_CDE
+ ,END_DTE
+ ,CURR_FLG
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,CTGRY_CDE
+ ,CTGRY_DESC
+ ,USER_DFN_FIELD_1_LABEL_NAM
+ ,USER_DFN_FIELD_1_TXT
+ ,USER_DFN_FIELD_2_LABEL_NAM
+ ,USER_DFN_FIELD_2_TXT
+ ,FRMLRY_FLG
+ ,DO_NOT_SUB_FLG
+ ,MSG_TXT
+ ,MIN_SUPPLY_DAY_QTY
+ ,MAX_SUPPLY_DAY_QTY
+ ,PRJCT_MTHLY_USAGE_QTY
+ ,PRJCT_USAGE_EXP_DTE
+ ,RORDR_POINT_QTY
+ ,RORDR_QTY
+FROM
+//  VIEWST.COMMODITY_DETAIL	ARR 315
+    VIEWS.COMMODITY_DETAIL
+WHERE  
+  (ROW_UPDATE_STP >= cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    RORDR_QTY
+   ,RORDR_POINT_QTY
+   ,PRJCT_USAGE_EXP_DTE
+   ,PRJCT_MTHLY_USAGE_QTY
+   ,MAX_SUPPLY_DAY_QTY
+   ,MIN_SUPPLY_DAY_QTY
+   ,MSG_TXT
+   ,DO_NOT_SUB_FLG
+   ,FRMLRY_FLG
+   ,USER_DFN_FIELD_2_TXT
+   ,USER_DFN_FIELD_2_LABEL_NAM
+   ,USER_DFN_FIELD_1_TXT
+   ,USER_DFN_FIELD_1_LABEL_NAM
+   ,CTGRY_DESC
+   ,CTGRY_CDE
+   ,ROW_UPDATE_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_ADD_STP
+   ,CURR_FLG
+   ,END_DTE
+   ,[CSN]
+   ,START_DTE
+   ,CORP_ITEM_NUM
+   ,SHIP_TO_LOCATION_NUM
+   ,SHIP_TO_CUSTOMER_NUM
+  FROM
+    '$(vQvdFile)' (qvd)
+  WHERE
+    NOT EXISTS(PRIMARY_KEY, CORP_ITEM_NUM & '-' & SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM)
+  ;
+
+  /********************************************
+   * Since Primary Key was composite key need
+   * to drop the field
+   ********************************************/
+  DROP FIELD PRIMARY_KEY;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+	STORE Commodity_Detail into '$(vRootFileLocation)$(vQVDs)\Commodity_Detail.qvd';
+	//call store_into_qvd(vTableName, vQvdFile, 0);
+    let vLastExecTime = '$(vThisExecTime)'; 
+END IF
+
+  /********************************************
+   * Store Dev QVD
+   ********************************************/
+   if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	//*****************************************************************
+	trace "************************** DEV LOAD: Creating Dev version of Commodity_Detail";
+	//*****************************************************************
+	NoConcatenate
+	Commodity_Detail_dev:
+	load 
+		* 
+	resident
+		Commodity_Detail
+	where exists(SHIP_TO_FILTER, SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM)
+	;
+
+	store Commodity_Detail_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Commodity_Detail.qvd';
+	drop table Commodity_Detail_dev;
+	
+endif;
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+DROP Table Commodity_Detail;
+//call drop_table(vTableName);
+

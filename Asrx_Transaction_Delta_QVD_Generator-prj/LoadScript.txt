@@ -1,0 +1,315 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ASRX_TRANSACTION Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Asrx_Transaction.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/17/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+//VIEWST Changes by Sumit 11/06/2020 ARR 262-270
+///$tab Asrx_Invoice_Filter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       ASRX_Invoice_Limiter:
+       load
+              INVOICE_KEY_NUM as INVOICE_KEY_NUM_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Asrx_Invoice.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Asrx_Transaction
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Asrx_Transaction';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vQvdFile)'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date; 
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Asrx_Transaction:
+LOAD
+  DCSN_DTE_KEY_NUM & '-' & INVOICE_KEY_NUM as [PRIMARY_KEY]
+ ,DCSN_DTE_KEY_NUM                         as [DCSN_DTE_KEY_NUM]
+ ,INVOICE_KEY_NUM                          as [INVOICE_KEY_NUM]
+ ,DCSN_CDE                                 as [DCSN_CDE]
+ ,FLG_KEY_NUM                              as [FLG_KEY_NUM]
+ ,APRV_USER_ID                             as [APRV_USER_ID]
+ ,EXPCT_USER_ID                            as [EXPCT_USER_ID]
+ ,EXPCT_USER_GROUP_NUM                     as [EXPCT_USER_GROUP_NUM]
+ ,DCSN_TIM                                 as [DCSN_TIM]
+ ,ROW_ADD_STP                              as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                          as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                           as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID                       as [ROW_UPDATE_USER_ID]
+;
+SQL
+SELECT
+  DCSN_DTE_KEY_NUM
+ ,INVOICE_KEY_NUM
+ ,DCSN_CDE
+ ,FLG_KEY_NUM
+ ,APRV_USER_ID
+ ,EXPCT_USER_ID
+ ,EXPCT_USER_GROUP_NUM
+ ,DCSN_TIM
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+FROM
+  VIEWS.ASRX_TRANSACTION
+WHERE  
+  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp));
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+LET vDeltaRecords = NoOfRows('$(vTableName)');/*Commented for full load*/
+
+IF $(vDeltaRecords) <> 0 THEN
+  /********************************************
+   * Concatenate Records where not exists in
+   * the query above
+   ********************************************/
+  CONCATENATE
+  LOAD
+    DCSN_DTE_KEY_NUM
+   ,INVOICE_KEY_NUM
+   ,DCSN_CDE
+   ,FLG_KEY_NUM
+   ,APRV_USER_ID
+   ,EXPCT_USER_ID
+   ,EXPCT_USER_GROUP_NUM
+   ,DCSN_TIM
+   ,ROW_ADD_STP
+   ,ROW_ADD_USER_ID
+   ,ROW_UPDATE_STP
+   ,ROW_UPDATE_USER_ID
+  FROM
+    '$(vQvdFile)' (qvd)
+  WHERE
+    NOT EXISTS(PRIMARY_KEY, DCSN_DTE_KEY_NUM & '-' & INVOICE_KEY_NUM)
+  ;
+
+  /********************************************
+   * Since Primary Key was composite key need
+   * to drop the field
+   ********************************************/
+  DROP FIELD PRIMARY_KEY;
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+	store 
+		Asrx_Transaction
+	into
+		'$(vRootFileLocation)$(vQVDs)Asrx_Transaction.qvd';
+	
+/********************************************
+ * Store Dev QVD
+ ********************************************/
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	trace "************************** DEV LOAD: Creating Dev version of Asrx_Transaction";
+
+	NoConcatenate
+	Asrx_Transaction_dev:
+	load 
+		* 
+	resident
+		Asrx_Transaction
+	where exists(INVOICE_KEY_NUM_FILTER, INVOICE_KEY_NUM)
+	;
+
+	store 
+		Asrx_Transaction_dev
+	into
+		'$(vRootFileLocation)$(vQVDs)\Dev\Asrx_Transaction.qvd';
+	
+	drop table Asrx_Transaction_dev;
+	
+endif;	
+	
+    let vLastExecTime = '$(vThisExecTime)'; 
+
+END IF
+
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+ 
+drop Table Asrx_Transaction;
+
+
+///$tab Asrx_Transaction_User_Group
+
+NoConcatenate
+
+Asrx_Transaction_User_Group:
+LOAD 
+  DCSN_DTE_KEY_NUM
+ ,INVOICE_KEY_NUM
+ ,DCSN_CDE
+ ,FLG_KEY_NUM
+ ,APRV_USER_ID
+ ,EXPCT_USER_ID
+ ,EXPCT_USER_GROUP_NUM
+ ,DCSN_TIM
+ ,ROW_ADD_STP 
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP 
+ ,ROW_UPDATE_USER_ID
+ 
+From '$(vRootFileLocation)$(vQVDs)Asrx_Transaction.qvd'(qvd) ;
+ 
+left Join (Asrx_Transaction_User_Group)
+
+LOAD Distinct
+	 USER_GROUP_NUM as EXPCT_USER_GROUP_NUM, 
+	 USER_GROUP_NUM,
+     USER_GROUP_ID as [Approval Group Name], 
+//     USER_GROUP_TYPE_CDE, 
+//     USER_GROUP_TYPE_ID, 
+     USER_GROUP_TYPE_DESC as [User Group Type Description]
+    
+FROM
+'$(vRootFileLocation)QVDs\Asrx_User_Group.qvd' (qvd);
+
+
+Inner Join (Asrx_Transaction_User_Group)
+//Asrx_Transaction_LAST:
+
+LOAD 	Distinct
+		INVOICE_KEY_NUM
+		,MaxString(DCSN_DTE_KEY_NUM) as [Last DCSN_DTE_KEY_NUM]
+Resident Asrx_Transaction_User_Group
+Group by
+INVOICE_KEY_NUM;
+		
+		
+		
+Inner Join (Asrx_Transaction_User_Group)
+
+LOAD Distinct
+INVOICE_KEY_NUM,
+FirstSortedValue(APRV_USER_ID,-EXPCT_USER_GROUP_NUM) as [Last APRV_USER_ID]
+
+Resident Asrx_Transaction_User_Group
+
+group by
+INVOICE_KEY_NUM
+;
+
+
+Inner Join (Asrx_Transaction_User_Group)
+
+LOAD Distinct
+INVOICE_KEY_NUM,
+FirstSortedValue([Approval Group Name],-EXPCT_USER_GROUP_NUM) as [Last Approval Group Name]
+
+Resident Asrx_Transaction_User_Group
+
+group by
+INVOICE_KEY_NUM
+;
+
+
+
+STORE Asrx_Transaction_User_Group INTO '$(vRootFileLocation)$(vQVDs)Asrx_Transaction_User_Group.qvd' (qvd) ; 
+
+DROP TABLE Asrx_Transaction_User_Group; 

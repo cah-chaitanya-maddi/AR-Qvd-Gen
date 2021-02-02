@@ -1,0 +1,259 @@
+﻿///$tab Doc
+/**********************************************************************************
+This QVD Generator will create the Contract Name QVD for GPO application.
+The Contract Names that are not assigned are masked. Contract# is still shown.
+
+Input QVD:
+user_categories_PurchaseReviewGPO_1.qvd
+Contract_Group.qvd
+User_Cardinal_Group_Rlt_2.qvd
+
+Output:
+GPO_Contract_Group.qvd
+
+Version 1.0 :: rajdeep.biswas :: file created.
+
+**********************************************************************************/
+///$tab Mapping
+/**********************************************************************************
+Include the default selections
+**********************************************************************************/
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+
+//
+//usermap:
+//Mapping LOAD
+//MRCRY_USER_ID, 
+//USER_ID
+//from
+//'$(vRootFileLocation)$(vQVDs)mercury_user.qvd' (qvd)
+//where USER_ID = 'grish_david'
+//;
+
+///$tab User Limit_Grish_David
+///********************************
+//Get the GPO user (Grish David)
+//********************************/
+//temp_users:
+//load distinct 
+//
+//MRCRY_USER_ID, 
+//USER_ID as GPO_USER_ID,
+//USER_ID as UID
+//from
+//'$(vRootFileLocation)$(vQVDs)user_categories_PurchaseReviewGPO_1.qvd' (qvd)
+//where USER_ID = 'grish_david'
+//;
+//
+//Inner Join
+//
+//LOAD
+//	 CNTRCT_GROUP_KEY_NUM, 
+//     [Contract Name],  
+//     CARD_ACCT_GROUP_NUM, 
+//     CNTRCT_GROUP_TYPE_DESC, 
+//     CNTRCT_GROUP_STAT_DESC, 
+//     CURR_VRSN_FLG, 
+//     [Contract #], 
+//     DEL_FLG, 
+//     INDVDL_CNTRCT_GROUP_FLG, 
+//     [Contract Type]
+//FROM
+//'$(vRootFileLocation)$(vQVDs)Contract_Group.qvd'
+//(qvd)
+//;
+//
+//
+///$tab GPO Contract Grish_David
+//
+//NoConcatenate
+//
+//Temp_Contract_Group:
+//LOAD *
+//Resident temp_users;
+//
+//drop Table temp_users;
+//
+//
+//Join (Temp_Contract_Group)
+//
+//LOAD CARD_ACCT_GROUP_NUM,
+//     MRCRY_USER_ID,
+//     ApplyMap('usermap',MRCRY_USER_ID) as GPO_USER_ID,
+//     'Y' as [Assigned Contract]
+//    
+//FROM
+//'$(vRootFileLocation)$(vQVDs)User_Cardinal_Group_Rlt_2.qvd'
+//(qvd)
+//;
+//
+//
+//
+//
+//
+//
+///********************************
+//Create the masked contract names
+//for Grish David as per assignment
+//********************************/
+//
+//NoConcatenate
+//
+//Contract_Group:
+//LOAD 
+//*,
+//if([Assigned Contract]='Y',[Contract Name],if([Contract Name]='N/A','Off Contract','Other Contract')) as [GPO Contract],
+//if([Assigned Contract]='Y','Eligible Contracts',if([Contract Name]='N/A',Null(),'Other Contracts')) as [GPO Contract Indicator]
+//
+//Resident 
+//Temp_Contract_Group
+//;
+//
+//
+//
+//STORE Contract_Group into '$(vRootFileLocation)$(vQVDs)GPO_Contract_Group_Grish_David.qvd';
+//
+//DROP Tables Temp_Contract_Group, Contract_Group ; 
+//
+//
+//
+// 
+//
+///$tab User Limit_New_Users
+/********************************
+Get all the GPO users
+********************************/
+temp_users:
+load distinct 
+
+MRCRY_USER_ID, 
+USER_ID as GPO_USER_ID,
+USER_ID as UID
+from
+'$(vRootFileLocation)$(vQVDs)user_categories_PurchaseReviewGPO_1.qvd' (qvd)
+;
+
+Inner Join
+
+LOAD
+	 CNTRCT_GROUP_KEY_NUM, 
+     [Contract Name],  
+     CARD_ACCT_GROUP_NUM, 
+     CNTRCT_GROUP_TYPE_DESC, 
+     CNTRCT_GROUP_STAT_DESC, 
+     CURR_VRSN_FLG, 
+     [Contract #], 
+     DEL_FLG, 
+     INDVDL_CNTRCT_GROUP_FLG, 
+     [Contract Type]
+FROM
+'$(vRootFileLocation)$(vQVDs)Contract_Group.qvd'
+(qvd)
+;
+
+
+///$tab GPO Contract New Users
+
+NoConcatenate
+
+Temp_Contract_Group:
+LOAD *
+Resident temp_users;
+
+drop Table temp_users;
+
+
+
+Left Join
+
+LOAD CARD_ACCT_GROUP_NUM, 
+     USER_ACCT_GROUP_NUM
+FROM
+'$(vRootFileLocation)$(vQVDs)CAG_UAG_RLT.qvd'     //// Added as a part of April 2016 release by Dicky Mohanty on 04/04/2016.
+(qvd);
+
+
+
+Left Join
+Group_User_Rlt:
+LOAD 
+     MRCRY_USER_ID, 
+     [Account Group #] as USER_ACCT_GROUP_NUM,
+     'Y' as [Assigned Contract]
+FROM
+'$(vRootFileLocation)$(vQVDs)Group_User_Rlt.qvd'  //// Added as a part of April 2016 release by Dicky Mohanty on 04/04/2016.
+(qvd);
+
+
+
+
+/********************************
+Create the masked contract names
+for all users as per assignment
+********************************/
+
+NoConcatenate
+Contract_Group:
+LOAD 
+*,
+if([Assigned Contract]='Y',[Contract Name],if([Contract Name]='N/A','Off Contract','Other Contract')) as [GPO Contract],
+if([Assigned Contract]='Y','Eligible Contracts',if([Contract Name]='N/A',Null(),'Other Contracts')) as [GPO Contract Indicator]
+
+Resident 
+Temp_Contract_Group
+;
+
+
+//STORE Contract_Group into '$(vRootFileLocation)$(vQVDs)GPO_Contract_Group_New_Users.qvd';
+STORE Contract_Group into '$(vRootFileLocation)$(vQVDs)GPO_Contract_Group.qvd';
+
+DROP Tables Temp_Contract_Group, Contract_Group ; 
+ 
+ 
+EXIT Script;
+///$tab Merge Contract Groups
+//
+///********************************
+//Merger both QVDs to hold info 
+//for all the users.
+//********************************/
+//
+//
+//GPO_Contract_Group:
+//
+//LOAD *
+//FROM
+//'$(vRootFileLocation)$(vQVDs)GPO_Contract_Group_Grish_David.qvd'
+//(qvd);
+//
+//
+//
+//
+//Concatenate
+//
+//
+//
+//LOAD *
+//FROM
+//'$(vRootFileLocation)$(vQVDs)GPO_Contract_Group_New_Users.qvd'
+//(qvd);
+//
+//
+//
+//
+//STORE GPO_Contract_Group into '$(vRootFileLocation)$(vQVDs)GPO_Contract_Group.qvd';
+//
+//DROP Table GPO_Contract_Group ; 
+//
+//
+//

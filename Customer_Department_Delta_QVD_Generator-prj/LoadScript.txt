@@ -1,0 +1,320 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for CUSTOMER_DEPARTMENT Delta information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Customer_Department.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 04/16/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+//Reverting --Nikita Brijwasi for testing purpose only $(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections_PROD.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//Nikita Brijwasi for testing purpose only ODBC CONNECT TO PD_SDW_Stg;
+//VIEWS Changes by Sumit 11/06/2020 ARR 262-270
+///$tab Ship_To_Limiter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              SHIP_TO_CUSTOMER_NUM & '-' & SHIP_TO_LOCATION_NUM as SHIP_TO_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Customer_Department
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Customer_Department';
+set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+/********************************************
+ * Get Last Time QVD was Generated and Current Time
+ ********************************************/
+LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+
+/********************************************
+ * Get List of Dates
+ ********************************************/
+temp:
+LOAD
+  ROW_UPDATE_STP as Date
+FROM
+  '$(vQvdFile)'
+(qvd);
+
+/********************************************
+ * Get Max Date
+ ********************************************/
+Max_Date:
+Load
+  min(Date) as min_date,
+  max(Date) as max_date;
+Load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+while not IsNull(FieldValue('Date',Iterno()));
+
+/********************************************
+ * Drop Table
+ ********************************************/
+Drop Table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+/********************************************
+ * Drop Table
+ ********************************************/
+DROP TABLE Max_Date; 
+
+/********************************************
+ * Get Changed/Updated Records
+ ********************************************/
+Customer_Department:
+LOAD
+  CUSTOMER_DEPT_KEY_NUM                  as [CUSTOMER_DEPT_KEY_NUM]
+ ,text(Capitalize(CUSTOMER_DEPT_DESC))   as [Department Name]
+ ,text(CUSTOMER_DEPT_ID)				 as [Department Code]
+ ,if(text(trim(CUSTOMER_DEPT_ID))='', text(DEPT_NUM), text(CUSTOMER_DEPT_ID))                 as [CUST_ID_DEPT_NUM]
+ ,text(trim(DEPT_NUM))						 as [DEPT_NUM]
+ ,ROW_ADD_STP                            as [ROW_ADD_STP]
+ ,ROW_ADD_USER_ID                        as [ROW_ADD_USER_ID]
+ ,ROW_UPDATE_STP                         as [ROW_UPDATE_STP]
+ ,ROW_UPDATE_USER_ID                     as [ROW_UPDATE_USER_ID]
+ ,SHIP_TO_CUSTOMER_NUM                   as [SHIP_TO_CUSTOMER_NUM]
+ ,SHIP_TO_LOCATION_NUM                   as [SHIP_TO_LOCATION_NUM]
+ ,Capitalize(PRIM_CNTCT_NAM)             as [PRIM_CNTCT_NAM]
+ ,PRIM_CNTCT_PHONE_NUM                   as [PRIM_CNTCT_PHONE_NUM]
+ ,PRIM_CNTCT_PHONE_EXT_NUM               as [PRIM_CNTCT_PHONE_EXT_NUM]
+ ,ACT_STAT_FLG                           as [ACT_STAT_FLG]
+ ,IDB_ACT_FLG                            as [IDB_ACT_FLG]
+ ,PRTL_FLG                               as [PRTL_FLG]
+ ,Capitalize(EMAIL_ADDR_TXT)             as [EMAIL_ADDR_TXT]
+ ,Capitalize(POST_ADRSE_NAM)             as [POST_ADRSE_NAM]
+ ,Capitalize(ADDR_TXT)                   as [ADDR_TXT]
+ ,Capitalize(ADDR2_TXT)                  as [ADDR2_TXT]
+ ,Capitalize(CITY)                       as [CITY]
+ ,STATE                                  as [STATE]
+ ,ZIP                                    as [ZIP]
+ ,SCNDRY_CNTCT_NAM                       as [SCNDRY_CNTCT_NAM]
+ ,SCNDRY_PHONE_NUM                       as [SCNDRY_PHONE_NUM]
+ ,SCNDRY_PHONE_EXTN_NUM                  as [SCNDRY_PHONE_EXTN_NUM]
+ ,FAX_NUM                                as [FAX_NUM]
+ ,MBL_PHONE_NUM                          as [MBL_PHONE_NUM]
+ ,PAGER_NUM                              as [PAGER_NUM]
+ ,PAGER_EXTN_NUM                         as [PAGER_EXTN_NUM]
+ ,Capitalize(CMNT_TXT)                   as [CMNT_TXT]
+ ,BUDGET_NUM                             as [BUDGET_NUM]
+ ,BUDGET_ID                              as [BUDGET_ID]
+ ,Capitalize(BUDGET_NAM)                 as [BUDGET_NAM]
+ ,BILL_ENTRY_VALUE_TYPE_CDE              as [BILL_ENTRY_VALUE_TYPE_CDE]
+ ,Capitalize(BILL_ENTRY_VALUE_TYPE_DESC) as [BILL_ENTRY_VALUE_TYPE_DESC]
+ ,DSPNS_FEE_LEVEL_CDE                    as [DSPNS_FEE_LEVEL_CDE]
+ ,Capitalize(DSPNS_FEE_LEVEL_DESC)       as [DSPNS_FEE_LEVEL_DESC]
+ ,BILL_BASE_CDE                          as [BILL_BASE_CDE]
+ ,Capitalize(BILL_BASE_DESC)             as [BILL_BASE_DESC]
+ ,DSPNS_FEE_DLR                          as [DSPNS_FEE_DLR]
+ ,MARKUP_PCT                             as [MARKUP_PCT]
+ ,DLVRY_CHRG_DLR                         as [DLVRY_CHRG_DLR]
+ ,TERM_OF_SALE_DAY_DISC_PCT              as [TERM_OF_SALE_DAY_DISC_PCT]
+ ,TERM_OF_SALE_DAY_QTY                   as [TERM_OF_SALE_DAY_QTY]
+ ,TERM_OF_SALE_DAY_NET_QTY               as [TERM_OF_SALE_DAY_NET_QTY]
+ ,TERM_OF_SALE_DAY_LATE_PCT              as [TERM_OF_SALE_DAY_LATE_PCT]
+ ,CURR_VRSN_FLG							 as [CURR_VRSN_FLG]
+ ,OE_DEPT_FLG							 as [OE_DEPT_FLG]
+;
+SQL
+SELECT
+  CUSTOMER_DEPT_KEY_NUM
+ ,CUSTOMER_DEPT_DESC
+ ,CUSTOMER_DEPT_ID
+ ,DEPT_NUM
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+ ,SHIP_TO_CUSTOMER_NUM
+ ,SHIP_TO_LOCATION_NUM
+ ,PRIM_CNTCT_NAM
+ ,PRIM_CNTCT_PHONE_NUM
+ ,PRIM_CNTCT_PHONE_EXT_NUM
+ ,ACT_STAT_FLG
+ ,IDB_ACT_FLG
+ ,PRTL_FLG
+ ,EMAIL_ADDR_TXT
+ ,POST_ADRSE_NAM
+ ,ADDR_TXT
+ ,ADDR2_TXT
+ ,CITY
+ ,STATE
+ ,ZIP
+ ,SCNDRY_CNTCT_NAM
+ ,SCNDRY_PHONE_NUM
+ ,SCNDRY_PHONE_EXTN_NUM
+ ,FAX_NUM
+ ,MBL_PHONE_NUM
+ ,PAGER_NUM
+ ,PAGER_EXTN_NUM
+ ,CMNT_TXT
+ ,BUDGET_NUM
+ ,BUDGET_ID
+ ,BUDGET_NAM
+ ,BILL_ENTRY_VALUE_TYPE_CDE
+ ,BILL_ENTRY_VALUE_TYPE_DESC
+ ,DSPNS_FEE_LEVEL_CDE
+ ,DSPNS_FEE_LEVEL_DESC
+ ,BILL_BASE_CDE
+ ,BILL_BASE_DESC
+ ,DSPNS_FEE_DLR
+ ,MARKUP_PCT
+ ,DLVRY_CHRG_DLR
+ ,TERM_OF_SALE_DAY_DISC_PCT
+ ,TERM_OF_SALE_DAY_QTY
+ ,TERM_OF_SALE_DAY_NET_QTY
+ ,TERM_OF_SALE_DAY_LATE_PCT
+ ,CURR_VRSN_FLG
+ ,OE_DEPT_FLG
+FROM
+VIEWS.CUSTOMER_DEPARTMENT
+//Reverting --Nikita Brijwasi for testing purpose only  VIEWS.CUSTOMER_DEPARTMENT
+//WHERE  
+//  (ROW_UPDATE_STP >= cast('$(vLastExecTime)' as timestamp))
+//  OR (ROW_ADD_STP >= '$(vLastExecTime)'
+//  AND ROW_ADD_STP < '$(vThisExecTime)')  
+;
+
+///********************************************
+// * Check to see if any new records exists
+// * otherwise do not concatenate
+// ********************************************/
+//LET vDeltaRecords = NoOfRows('$(vTableName)');
+//
+//IF $(vDeltaRecords) <> 0 THEN
+//  /********************************************
+//   * Concatenate Records where not exists in
+//   * the query above
+//   ********************************************/
+//  CONCATENATE
+//  LOAD
+//    TERM_OF_SALE_DAY_LATE_PCT
+//   ,TERM_OF_SALE_DAY_NET_QTY 
+//   ,TERM_OF_SALE_DAY_QTY
+//   ,TERM_OF_SALE_DAY_DISC_PCT
+//   ,DLVRY_CHRG_DLR
+//   ,MARKUP_PCT
+//   ,DSPNS_FEE_DLR
+//   ,BILL_BASE_DESC
+//   ,BILL_BASE_CDE
+//   ,DSPNS_FEE_LEVEL_DESC
+//   ,DSPNS_FEE_LEVEL_CDE
+//   ,BILL_ENTRY_VALUE_TYPE_DESC
+//   ,BILL_ENTRY_VALUE_TYPE_CDE
+//   ,BUDGET_NAM
+//   ,BUDGET_ID
+//   ,BUDGET_NUM
+//   ,CMNT_TXT
+//   ,PAGER_EXTN_NUM
+//   ,PAGER_NUM
+//   ,MBL_PHONE_NUM
+//   ,FAX_NUM
+//   ,SCNDRY_PHONE_EXTN_NUM
+//   ,SCNDRY_PHONE_NUM
+//   ,SCNDRY_CNTCT_NAM
+//   ,ZIP
+//   ,STATE
+//   ,CITY
+//   ,ADDR2_TXT
+//   ,ADDR_TXT
+//   ,POST_ADRSE_NAM
+//   ,EMAIL_ADDR_TXT
+//   ,PRTL_FLG
+//   ,IDB_ACT_FLG
+//   ,ACT_STAT_FLG
+//   ,PRIM_CNTCT_PHONE_EXT_NUM
+//   ,PRIM_CNTCT_PHONE_NUM
+//   ,PRIM_CNTCT_NAM
+//   ,SHIP_TO_LOCATION_NUM
+//   ,SHIP_TO_CUSTOMER_NUM
+//   ,ROW_UPDATE_USER_ID
+//   ,ROW_UPDATE_STP
+//   ,ROW_ADD_USER_ID
+//   ,ROW_ADD_STP
+//   ,text([CUST_ID_DEPT_NUM]) as [CUST_ID_DEPT_NUM]
+//   ,text([Department Code]) as [Department Code]
+//   ,text([Department Name]) as [Department Name]
+//   ,text([DEPT_NUM]) as [DEPT_NUM]
+//   ,CUSTOMER_DEPT_KEY_NUM
+//   ,CURR_VRSN_FLG
+//   ,OE_DEPT_FLG
+//  FROM
+//    '$(vQvdFile)' (qvd)
+//  WHERE
+//    NOT EXISTS(CUSTOMER_DEPT_KEY_NUM, CUSTOMER_DEPT_KEY_NUM)
+//  ;
+//
+//  /********************************************
+//   * Store New QVD, if no errors
+//   ********************************************/ 
+	store Customer_Department into '$(vRootFileLocation)$(vQVDs)\Customer_Department.qvd';
+//	
+//    let vLastExecTime = '$(vThisExecTime)'; 
+
+
+//END IF
+
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/
+ DROP Table  Customer_Department;
+ 
+

@@ -1,0 +1,458 @@
+﻿<DocInternals>
+  <AlwaysLoose></AlwaysLoose>
+  <FieldSrcTables></FieldSrcTables>
+  <TableViewData></TableViewData>
+  <Bookmarks></Bookmarks>
+  <SavedByVersion>12.20.21000.0</SavedByVersion>
+  <ForceBackEndMacroExecution>false</ForceBackEndMacroExecution>
+  <FieldTags>
+    <ScriptBased>
+      <FieldTagData>
+        <Tag>$hidden</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$system</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>PROD_DSCONT_DTE</String>
+          <String>EDI_CGBK_FLG</String>
+          <String>PROD_AGR_DESC</String>
+          <String>SBST_DESC</String>
+          <String>SBST_ID</String>
+          <String>INVTRY_CLASS_DESC</String>
+          <String>INVTRY_TYPE_DESC</String>
+          <String>CH_ALTRNT_HAM_DEPT_FLG</String>
+          <String>CH_ALTRNT_HAM_DEPT_DESC</String>
+          <String>CH_HHC_SUB_CTGRY_DESC</String>
+          <String>CH_SUB_CTGRY_DESC</String>
+          <String>CH_CTGRY_DESC</String>
+          <String>CH_CTGRY_MNGR_ASSIST_NAM</String>
+          <String>CH_NON_PRIVATE_LABEL_MNGR_NAM</String>
+          <String>CH_CTGRY_MNGR_NAM</String>
+          <String>DEA_SPECIAL_ATTN_DESC</String>
+          <String>SUPPLIER_GWSA_SVC_LEVEL_FLG</String>
+          <String>SUPPLIER_GWSA_RPRCR_FLG</String>
+          <String>SUPPLIER_GWSA_CNTRCT_COST_FLG</String>
+          <String>SUPPLIER_GWSA_WAC_FLG</String>
+          <String>SUPPLIER_GWSA_NAV_SUPPLIER_FLG</String>
+          <String>SUPPLIER_GWSA_GROUP_NAM</String>
+          <String>GWSA_EXCLSV_FLG</String>
+          <String>GWSA_INJCT_FLG</String>
+          <String>INTRNL_PROD_FNC_CLASS_DESC</String>
+          <String>ITEM_TYPE_DESC</String>
+          <String>GLBL_SRC_FLG</String>
+          <String>AMP</String>
+          <String>Multi-Source Indicator</String>
+          <String>SUPPLIER_NLC_TYPE_DESC</String>
+          <String>NLC_TYPE_DESC</String>
+          <String>FDA Therapeutic Equivalency Rating</String>
+          <String>MDSP_PKG_SIZE_UOM_ID</String>
+          <String>MDSP_THER_EQV_ID</String>
+          <String>FDB_BBPKG_D1</String>
+          <String>BUYER_NAM</String>
+          <String>PURCH_PROD_TYPE_DESC</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>GPI Subclass Name</String>
+          <String>GPI Group Name</String>
+          <String>GPI Class Name</String>
+          <String>GPI Description</String>
+          <String>Mfr Class</String>
+          <String>Mfr Type</String>
+          <String>Mfr State Name</String>
+          <String>Mfr State</String>
+          <String>Manufacturer</String>
+          <String>SYSTEM_NAM</String>
+          <String>SUBCAT_DESC</String>
+          <String>RTRN_RSTRCT_DESC</String>
+          <String>Private Label Description</String>
+          <String>NDC_KEY_DESC</String>
+          <String>INST_PACK_DESC</String>
+          <String>Form</String>
+          <String>FORM_DESC</String>
+          <String>FORM_ID</String>
+          <String>DEPT_DESC</String>
+          <String>DEA Description</String>
+          <String>CTGRY_DESC</String>
+          <String>Product Active Status ID</String>
+          <String>Product Active Status</String>
+          <String>RX_TYPE_DESC</String>
+          <String>DEA_SCHED_DESC</String>
+          <String>UNIT_DOSE_DESC</String>
+          <String>Unit Dose</String>
+          <String>NDC_IND_DESC</String>
+          <String>Fineline Description</String>
+          <String>Drug Class</String>
+          <String>AHFS Description</String>
+          <String>Cardinal Generic Indicator</String>
+          <String>GEN_PROD_IND_DESC</String>
+          <String>GEN_IND_H_ID</String>
+          <String>Generic Indicator</String>
+          <String>UNIT_H_DESC</String>
+          <String>UOM</String>
+          <String>RLS_DTE</String>
+          <String>RTRN_RSTRCT_EXP_DTE</String>
+          <String>IBT_ELIGIBLE_FLG</String>
+          <String>DRUG_CLASS_FLG</String>
+          <String>NDC_UPC_FLG</String>
+          <String>SPECIAL_PROG_FLG</String>
+          <String>GEN_IND_FLG</String>
+          <String>GEN_SBST_FLG</String>
+          <String>DISP_FLG</String>
+          <String>SUPPLY_FLG</String>
+          <String>DEL_FLG</String>
+          <String>CURR_VRSN_FLG</String>
+          <String>RX_FLG</String>
+          <String>HOSP_ONLY_FLG</String>
+          <String>REFRIG_FLG</String>
+          <String>RSTRCT_FLG</String>
+          <String>AIR_FRT_FLG</String>
+          <String>CSE_LABEL_FLG</String>
+          <String>ARCOS_FLG</String>
+          <String>Generic Name</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+          <String>PROD_DSCONT_DTE</String>
+          <String>EDI_CGBK_FLG</String>
+          <String>PROD_AGR_DESC</String>
+          <String>SBST_DESC</String>
+          <String>SBST_ID</String>
+          <String>INVTRY_CLASS_DESC</String>
+          <String>INVTRY_TYPE_DESC</String>
+          <String>CH_ALTRNT_HAM_DEPT_FLG</String>
+          <String>CH_ALTRNT_HAM_DEPT_DESC</String>
+          <String>CH_HHC_SUB_CTGRY_DESC</String>
+          <String>CH_SUB_CTGRY_DESC</String>
+          <String>CH_CTGRY_DESC</String>
+          <String>CH_CTGRY_MNGR_ASSIST_NAM</String>
+          <String>CH_NON_PRIVATE_LABEL_MNGR_NAM</String>
+          <String>CH_CTGRY_MNGR_NAM</String>
+          <String>DEA_SPECIAL_ATTN_DESC</String>
+          <String>SUPPLIER_GWSA_SVC_LEVEL_FLG</String>
+          <String>SUPPLIER_GWSA_RPRCR_FLG</String>
+          <String>SUPPLIER_GWSA_CNTRCT_COST_FLG</String>
+          <String>SUPPLIER_GWSA_WAC_FLG</String>
+          <String>SUPPLIER_GWSA_NAV_SUPPLIER_FLG</String>
+          <String>SUPPLIER_GWSA_GROUP_NAM</String>
+          <String>GWSA_EXCLSV_FLG</String>
+          <String>GWSA_INJCT_FLG</String>
+          <String>INTRNL_PROD_FNC_CLASS_DESC</String>
+          <String>ITEM_TYPE_DESC</String>
+          <String>GLBL_SRC_FLG</String>
+          <String>AMP</String>
+          <String>Multi-Source Indicator</String>
+          <String>SUPPLIER_NLC_TYPE_DESC</String>
+          <String>NLC_TYPE_DESC</String>
+          <String>FDA Therapeutic Equivalency Rating</String>
+          <String>MDSP_PKG_SIZE_UOM_ID</String>
+          <String>MDSP_THER_EQV_ID</String>
+          <String>FDB_BBPKG_D1</String>
+          <String>BUYER_NAM</String>
+          <String>PURCH_PROD_TYPE_DESC</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>ROW_ADD_USER_ID</String>
+          <String>GPI Subclass Name</String>
+          <String>GPI Group Name</String>
+          <String>GPI Class Name</String>
+          <String>GPI Description</String>
+          <String>Mfr Class</String>
+          <String>Mfr Type</String>
+          <String>Mfr State Name</String>
+          <String>Mfr State</String>
+          <String>Manufacturer</String>
+          <String>SYSTEM_NAM</String>
+          <String>SUBCAT_DESC</String>
+          <String>RTRN_RSTRCT_DESC</String>
+          <String>Private Label Description</String>
+          <String>NDC_KEY_DESC</String>
+          <String>INST_PACK_DESC</String>
+          <String>Form</String>
+          <String>FORM_DESC</String>
+          <String>FORM_ID</String>
+          <String>DEPT_DESC</String>
+          <String>DEA Description</String>
+          <String>CTGRY_DESC</String>
+          <String>Product Active Status ID</String>
+          <String>Product Active Status</String>
+          <String>RX_TYPE_DESC</String>
+          <String>DEA_SCHED_DESC</String>
+          <String>UNIT_DOSE_DESC</String>
+          <String>Unit Dose</String>
+          <String>NDC_IND_DESC</String>
+          <String>Fineline Description</String>
+          <String>Drug Class</String>
+          <String>AHFS Description</String>
+          <String>Cardinal Generic Indicator</String>
+          <String>GEN_PROD_IND_DESC</String>
+          <String>GEN_IND_H_ID</String>
+          <String>Generic Indicator</String>
+          <String>UNIT_H_DESC</String>
+          <String>UOM</String>
+          <String>RLS_DTE</String>
+          <String>RTRN_RSTRCT_EXP_DTE</String>
+          <String>IBT_ELIGIBLE_FLG</String>
+          <String>DRUG_CLASS_FLG</String>
+          <String>NDC_UPC_FLG</String>
+          <String>SPECIAL_PROG_FLG</String>
+          <String>GEN_IND_FLG</String>
+          <String>GEN_SBST_FLG</String>
+          <String>DISP_FLG</String>
+          <String>SUPPLY_FLG</String>
+          <String>DEL_FLG</String>
+          <String>CURR_VRSN_FLG</String>
+          <String>RX_FLG</String>
+          <String>HOSP_ONLY_FLG</String>
+          <String>REFRIG_FLG</String>
+          <String>RSTRCT_FLG</String>
+          <String>AIR_FRT_FLG</String>
+          <String>CSE_LABEL_FLG</String>
+          <String>ARCOS_FLG</String>
+          <String>Generic Name</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>CGBK_PARENT_SUPPLIER_NUM</String>
+          <String>PROD_AGR_CDE</String>
+          <String>CH_ALTRNT_HAM_DEPT_NUM</String>
+          <String>DEA_SPECIAL_ATTN_CDE</String>
+          <String>SUPPLIER_GWSA_GROUP_NUM</String>
+          <String>SUPL_GWSA_SVC_LEVEL_TYPE_CDE</String>
+          <String>SUPPLIER_CASH_DISC_WAC_PCT</String>
+          <String>PACK_AMP_DLR</String>
+          <String>PACK_FFPUL_P1_DLR</String>
+          <String>INTRNL_PROD_FNC_CLASS_CDE</String>
+          <String>ITEM_TYPE_CDE</String>
+          <String>MULTI_SRC_IND_CDE</String>
+          <String>SUPPLIER_NLC_TYPE_CDE</String>
+          <String>NLC_TYPE_CDE</String>
+          <String>Total Package Quantity</String>
+          <String>Package Size</String>
+          <String>MDSP_TOTAL_PKG_QTY</String>
+          <String>MDSP_PACK_QTY</String>
+          <String>MDSP_PACK_SIZE_NUM</String>
+          <String>Federal Upper Limit</String>
+          <String>FDB_CWPPKG_P1</String>
+          <String>FDB_BBPKG_P1</String>
+          <String>BUYER_NUM</String>
+          <String>PURCH_PROD_TYPE_CDE</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>DRUG_SUBCLS_CDE</String>
+          <String>DRUG_GROUP_CDE</String>
+          <String>DRUG_CLASS_CDE</String>
+          <String>Package Qty</String>
+          <String>MIN_PACK_QTY</String>
+          <String>TOTAL_QTY</String>
+          <String>MSTR_PACK_QTY</String>
+          <String>CONVEN_PACK_QTY</String>
+          <String>FIXED_SELL_PCT</String>
+          <String>PRFTPK_DISC_PCT</String>
+          <String>EDLP_PCT</String>
+          <String>Mfr Class Code</String>
+          <String>Parent Mfr #</String>
+          <String>Mfr FAX #</String>
+          <String>Mfr Phone #</String>
+          <String>Mfr Type Code</String>
+          <String>Mfr Zip Code</String>
+          <String>Mfr #</String>
+          <String>SYSTEM_CDE</String>
+          <String>SUBCAT_CDE</String>
+          <String>RTRN_RSTRCT_CDE</String>
+          <String>PRIVATE_LABEL_CDE</String>
+          <String>NDC_KEY_CDE</String>
+          <String>INST_PACK_CDE</String>
+          <String>DEPT_CDE</String>
+          <String>Drug Category</String>
+          <String>Product Active Status Code</String>
+          <String>RX_TYPE_CDE</String>
+          <String>DEA Schedule #</String>
+          <String>NDC_IND_CDE</String>
+          <String>Fineline #</String>
+          <String>PROD_TYPE_CDE</String>
+          <String>AHFS #</String>
+          <String>CARD_GEN_CDE_NUM</String>
+          <String>CARD_GEN_IND_CDE</String>
+          <String>GEN_PROD_IND_CDE</String>
+          <String>GEN_IND_CDE</String>
+          <String>NDC</String>
+          <String>UNIT_H_CDE</String>
+          <String>UNIT_CDE</String>
+          <String>Total Doses</String>
+          <String>WEIGHT_NUM</String>
+          <String>WEIGHT_EXT_NUM</String>
+          <String>HAZARD_ID_NUM</String>
+          <String>MDSP_AWP_MULT_NUM</String>
+          <String>VOLUME_NUM</String>
+          <String>BASE_CDE_GMS_NUM</String>
+          <String>FDB_AWP_MULT_NUM</String>
+          <String>CSE_WEIGHT_NUM</String>
+          <String>SELL_WEIGHT_NUM</String>
+          <String>SELL_CUBE_NUM</String>
+          <String>DP_NUM</String>
+          <String>CIN</String>
+          <String>PROD_KEY_NUM</String>
+          <String>FDB_AHFS_ID</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>CGBK_PARENT_SUPPLIER_NUM</String>
+          <String>PROD_AGR_CDE</String>
+          <String>CH_ALTRNT_HAM_DEPT_NUM</String>
+          <String>DEA_SPECIAL_ATTN_CDE</String>
+          <String>SUPPLIER_GWSA_GROUP_NUM</String>
+          <String>SUPL_GWSA_SVC_LEVEL_TYPE_CDE</String>
+          <String>INTRNL_PROD_FNC_CLASS_CDE</String>
+          <String>ITEM_TYPE_CDE</String>
+          <String>MULTI_SRC_IND_CDE</String>
+          <String>SUPPLIER_NLC_TYPE_CDE</String>
+          <String>NLC_TYPE_CDE</String>
+          <String>MDSP_PACK_QTY</String>
+          <String>Federal Upper Limit</String>
+          <String>FDB_BBPKG_P1</String>
+          <String>BUYER_NUM</String>
+          <String>PURCH_PROD_TYPE_CDE</String>
+          <String>DRUG_SUBCLS_CDE</String>
+          <String>DRUG_GROUP_CDE</String>
+          <String>DRUG_CLASS_CDE</String>
+          <String>Package Qty</String>
+          <String>MIN_PACK_QTY</String>
+          <String>TOTAL_QTY</String>
+          <String>MSTR_PACK_QTY</String>
+          <String>CONVEN_PACK_QTY</String>
+          <String>EDLP_PCT</String>
+          <String>Mfr Class Code</String>
+          <String>Parent Mfr #</String>
+          <String>Mfr FAX #</String>
+          <String>Mfr Phone #</String>
+          <String>Mfr Type Code</String>
+          <String>Mfr Zip Code</String>
+          <String>Mfr #</String>
+          <String>SYSTEM_CDE</String>
+          <String>SUBCAT_CDE</String>
+          <String>RTRN_RSTRCT_CDE</String>
+          <String>PRIVATE_LABEL_CDE</String>
+          <String>NDC_KEY_CDE</String>
+          <String>INST_PACK_CDE</String>
+          <String>DEPT_CDE</String>
+          <String>Drug Category</String>
+          <String>Product Active Status Code</String>
+          <String>RX_TYPE_CDE</String>
+          <String>DEA Schedule #</String>
+          <String>NDC_IND_CDE</String>
+          <String>Fineline #</String>
+          <String>PROD_TYPE_CDE</String>
+          <String>AHFS #</String>
+          <String>CARD_GEN_CDE_NUM</String>
+          <String>CARD_GEN_IND_CDE</String>
+          <String>GEN_PROD_IND_CDE</String>
+          <String>GEN_IND_CDE</String>
+          <String>NDC</String>
+          <String>UNIT_H_CDE</String>
+          <String>UNIT_CDE</String>
+          <String>Total Doses</String>
+          <String>WEIGHT_NUM</String>
+          <String>WEIGHT_EXT_NUM</String>
+          <String>HAZARD_ID_NUM</String>
+          <String>VOLUME_NUM</String>
+          <String>BASE_CDE_GMS_NUM</String>
+          <String>CSE_WEIGHT_NUM</String>
+          <String>SELL_WEIGHT_NUM</String>
+          <String>SELL_CUBE_NUM</String>
+          <String>DP_NUM</String>
+          <String>CIN</String>
+          <String>PROD_KEY_NUM</String>
+          <String>FDB_AHFS_ID</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+        </FieldNames>
+      </FieldTagData>
+    </ScriptBased>
+    <Interactive>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+          <String>LoadDuration</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>LoadYear</String>
+          <String>LoadMonth</String>
+          <String>LoadDay</String>
+          <String>FieldCount</String>
+          <String>RecordCount</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+        </FieldNames>
+      </FieldTagData>
+    </Interactive>
+  </FieldTags>
+  <FieldComments></FieldComments>
+  <TableComments></TableComments>
+  <CreatePrjFolder>false</CreatePrjFolder>
+  <LinkedTables></LinkedTables>
+  <AppObjectEntries></AppObjectEntries>
+  <GenericDimensions></GenericDimensions>
+  <GenericMeasures></GenericMeasures>
+  <GenericBookmarks></GenericBookmarks>
+  <ConnectionInfo></ConnectionInfo>
+  <GenericDerivedDefinitions></GenericDerivedDefinitions>
+  <GenericDerivedFields></GenericDerivedFields>
+  <BnfOff>false</BnfOff>
+  <CreatedAfterSingleQuoteExactSearch>false</CreatedAfterSingleQuoteExactSearch>
+</DocInternals>

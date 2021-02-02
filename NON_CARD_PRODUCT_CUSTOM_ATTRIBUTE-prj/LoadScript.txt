@@ -1,0 +1,47 @@
+﻿///$tab Main
+SET ThousandSep=',';
+SET DecimalSep='.';
+SET MoneyThousandSep=',';
+SET MoneyDecimalSep='.';
+SET MoneyFormat='$#,##0.00;($#,##0.00)';
+SET TimeFormat='h:mm:ss TT';
+SET DateFormat='M/D/YYYY';
+SET TimestampFormat='M/D/YYYY h:mm:ss[.fff] TT';
+SET MonthNames='Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec';
+SET DayNames='Mon;Tue;Wed;Thu;Fri;Sat;Sun';
+SET LongMonthNames='January;February;March;April;May;June;July;August;September;October;November;December';
+SET LongDayNames='Monday;Tuesday;Wednesday;Thursday;Friday;Saturday;Sunday';
+SET FirstWeekDay=6;
+SET BrokenWeeks=1;
+SET ReferenceDay=0;
+SET FirstMonthOfYear=1;
+SET CollationLocale='en-US';
+
+///$tab Setup
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+
+//ODBC CONNECT TO PD_SDW_Prod;
+ODBC CONNECT TO PD_SDW_Stg;
+//VIEWST Changes by Sumit 11/06/2020 ARR 262-283
+///$tab PRODUCT_CUSTOM_ATTRIBUTE
+
+PRODUCT_CUSTOM_ATTRIBUTE:
+SELECT    SHIP_TO_CUSTOMER_NUM, SHIP_TO_LOCATION_NUM, CORP_ITEM_NUM,
+        NON_CARD_PROD_NUM, CTGRY_1_CDE, CTGRY_1_DESC, USER_DFN_FIELD_1_LABEL_NAM,
+        USER_DFN_FIELD_1_TXT, USER_DFN_FIELD_2_LABEL_NAM, USER_DFN_FIELD_2_TXT,
+        FRMLRY_FLG, DO_NOT_SUB_FLG, MSG_TXT, MIN_SUPPLY_QTY, MAX_SUPPLY_QTY,
+        PRJCT_MTHLY_USAGE_QTY, PRJCT_USAGE_EXP_DTE, UOIF_NUM, CARD_PROD_FLG,
+        ROW_ADD_STP, ROW_ADD_USER_ID, ROW_UPDATE_STP, ROW_UPDATE_USER_ID,
+        CTGRY_2_CDE, CUSTOM_STOCK_ID, DLVRY_PREFER_CDE, CTLG_EXCLN_FLG
+FROM VIEWST.PRODUCT_CUSTOM_ATTRIBUTE;
+
+store PRODUCT_CUSTOM_ATTRIBUTE into '$(vRootFileLocation)$(vQVDs)NON_CARD_PRODUCT_CUSTOM_ATTRIBUTE.qvd'(qvd);
+
+drop table PRODUCT_CUSTOM_ATTRIBUTE;

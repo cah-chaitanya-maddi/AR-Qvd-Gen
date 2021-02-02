@@ -1,0 +1,96 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for BACK_ORDER_STATUS information.
+ *   Put some useful description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   BACK_ORDER_STATUS.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ *
+ * 05/21/18 Dicky Mohanty 
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+//VIEWST Changes by Sumit 11/06/2020 ARR 262-264
+///$tab BACK_ORDER_STATUS
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'BACK_ORDER_STATUS';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+BACK_ORDER_STATUS:
+LOAD
+ 	BACK_ORDER_STAT_KEY_NUM, 
+	BACK_ORDER_STAT_ID, 
+	BACK_ORDER_STAT_DESC,
+	ROW_ADD_STP, 
+	ROW_ADD_USER_ID, 
+	ROW_UPDATE_STP, 
+	ROW_UPDATE_USER_ID
+;
+SQL
+SELECT	
+	BACK_ORDER_STAT_KEY_NUM, 
+	BACK_ORDER_STAT_ID, 
+	BACK_ORDER_STAT_DESC,
+	ROW_ADD_STP, 
+	ROW_ADD_USER_ID, 
+	ROW_UPDATE_STP, 
+	ROW_UPDATE_USER_ID
+FROM 
+//	VIEWST.BACK_ORDER_STATUS 	ARR 315
+	VIEWS.BACK_ORDER_STATUS
+;
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE
+  BACK_ORDER_STATUS
+INTO
+ '$(vRootFileLocation)$(vQVDs)BACK_ORDER_STATUS.qvd' (qvd)
+;
+
+/********************************************
+ * Store Dev QVD
+ ********************************************/
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+trace "************************** DEV LOAD: Dev copy for BACK_ORDER_STATUS";
+
+store 
+	BACK_ORDER_STATUS
+into 
+	'$(vRootFileLocation)$(vQVDs)\Dev\BACK_ORDER_STATUS.qvd';
+	
+endif;
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP TABLE
+  BACK_ORDER_STATUS
+;
+

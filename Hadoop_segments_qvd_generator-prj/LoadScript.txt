@@ -1,0 +1,378 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for doing the following:
+ *   
+ *   1. Extracting the segments data from Hadoop daily
+ *   2. backing up the previous data into a backup qvd
+ * 
+ * Sources:
+ *   Hadoop
+ *
+ * Outputs:
+ *   segments.qvd - Current Segment QVD
+ *   segments_archive.qvd - Archives Segments
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 10/06/15 Rajdeep Biswas
+ * QVW creation
+ *
+ */
+
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vArchive = 'Archive\';
+SET vSegmentFileArchivePath='$(vRootFileLocation)$(vQVDs)$(vArchive)';
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);   /*Cloud ODBC*/
+//$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections_BKP.qvs);  /*On Prem ODBC*/
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO $(vHadoopConnection); 
+
+///$tab Last Execution Date
+//----------------------Get Previous Execution Date----------------------
+last_exec:
+LOAD
+   distinct date as Date
+FROM
+  '$(vRootFileLocation)$(vQVDs)segments.qvd'
+(qvd);
+
+NoConcatenate
+Max_Date:
+load
+	max(Date) as Date
+Resident last_exec;
+
+DROP Table last_exec;
+
+LET vLastExecTime = date(Peek('Date',0,'Max_Date'),'YYYY-MM-DD');
+
+TRACE last execution time = $(vLastExecTime);
+
+DROP Table Max_Date;
+
+
+///$tab Creating Backup
+//---------------------Backing up Old Segment File---------------------//
+
+segments_backup:
+LOAD user_id, 
+     mrcry_user_id, 
+     acct_key_num, 
+     invoice_lines, 
+     segment_num, 
+     date,
+     today() as [Audit Date]
+FROM
+  '$(vRootFileLocation)$(vQVDs)segments.qvd'
+(qvd);
+
+
+Concatenate:
+LOAD user_id, 
+     mrcry_user_id, 
+     acct_key_num, 
+     invoice_lines, 
+     segment_num, 
+     date,
+     [Audit Date]
+FROM
+  '$(vSegmentFileArchivePath)segments_archive.qvd'
+(qvd)
+Where
+	//date > AddMonths(Today(), -1)
+	date > Date(today() -6)
+;
+
+//-----------------Creating archive file for segments-----------------//
+
+STORE segments_backup into '$(vSegmentFileArchivePath)segments_archive.qvd';
+
+//------------------------Drop In-Memory file------------------------//
+DROP Table segments_backup;
+
+///$tab Normal User
+//-----------Data for normal Users--------------//
+
+normal_user_segments:
+LOAD "user_id",
+    Upper(mrcry_user_id) as "mrcry_user_id", //changes done on 5/12 will be deployed on 5/15/2020
+    "acct_key_num",
+    "invoice_lines",
+    "segment_num",
+    "date";
+SQL SELECT *
+FROM HIVE."default"."pub_poerpt_qlikview_segments"
+WHERE 
+	(date > '$(vLastExecTime)')
+;
+
+//-----------Store Segment data-----//
+TRACE Checking for record count for segments table;
+
+//-----------Check row count for segment table------------//
+LET vDeltaRecords = NoOfRows('normal_user_segments');
+
+//-----------Store segment table to qvd if row count > 0----------//
+IF $(vDeltaRecords) > 0 THEN
+	TRACE segment table row count = $(vDeltaRecords);
+	STORE normal_user_segments into '$(vRootFileLocation)$(vQVDs)normal_user_segments.qvd';
+	DROP Table normal_user_segments;
+ENDIF;
+
+//-----------Store segment table to qvd if row count = 0----------//
+IF $(vDeltaRecords) = 0 THEN
+	TRACE segment table row count = $(vDeltaRecords);
+	
+	DROP Table normal_user_segments;
+	
+	normal_user_segments:
+	LOAD user_id, 
+	     Upper(mrcry_user_id) as mrcry_user_id,  //changes done on 5/12 will be deployed on 5/15/2020
+	     acct_key_num, 
+	     invoice_lines, 
+	     segment_num, 
+	     date
+	FROM
+	  '$(vRootFileLocation)$(vQVDs)segments.qvd'
+	(qvd)
+	Where 
+	segment_num<25
+	;
+	
+	STORE normal_user_segments into '$(vRootFileLocation)$(vQVDs)normal_user_segments.qvd';
+	
+	DROP Table normal_user_segments;
+		
+ENDIF;
+///$tab Super User
+//-----------Data for super Users--------------//
+
+super_user_segments:
+LOAD user_id,
+     Upper(mrcry_user_id) as mrcry_user_id,  //changes done on 5/12 will be deployed on 5/15/2020
+     acct_key_num,
+     invoice_lines,
+     30 + segment_num as segment_num,
+     date;
+SQL SELECT *
+FROM HIVE."default"."pub_poerpt_qlikview_segments_super_user"
+WHERE 
+	(date > '$(vLastExecTime)')
+	;
+
+//-----------Store Segment data-----//
+TRACE Checking for record count for segments table;
+
+//-----------Check row count for segment table------------//
+LET vDeltaRecords = NoOfRows('super_user_segments');
+
+//-----------Store segment table to qvd if row count > 0----------//
+IF $(vDeltaRecords) > 0 THEN
+	TRACE segment table row count = $(vDeltaRecords);
+	STORE super_user_segments into '$(vRootFileLocation)$(vQVDs)super_user_segments.qvd';
+	DROP Table super_user_segments;
+ENDIF;
+
+//-----------Store segment table to qvd if row count = 0----------//
+IF $(vDeltaRecords) = 0 THEN
+	TRACE segment table row count = $(vDeltaRecords);
+	
+	DROP Table super_user_segments;
+	
+	super_user_segments:
+	LOAD user_id, 
+	     Upper(mrcry_user_id) as mrcry_user_id,   //changes done on 5/12 will be deployed on 5/15/2020
+	     acct_key_num, 
+	     invoice_lines, 
+	     segment_num, 
+	     date
+	FROM
+	  '$(vRootFileLocation)$(vQVDs)segments.qvd'
+	(qvd)
+	Where 
+	segment_num>25
+	;
+	
+	STORE super_user_segments into '$(vRootFileLocation)$(vQVDs)super_user_segments.qvd';
+	
+	DROP Table super_user_segments;
+		
+ENDIF;
+///$tab Validate Segment QVD
+/***************************************************************************************
+ * This code will check if the segment.qvd has data for only one day.
+ * If there is data for more than one day, the most recent data will be retailned.
+ ***************************************************************************************/
+
+/*************************************
+ * For Normal Users
+ *************************************/
+ 
+check_date:
+LOAD
+   distinct date as Date
+FROM
+  '$(vRootFileLocation)$(vQVDs)normal_user_segments.qvd'
+(qvd);
+
+LET vDateCount = NoOfRows('check_date');
+
+TRACE date count = $(vDateCount);
+
+if $(vDateCount)=1 then
+	
+	DROP Table check_date;
+	
+ENDIF;
+
+if $(vDateCount)>1 then
+	
+	/******************
+	 *Get the Max date
+	 ******************/	
+	NoConcatenate
+	Max_Date:
+	load
+		max(Date) as Date
+	Resident check_date;
+
+	DROP Table check_date;
+	/******************
+	 *Store the Max date
+	 *in a variable
+	 ******************/
+	LET vMaxDate = date(Peek('Date',0,'Max_Date'),'YYYY-MM-DD');
+
+	TRACE max date = $(vMaxDate);
+
+	DROP Table Max_Date;
+	/******************
+	 *Load segment data
+	 *only for max date
+	 ******************/
+	segments:
+	LOAD user_id, 
+	     Upper(mrcry_user_id) as mrcry_user_id,  //changes done on 5/12 will be deployed on 5/15/2020
+	     acct_key_num, 
+	     invoice_lines, 
+	     segment_num, 
+	     date
+	FROM
+	 '$(vRootFileLocation)$(vQVDs)normal_user_segments.qvd'
+	(qvd)
+	where
+	date='$(vMaxDate)'
+	;
+	
+	STORE segments into '$(vRootFileLocation)$(vQVDs)normal_user_segments.qvd';
+	
+	DROP Table segments;
+	
+ENDIF;
+
+
+/*************************************
+ * For Super Users
+ *************************************/
+ 
+check_date:
+LOAD
+   distinct date as Date
+FROM
+  '$(vRootFileLocation)$(vQVDs)super_user_segments.qvd'
+(qvd);
+
+LET vDateCount = NoOfRows('check_date');
+
+TRACE date count = $(vDateCount);
+
+if $(vDateCount)=1 then
+	
+	DROP Table check_date;
+	
+ENDIF;
+
+if $(vDateCount)>1 then
+	
+	/******************
+	 *Get the Max date
+	 ******************/	
+	NoConcatenate
+	Max_Date:
+	load
+		max(Date) as Date
+	Resident check_date;
+
+	DROP Table check_date;
+	/******************
+	 *Store the Max date
+	 *in a variable
+	 ******************/
+	LET vMaxDate = date(Peek('Date',0,'Max_Date'),'YYYY-MM-DD');
+
+	TRACE max date = $(vMaxDate);
+
+	DROP Table Max_Date;
+	/******************
+	 *Load segment data
+	 *only for max date
+	 ******************/
+	segments:
+	LOAD user_id, 
+	     Upper(mrcry_user_id) as mrcry_user_id,   //changes done on 5/12 will be deployed on 5/15/2020
+	     acct_key_num, 
+	     invoice_lines, 
+	     segment_num, 
+	     date
+	FROM
+	 '$(vRootFileLocation)$(vQVDs)super_user_segments.qvd'
+	(qvd)
+	where
+	date='$(vMaxDate)'
+	;
+	
+	STORE segments into '$(vRootFileLocation)$(vQVDs)super_user_segments.qvd';
+	
+	DROP Table segments;
+	
+ENDIF;
+///$tab Final User Segment QVD
+//-----------Create Final segment.qvd--------------//
+
+segments:
+LOAD user_id, 
+     mrcry_user_id, 
+     acct_key_num, 
+     invoice_lines, 
+     segment_num, 
+     date
+FROM
+  '$(vRootFileLocation)$(vQVDs)normal_user_segments.qvd'
+(qvd);
+
+Concatenate
+LOAD user_id, 
+     mrcry_user_id, 
+     acct_key_num, 
+     invoice_lines, 
+     segment_num, 
+     date
+FROM
+    '$(vRootFileLocation)$(vQVDs)super_user_segments.qvd'
+(qvd);
+
+STORE segments into '$(vRootFileLocation)$(vQVDs)segments.qvd';
+
+DROP Table segments;

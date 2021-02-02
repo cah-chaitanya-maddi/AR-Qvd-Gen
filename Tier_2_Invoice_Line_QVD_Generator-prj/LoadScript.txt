@@ -1,0 +1,537 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for Tier 2 Invoice_Line information.
+ *   This table is a combination of Invoice_Line_YYYYMM, Flag, 
+ *   tables
+ * 
+ * Sources:
+ *	 Invoice_Line_*.qvd 	
+ * Outputs:
+ *   Invoice_Line.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ *
+ * 7/25/2013 Joe Roberts
+ * Removed all logic except the concatenation of all historic files into a 
+ * single Invoice Line file. All other logic moved to Invoice Line QVD
+ * generator and Invoice Line delta QVD generator.
+ *
+ * 05/01/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+/*********************************************************************************
+Setup environment specific variables.
+Load in defaults for formatting of currency,dates and numbers.
+
+Changelog:
+- 10.2.2013 jeremy.fourman
+Removed inclusion of Web settings, those are for UI components only.
+*********************************************************************************/
+
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+///$tab Map_Load
+date_map:
+MAPPING
+LOAD distinct
+  DTE_KEY_NUM
+ ,SMRY_NUM
+FROM
+  '$(vRootFileLocation)$(vQVDs)Time_Detail.qvd'
+(qvd)
+;
+
+
+/***************************
+Load Short Reason IDs for
+Mapping to the Invoice Line
+file for evaluation
+***************************/
+Short_Reason_Map:
+Mapping Load 
+SHRT_REASON_KEY_NUM,
+SHRT_ID
+FROM
+'$(vRootFileLocation)QVDs\Short_Reason.qvd'
+(qvd);
+
+///$tab Invoice Line
+/*********************************************************************************
+Do any transformations on the fields within the Invoice_Line table and then write it 
+back out.
+
+Changelog:
+- 8.26.2013 jeremy.fourman
+Removed fields that do not need to be loaded at this time.
+- 9.20.2013 jeremy.fourman
+Removed the field [Short Invoice Code] CORP_ACCT_KEY_NUM was aliased to this
+- 2.28.2014 warren.lea
+Remove the STORE of the full Invoice_Line qvd. We will store the Document (Acute + Retail)
+Invoice_Line. 
+- 05/27/2014 joe.fusco
+added XPharm logic
+*********************************************************************************/
+
+set vTableName = 'Invoice_Line';
+set vQvdFile = '$(vInvoiceLineRootFileLocation)$(vQVDs)$(vTableName).qvd';
+
+// List the QVD files to be catenated
+FOR EACH _file in filelist('$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line_2*.qvd');
+  ListFileTable:
+  LOAD 
+    subfield('$(_file)','\',substringcount('$(_file)','\')+1) as [File]
+  AutoGenerate
+      1
+  ;
+NEXT _file;
+
+Trace Display qvd file names;
+let v_files = NoOfRows('ListFileTable');
+For vFileNo = 1 to v_files
+      Let vFileName = Peek('File',vFileNo-1,'FileListTable');
+      Trace $(vFileName);
+Next vFileNo
+
+Drop Table ListFileTable;
+
+
+/******************************************************
+*** Load all Invoice Line Monthly QVD files
+******************************************************/
+
+Invoice_Line:
+
+LOAD 
+	CNTRCT_GROUP_KEY_NUM
+    ,FLG_KEY_NUM
+    ,[DEA Blank #]
+    ,ACCT_KEY_NUM
+    ,SBST_OVRD_REASON_KEY_NUM     
+    ,PRICE_SGMNT_KEY_NUM   
+    ,RPT_LINE_SHRT_REASON_KEY_NUM
+    ,RPT_SHRT_REASON_KEY_NUM
+    ,CREDIT_REBILL_REASON_KEY_NUM
+    ,LINE_SHRT_REASON_KEY_NUM
+    ,OVRD_SHIP_QTY
+    ,CNTRCT_KEY_NUM
+    ,CARD_OVRD_RTRN_REASON_KEY_NUM
+    ,OTS_TYPE_KEY_NUM
+    ,ORDER_DTE_KEY_NUM
+    ,ORIG_ORDER_QTY
+    ,CAC_KEY_NUM
+    ,CNTRCT_FIXED_SELL_DLR
+    ,ORDER_LINE_NUM
+    ,ORDER_NUM as [Order #]
+    ,ROW_UPDATE_STP
+    ,ROW_ADD_STP
+    ,[Qty Multiplier]
+    ,[Order Qty]
+    ,[Ship Qty Amt]
+    ,[Unit Price DOD]
+    ,[Unit Price]
+    ,[Purchase Dollars DOD]
+    ,[Purchase Dollars Amt]
+    ,[Sub Purchase Dollars Amt]
+    ,[Sub Unit Price]
+    ,[NIFO Cost]
+    ,Text([PO #]) as [PO #]
+    ,[Due Date]
+    ,VENDOR_RFRNC_ID
+    ,CUSTOMER_DEPT_KEY_NUM
+    ,ORDER_ENTRY_MTHD_KEY_NUM
+    ,OVRD_TYPE_KEY_NUM
+    ,CNTRCT_TYPE_KEY_NUM
+    ,RTRN_REASON_KEY_NUM
+    ,SHRT_REASON_KEY_NUM
+    ,CORP_ACCT_KEY_NUM
+    ,TRNSCT_TYPE_KEY_NUM
+    ,PROG_KEY_NUM
+    ,[Invoice Line #]
+    ,[Invoice #]
+    ,DIST_CENTER_KEY_NUM
+    ,DTE_KEY_NUM
+    ,ApplyMap('date_map', DTE_KEY_NUM) as [SMRY_DTE]    
+    ,PROD_KEY_NUM
+    ,SALES_RETURNS
+    ,Contract_Flag_Group
+    ,[Invoice Counter]
+    ,[Customer Item Code]
+    ,CIN
+    ,[DC #]
+    ,[Account #]
+    ,[Contract Flag]
+    ,[Contract Name]
+    ,[Contract #] 
+    ,CSN
+    ,ORIG_PROD_KEY_NUM
+  	,CREDIT_DETAIL_CMNT_TXT                  ////// ************** Added on 02/19 by Dicky Mohanty for Credit Memo Changes 	  
+  	,CREDIT_MEMO_NUM 
+    ,[DC #]&'-'&[Account #]&'-'&CIN as PCA_KEY
+	,[DC #]&'-'&[Account #]&'-'&CIN as AMU_KEY
+    ,ApplyMap('Short_Reason_Map',RPT_SHRT_REASON_KEY_NUM) as short_id
+    ,ApplyMap('Short_Reason_Map',RPT_LINE_SHRT_REASON_KEY_NUM,) as line_short_id
+      
+FROM
+  '$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line_2018*.qvd'
+(qvd)
+;
+
+Concatenate
+
+LOAD 
+	CNTRCT_GROUP_KEY_NUM
+    ,FLG_KEY_NUM
+    ,[DEA Blank #]
+    ,ACCT_KEY_NUM
+    ,SBST_OVRD_REASON_KEY_NUM     
+    ,PRICE_SGMNT_KEY_NUM   
+    ,RPT_LINE_SHRT_REASON_KEY_NUM
+    ,RPT_SHRT_REASON_KEY_NUM
+    ,CREDIT_REBILL_REASON_KEY_NUM
+    ,LINE_SHRT_REASON_KEY_NUM
+    ,OVRD_SHIP_QTY
+    ,CNTRCT_KEY_NUM
+    ,CARD_OVRD_RTRN_REASON_KEY_NUM
+    ,OTS_TYPE_KEY_NUM
+    ,ORDER_DTE_KEY_NUM
+    ,ORIG_ORDER_QTY
+    ,CAC_KEY_NUM
+    ,CNTRCT_FIXED_SELL_DLR
+    ,ORDER_LINE_NUM
+    ,ORDER_NUM as [Order #]
+    ,ROW_UPDATE_STP
+    ,ROW_ADD_STP
+    ,[Qty Multiplier]
+    ,[Order Qty]
+    ,[Ship Qty Amt]
+    ,[Unit Price DOD]
+    ,[Unit Price]
+    ,[Purchase Dollars DOD]
+    ,[Purchase Dollars Amt]
+    ,[Sub Purchase Dollars Amt]
+    ,[Sub Unit Price]
+    ,[NIFO Cost]
+    ,Text([PO #]) as [PO #]
+    ,[Due Date]
+    ,VENDOR_RFRNC_ID
+    ,CUSTOMER_DEPT_KEY_NUM
+    ,ORDER_ENTRY_MTHD_KEY_NUM
+    ,OVRD_TYPE_KEY_NUM
+    ,CNTRCT_TYPE_KEY_NUM
+    ,RTRN_REASON_KEY_NUM
+    ,SHRT_REASON_KEY_NUM
+    ,CORP_ACCT_KEY_NUM
+    ,TRNSCT_TYPE_KEY_NUM
+    ,PROG_KEY_NUM
+    ,[Invoice Line #]
+    ,[Invoice #]
+    ,DIST_CENTER_KEY_NUM
+    ,DTE_KEY_NUM
+    ,ApplyMap('date_map', DTE_KEY_NUM) as [SMRY_DTE]    
+    ,PROD_KEY_NUM
+    ,SALES_RETURNS
+    ,Contract_Flag_Group
+    ,[Invoice Counter]
+    ,[Customer Item Code]
+    ,CIN
+    ,[DC #]
+    ,[Account #]
+    ,[Contract Flag]
+    ,[Contract Name]
+    ,[Contract #] 
+    ,CSN
+    ,ORIG_PROD_KEY_NUM
+    ,CREDIT_DETAIL_CMNT_TXT                  ////// ************** Added on 02/19 by Dicky Mohanty for Credit Memo Changes 	  
+    ,CREDIT_MEMO_NUM
+    ,COGS_TYPE_KEY_NUM
+    ,[DC #]&'-'&[Account #]&'-'&CIN as PCA_KEY
+	,[DC #]&'-'&[Account #]&'-'&CIN as AMU_KEY
+    ,ApplyMap('Short_Reason_Map',RPT_SHRT_REASON_KEY_NUM) as short_id 
+    ,ApplyMap('Short_Reason_Map',RPT_LINE_SHRT_REASON_KEY_NUM,) as line_short_id
+    
+FROM
+  '$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line_2019*.qvd'
+(qvd)
+;
+
+Concatenate
+
+LOAD 
+	CNTRCT_GROUP_KEY_NUM
+    ,FLG_KEY_NUM
+    ,[DEA Blank #]
+    ,ACCT_KEY_NUM
+    ,SBST_OVRD_REASON_KEY_NUM     
+    ,PRICE_SGMNT_KEY_NUM   
+    ,RPT_LINE_SHRT_REASON_KEY_NUM
+    ,RPT_SHRT_REASON_KEY_NUM
+    ,CREDIT_REBILL_REASON_KEY_NUM
+    ,LINE_SHRT_REASON_KEY_NUM
+    ,OVRD_SHIP_QTY
+    ,CNTRCT_KEY_NUM
+    ,CARD_OVRD_RTRN_REASON_KEY_NUM
+    ,OTS_TYPE_KEY_NUM
+    ,ORDER_DTE_KEY_NUM
+    ,ORIG_ORDER_QTY
+    ,CAC_KEY_NUM
+    ,CNTRCT_FIXED_SELL_DLR
+    ,ORDER_LINE_NUM
+    ,ORDER_NUM as [Order #]
+    ,ROW_UPDATE_STP
+    ,ROW_ADD_STP
+    ,[Qty Multiplier]
+    ,[Order Qty]
+    ,[Ship Qty Amt]
+    ,[Unit Price DOD]
+    ,[Unit Price]
+    ,[Purchase Dollars DOD]
+    ,[Purchase Dollars Amt]
+    ,[Sub Purchase Dollars Amt]
+    ,[Sub Unit Price]
+    ,[NIFO Cost]
+    ,Text([PO #]) as [PO #]
+    ,[Due Date]
+    ,VENDOR_RFRNC_ID
+    ,CUSTOMER_DEPT_KEY_NUM
+    ,ORDER_ENTRY_MTHD_KEY_NUM
+    ,OVRD_TYPE_KEY_NUM
+    ,CNTRCT_TYPE_KEY_NUM
+    ,RTRN_REASON_KEY_NUM
+    ,SHRT_REASON_KEY_NUM
+    ,CORP_ACCT_KEY_NUM
+    ,TRNSCT_TYPE_KEY_NUM
+    ,PROG_KEY_NUM
+    ,[Invoice Line #]
+    ,[Invoice #]
+    ,DIST_CENTER_KEY_NUM
+    ,DTE_KEY_NUM
+    ,ApplyMap('date_map', DTE_KEY_NUM) as [SMRY_DTE]    
+    ,PROD_KEY_NUM
+    ,SALES_RETURNS
+    ,Contract_Flag_Group
+    ,[Invoice Counter]
+    ,[Customer Item Code]
+    ,CIN
+    ,[DC #]
+    ,[Account #]
+    ,[Contract Flag]
+    ,[Contract Name]
+    ,[Contract #] 
+    ,CSN
+    ,ORIG_PROD_KEY_NUM
+    ,CREDIT_DETAIL_CMNT_TXT                  ////// ************** Added on 02/19 by Dicky Mohanty for Credit Memo Changes 	  
+    ,CREDIT_MEMO_NUM
+    ,COGS_TYPE_KEY_NUM
+    ,[DC #]&'-'&[Account #]&'-'&CIN as PCA_KEY
+	,[DC #]&'-'&[Account #]&'-'&CIN as AMU_KEY
+    ,ApplyMap('Short_Reason_Map',RPT_SHRT_REASON_KEY_NUM) as short_id 
+    ,ApplyMap('Short_Reason_Map',RPT_LINE_SHRT_REASON_KEY_NUM,) as line_short_id
+    
+FROM
+  '$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line_2020*.qvd'
+(qvd)
+;
+
+Concatenate
+
+LOAD 						 ////// ************** Added on 01/21 by Chaitanya for 2021 Qvd's
+	CNTRCT_GROUP_KEY_NUM
+    ,FLG_KEY_NUM
+    ,[DEA Blank #]
+    ,ACCT_KEY_NUM
+    ,SBST_OVRD_REASON_KEY_NUM     
+    ,PRICE_SGMNT_KEY_NUM   
+    ,RPT_LINE_SHRT_REASON_KEY_NUM
+    ,RPT_SHRT_REASON_KEY_NUM
+    ,CREDIT_REBILL_REASON_KEY_NUM
+    ,LINE_SHRT_REASON_KEY_NUM
+    ,OVRD_SHIP_QTY
+    ,CNTRCT_KEY_NUM
+    ,CARD_OVRD_RTRN_REASON_KEY_NUM
+    ,OTS_TYPE_KEY_NUM
+    ,ORDER_DTE_KEY_NUM
+    ,ORIG_ORDER_QTY
+    ,CAC_KEY_NUM
+    ,CNTRCT_FIXED_SELL_DLR
+    ,ORDER_LINE_NUM
+    ,ORDER_NUM as [Order #]
+    ,ROW_UPDATE_STP
+    ,ROW_ADD_STP
+    ,[Qty Multiplier]
+    ,[Order Qty]
+    ,[Ship Qty Amt]
+    ,[Unit Price DOD]
+    ,[Unit Price]
+    ,[Purchase Dollars DOD]
+    ,[Purchase Dollars Amt]
+    ,[Sub Purchase Dollars Amt]
+    ,[Sub Unit Price]
+    ,[NIFO Cost]
+    ,Text([PO #]) as [PO #]
+    ,[Due Date]
+    ,VENDOR_RFRNC_ID
+    ,CUSTOMER_DEPT_KEY_NUM
+    ,ORDER_ENTRY_MTHD_KEY_NUM
+    ,OVRD_TYPE_KEY_NUM
+    ,CNTRCT_TYPE_KEY_NUM
+    ,RTRN_REASON_KEY_NUM
+    ,SHRT_REASON_KEY_NUM
+    ,CORP_ACCT_KEY_NUM
+    ,TRNSCT_TYPE_KEY_NUM
+    ,PROG_KEY_NUM
+    ,[Invoice Line #]
+    ,[Invoice #]
+    ,DIST_CENTER_KEY_NUM
+    ,DTE_KEY_NUM
+    ,ApplyMap('date_map', DTE_KEY_NUM) as [SMRY_DTE]    
+    ,PROD_KEY_NUM
+    ,SALES_RETURNS
+    ,Contract_Flag_Group
+    ,[Invoice Counter]
+    ,[Customer Item Code]
+    ,CIN
+    ,[DC #]
+    ,[Account #]
+    ,[Contract Flag]
+    ,[Contract Name]
+    ,[Contract #] 
+    ,CSN
+    ,ORIG_PROD_KEY_NUM
+    ,CREDIT_DETAIL_CMNT_TXT                 
+    ,CREDIT_MEMO_NUM
+    ,COGS_TYPE_KEY_NUM
+    ,[DC #]&'-'&[Account #]&'-'&CIN as PCA_KEY
+	,[DC #]&'-'&[Account #]&'-'&CIN as AMU_KEY
+    ,ApplyMap('Short_Reason_Map',RPT_SHRT_REASON_KEY_NUM) as short_id 
+    ,ApplyMap('Short_Reason_Map',RPT_LINE_SHRT_REASON_KEY_NUM,) as line_short_id
+    
+FROM
+  '$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line_2021*.qvd'
+(qvd)
+;
+
+FOR EACH _file in filelist('$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line_XPharm_2*.qvd');
+  XPharm_Files:
+  LOAD 
+    subfield('$(_file)','\',substringcount('$(_file)','\')+1) as [File]
+  AutoGenerate
+      1
+  ;
+NEXT _file;
+
+
+if $(f_does_table_exist('XPharm_Files')) = 'Y' then
+	drop table XPharm_Files;
+
+	/******************************************************
+	*** Load all Invoice Line XPharm Monthly QVD files
+	******************************************************/
+	trace Loading from XPharm Files;
+	
+	Concatenate (Invoice_Line)
+	
+	LOAD 
+		CNTRCT_GROUP_KEY_NUM
+        ,[DEA Blank #]		
+	    ,FLG_KEY_NUM
+	    ,ACCT_KEY_NUM
+	    ,SBST_OVRD_REASON_KEY_NUM     
+	    ,PRICE_SGMNT_KEY_NUM   
+	    ,RPT_LINE_SHRT_REASON_KEY_NUM
+	    ,RPT_SHRT_REASON_KEY_NUM
+	    ,CREDIT_REBILL_REASON_KEY_NUM
+	    ,LINE_SHRT_REASON_KEY_NUM
+	    ,OVRD_SHIP_QTY
+	    ,CNTRCT_KEY_NUM
+	    ,CARD_OVRD_RTRN_REASON_KEY_NUM
+	    ,OTS_TYPE_KEY_NUM
+	    ,ORDER_DTE_KEY_NUM
+	    ,ORIG_ORDER_QTY
+	    ,CAC_KEY_NUM
+	    ,CNTRCT_FIXED_SELL_DLR
+	    ,ORDER_LINE_NUM
+	    ,ORDER_NUM as [Order #]
+	    ,ROW_UPDATE_STP
+	    ,ROW_ADD_STP
+	    ,[Qty Multiplier]
+	    ,[Order Qty]
+	    ,[Ship Qty Amt]
+	    ,[Unit Price DOD]
+	    ,[Unit Price]
+	    ,[Purchase Dollars DOD]
+	    ,[Purchase Dollars Amt]
+        ,[Sub Purchase Dollars Amt]
+        ,[Sub Unit Price]
+	    ,[NIFO Cost]
+	    ,Text([PO #]) as [PO #]
+	    ,[Due Date]
+	    ,VENDOR_RFRNC_ID
+	    ,CUSTOMER_DEPT_KEY_NUM
+	    ,ORDER_ENTRY_MTHD_KEY_NUM
+	    ,OVRD_TYPE_KEY_NUM
+	    ,CNTRCT_TYPE_KEY_NUM
+	    ,RTRN_REASON_KEY_NUM
+	    ,SHRT_REASON_KEY_NUM
+	    ,CORP_ACCT_KEY_NUM
+	    ,TRNSCT_TYPE_KEY_NUM
+	    ,PROG_KEY_NUM
+	    ,[Invoice Line #]
+	    ,[Invoice #]
+	    ,DIST_CENTER_KEY_NUM
+	    ,DTE_KEY_NUM
+    	,ApplyMap('date_map', DTE_KEY_NUM) as [SMRY_DTE]
+	    ,PROD_KEY_NUM
+	    ,SALES_RETURNS
+	    ,Contract_Flag_Group
+	    ,[Invoice Counter]
+	    ,[Customer Item Code]
+	    ,CIN
+	    ,[DC #]
+	    ,[Account #]
+	    ,[Contract Flag]
+	    ,[Contract Name]
+	    ,[Contract #] 
+	    ,CSN
+	    ,ORIG_PROD_KEY_NUM
+    	,[DC #]&'-'&[Account #]&'-'&CIN as PCA_KEY
+		,[DC #]&'-'&[Account #]&'-'&CIN as AMU_KEY
+	    ,ApplyMap('Short_Reason_Map',RPT_SHRT_REASON_KEY_NUM) as short_id
+	    ,ApplyMap('Short_Reason_Map',RPT_LINE_SHRT_REASON_KEY_NUM,) as line_short_id
+	      
+	FROM
+	  '$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line_XPharm_2*.qvd'
+	(qvd)
+	;
+
+end if;
+///$tab Document Invoice Lines
+/********************************
+*  store the tier_2_invoice_line
+*********************************/
+
+	store Invoice_Line into	'$(vInvoiceLineRootFileLocation)$(vQVDs)Invoice_Line.qvd';
+///$tab Clean Up
+
+if $(f_does_table_exist('XPharm_Files')) = 'Y' then
+	drop table XPharm_Files;
+end if;
+
+if $(f_does_table_exist('Invoice_Line')) = 'Y' then
+	drop table Invoice_Line;
+end if;
+
+

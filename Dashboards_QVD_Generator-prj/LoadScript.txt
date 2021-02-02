@@ -1,0 +1,675 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is used to create QVDs for the Executive Dashboard (Acute) and the
+ *   Retail Executive Dashboard (Retail).
+ * 
+ * Sources:
+ *   Time_Detail.qvd
+ *   Invoice_Line.qvd
+ *   Ship_To_Account.qvd
+ *
+ * Outputs:
+ *   Dashboard_Invoice_Line.qvd
+ *   Dashboard_Ship_To_Account.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 05/06/2013 Aaron Zechman
+ * Initial Creation
+ * 9.1.2013 jeremy.fourman
+ 8 Updated Outputs statement
+ */
+///$tab Setup
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+//$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections_PROD.qvs);
+
+///$tab Create Dashboard_Product_Fields
+/******************************************************************************
+Overview:
+	Creates the Dashboard_Product_Fields.qvd 
+	
+
+Changelog:
+- 9.1.2013 jeremy.fourman
+  Tab creation
+- 1.13.2014 warren.lea
+  Finding that the creation of AutoNumber() values is not always consistent. 
+  Using Jeremy's idea of generating the AutoNumber values from a Resident table
+  and not the QVD. 
+- 1.15.2014 warren.lea	
+  Per QlikTech, AutoNumber() cannot be used like this to store a QVD with AutoNumber and then
+  combine later with another table where AutoNumber() is run again. 
+******************************************************************************/
+
+trace '**** Creating Product_Dashboard table ******';
+// Load the 3 product fields and their values that are used in the Landing Page documents.
+// Use a composite field as the new product key
+Product_Fields_tmp:
+load Distinct
+ PROD_KEY_NUM
+ ,[Brand Generic Indicator]
+// ,[Cardinal Generic Indicator-hist] // To be removed
+ ,Category 
+ ,[Rx Indicator] 
+// ,[Rx Flag] // To Be removed
+ ,[Brand Generic Indicator] & '|' & Category & '|' & [Rx Indicator] as [Product Fields Key]
+from  
+		'$(vRootFileLocation)$(vQVDs)Product_All.qvd' (qvd)
+;
+
+trace '**** Creating Product_Dashboard Mapping table for Invoice_Line ******';
+product_map:
+mapping load 
+ PROD_KEY_NUM
+ ,[Product Fields Key]
+resident 
+	Product_Fields_tmp
+;
+
+
+trace '**** Creating Product_Fields table for landing page dashboard ******';
+NoConcatenate
+Product_Fields:
+load distinct
+ [Product Fields Key]
+ ,[Brand Generic Indicator]
+// ,[Cardinal Generic Indicator-hist] // To be removed
+ ,Category 
+// ,[Rx Flag] // To Be removed
+ ,[Rx Indicator]
+resident 
+	Product_Fields_tmp
+;
+drop table Product_Fields_tmp;
+
+//Commenting below as a part of ARB-781 for replacing Dashboard_Product_Fields_test.qvd with Dashboard_Product_Fields.qvd
+//store Product_Fields into '$(vRootFileLocation)$(vQVDs)Dashboard_Product_Fields_test.qvd' (qvd);
+
+store Product_Fields into '$(vRootFileLocation)$(vQVDs)Dashboard_Product_Fields.qvd' (qvd);
+
+drop table Product_Fields;
+///$tab Ship to Filter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              ACCT_KEY_NUM as ACCT_KEY_NUM_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Create Dashboard_Invoice_Line_YYYY QVDS
+/******************************************************************************
+Creates the Dasboard_Invoice_Line_YYYY.qvds to be fed into the final Dashboard_Invoice_Line.qvd. 
+This QVD is pre-summed over the following fields.
+ SMRY_NUM
+ ACCT_KEY_NUM
+ PROD_KEY_NUM
+ CORP_ACCT_KEY_NUM
+ [Contract Flag]
+ [SALES_RETURNS]
+
+The data for these QVDs are pulled from Invoice_Line_YYYYMM QVDs. These files contain the records needed for the 
+moving 36 plus month to date months.
+
+The logic in this tab is for making sure that the correct QVDs are used and kept.	
+
+Changelog:
+ - 9.1.2013 jeremy.fourman
+  Tab creation
+ - 9.12.2013 jeremy.fourman
+  Removed checking for first of month and first of year and instead now rely on 
+  Invoice Line processes to place into a QVD the YYYYMM period it dropped off.
+ - 9.20.2013 jeremy.fourman
+ Removed the field [Short Reason Code] CORP_ACCT_KEY_NUM was aliased to this.
+ - 1.13.2014 warren.lea
+  The Invoice_Line data on the portal pages does not need to go back 36 months. 
+  Going back to the Year of 24 months ago is sufficient. 
+******************************************************************************/
+/******************************************************************************
+  - 7.5.2020  Vinil rao rangineni
+  ARB-664 (INC4113570|| Acute Dashboard-Invoice summary totals do not match 
+  dollar totals from Reporting Dashboard)
+  Previous logic is a manual process to fetch complete last year data when we 
+  entered into new year to overcome that process we implementewd the below piece 
+  of logic into a dynamic way.
+/******************************************************************************/
+
+/*****************************************************************************
+07/14/2020--ARB-664 & INC4113570  By Vinil rao rangineni
+
+Modified the piece of logic by adding the last updated time stamp instead of vcurrent date 
+
+******************************************************************************/
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+let vTimeStamp = Now();
+let vStart = Now();
+set vTableName = 'Invoice_Line';
+
+/********************************************
+ * Loop Thru Invoice Files and get time stamp
+ ********************************************/
+for each _file in filelist('$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_2*.qvd');
+  ListFilesTable:
+  load 
+    subfield('$(_file)','\',substringcount('$(_file)','\')+1) as [File]
+  AutoGenerate
+      1
+ ;
+next _file;
+
+/*********************************************************************************
+* Get Latest Invoice_Line QVD file
+*********************************************************************************/
+max_file:
+load
+  maxstring([File]) as max_File
+resident
+  ListFilesTable;
+
+let v_max_File = Peek('max_File',0,'max_file');
+
+Trace 'Vmaxfile'= $(v_max_File);
+
+drop table max_file;
+
+/********************************************
+* Get List of ROW_ADD_STP Dates
+********************************************/
+temp:
+load
+  ROW_ADD_STP as Date
+from
+  '$(vInvoiceLineRootFolderLocation)$(vQVDs)$(v_max_File)' (qvd);
+
+/********************************************
+* Get Min/Max ROW_ADD_STP Date for the last QVD file
+********************************************/
+Max_Date:
+load
+  min(Date) as min_date,
+  max(Date) as max_date;
+load
+  FieldValue('Date',IterNo()) as Date
+autogenerate(1)
+
+while
+  not IsNull(FieldValue('Date',Iterno()))
+;
+
+drop table temp;
+
+/********************************************
+ * Set vLastExecTime
+ ********************************************/
+let v_last_update_stp = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+
+drop table Max_Date;
+
+trace 'Last update stamp' =$(v_last_update_stp);
+
+//*****************************************************************************/
+let v_curr_year = year(Today());
+let v_start_period = date(addmonths(Today(),-36),'YYYYMM');
+let v_end_period = date(Today(),'YYYYMM');
+let v_start_year = year(date(addmonths(Today(),-24),'YYYYMM'));
+let v_create_all_years = 0;
+
+trace 'current year'=$(v_curr_year);
+trace 'Start year'  =$(v_start_year);
+trace 'Start_period'=$(v_start_period);
+trace 'Year end'	=$(v_end_period);
+trace 'Last update stamp' =$(v_last_update_stp);
+
+
+///=================================================================
+
+trace '**** Load calendar months mapping table ******';
+// Invoice_Line dates go back 3 years, plus MTD. 
+calendar_month_map:	
+mapping load 
+  DTE_KEY_NUM
+ ,SMRY_NUM
+ 
+from 
+ '$(vRootFileLocation)$(vQVDs)Time_Detail.qvd' (qvd)
+  
+where 
+	SMRY_NUM >= $(v_start_period)
+   	and SMRY_NUM <= $(v_end_period)
+;
+
+
+/**********************************************************************************
+The Invoice_Line_Delta process will deposit a QVD that contains any periods that it
+had cleaned up within it's last run. We need to read this file and do the same for
+any aggregated sets we have created.
+**********************************************************************************/
+//*************************************************************
+trace "******************************************* Checking for Invoice Line cleanup.";
+//*************************************************************	   	
+ListFileTable:
+load * from '$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_Files_to_Delete.qvd' (qvd);
+
+if(NoOfRows('ListFileTable') > 0) then
+
+	//*************************************************************
+	trace "******************************************* There are files to be removed.";
+	//*************************************************************
+
+	// Identify Invoice_Line QVDs that are older than 36 months from the latest inserted record
+  	FilesToDelete:
+  	noconcatenate
+  	load
+    	concat(chr(39) & yr_mon_to_delete & chr(39),',') as yr_mon_to_delete  
+  	resident
+    	ListFileTable  
+  	;
+
+  	let vCurrField = 'yr_mon_to_delete';
+  	let v_PeriodToDelete = FieldValue('$(vCurrField)',1);
+  	
+  	drop table ListFileTable;
+  	drop table FilesToDelete;
+  	
+    for each f in $(v_PeriodToDelete)
+    	// this field has a yyyymm value we only need the year
+      	let yr = left($(f),4);
+      
+      	//*************************************************************
+	 	 trace ******************************************* "Removing $(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line_$(yr).qvd";
+	  	//*************************************************************
+      	//execute cmd.exe /c del "$(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line_$(yr).qvd" /q;
+      	trace "$(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line_$(yr).qvd" ;
+      	
+      	//*************************************************************
+		trace "******************************************* Creating Dashboard_Invoice_Line_YYYY QVDs";
+		//*************************************************************
+    	trace '******** Aggregate Data for Invoice Line $(yr) **********';			
+		invoice_line:
+		load
+		 applymap('calendar_month_map', DTE_KEY_NUM) as SMRY_NUM
+		 ,DTE_KEY_NUM
+		 ,ACCT_KEY_NUM
+		 ,applymap('product_map', PROD_KEY_NUM) as [Product Fields Key]
+		 ,CORP_ACCT_KEY_NUM
+		 ,[Contract Flag]
+		 ,CNTRCT_GROUP_KEY_NUM// for Landing Dashboard 21May'19
+		 ,[SALES_RETURNS]
+		 ,sum([Ship Qty Amt]) as [Ship Qty Amt]
+		 ,sum([Order Qty]) as [Order Qty]
+		 ,sum([Purchase Dollars Amt]) as [Purchase Dollars Amt]
+		from  
+		 '$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_$(yr)*.qvd' (qvd)
+			 
+		group by
+		  applymap('calendar_month_map', DTE_KEY_NUM)
+		  ,DTE_KEY_NUM
+		 ,ACCT_KEY_NUM
+		 ,applymap('product_map', PROD_KEY_NUM)
+		 ,CORP_ACCT_KEY_NUM
+		 ,CNTRCT_GROUP_KEY_NUM// for Landing Dashboard 21May'19
+		 ,[Contract Flag]
+		 ,[SALES_RETURNS]
+		;		
+			
+		trace '******* Store Dashboard_Invoice_Line_$(yr).qvd **************';
+			
+		store invoice_line into '$(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line_$(yr).qvd' (qvd);
+		//		store invoice_line into Dashboard_Invoice_Line_$(yr).qvd (qvd);	
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		//*****************************************************************
+		trace "************************** DEV LOAD: Creating Dev version of Dashboard_Invoice_Line_$(yr)";
+		//*****************************************************************
+		NoConcatenate
+		invoice_line_dev:
+		load 
+			* 
+		resident
+			invoice_line
+		where exists(ACCT_KEY_NUM_FILTER, ACCT_KEY_NUM)
+		;	
+
+	    store invoice_line_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Dashboard_Invoice_Line_$(yr).qvd';
+		//store invoice_line_dev into '$(vRootFileLocation)$(vQVDs)\Dev\old_Dashboard_Invoice_Line_$(v_start_year)_20201206.qvd';
+		drop table invoice_line_dev;
+	
+	endif;		
+		
+		
+		drop table invoice_line;
+    next 
+	
+endif;
+
+
+
+/*****************************************************************
+Two main modes here we either creating the whole set or just current year
+*****************************************************************/
+if $(v_create_all_years) = 1 then
+
+	 do while v_start_year <= v_last_update_stp
+	 
+	 	
+	 	trace '******** Aggregate Data for Invoice Line $(v_start_year) **********';
+		
+		invoice_line:
+		load
+		 applymap('calendar_month_map', DTE_KEY_NUM) as SMRY_NUM
+		 ,DTE_KEY_NUM
+		 ,ACCT_KEY_NUM
+		 ,applymap('product_map', PROD_KEY_NUM) as [Product Fields Key]
+		 ,CORP_ACCT_KEY_NUM
+		 ,CNTRCT_GROUP_KEY_NUM// for Landing Dashboard 21May'19
+		 ,[Contract Flag]
+		 ,[SALES_RETURNS]
+		 ,sum([Ship Qty Amt]) as [Ship Qty Amt]
+		 ,sum([Order Qty]) as [Order Qty]
+		 ,sum([Purchase Dollars Amt]) as [Purchase Dollars Amt]
+		from  
+		 '$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_$(v_start_year)*.qvd' (qvd)
+			 
+		group by
+		  applymap('calendar_month_map', DTE_KEY_NUM)
+		  ,DTE_KEY_NUM
+		 ,ACCT_KEY_NUM
+		 ,applymap('product_map', PROD_KEY_NUM)
+		 ,CORP_ACCT_KEY_NUM
+		 ,CNTRCT_GROUP_KEY_NUM// for Landing Dashboard 21May'19
+		 ,[Contract Flag]
+		 ,[SALES_RETURNS]
+		;		
+					 	
+		trace '******* Store Dashboard_Invoice_Line_$(v_start_year).qvd **************';
+		
+		store invoice_line into '$(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line_$(v_start_year).qvd' (qvd);
+		//store invoice_line into Dashboard_Invoice_Line_$(v_start_year).qvd (qvd);
+	 	
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		//*****************************************************************
+		trace "************************** DEV LOAD: Creating Dev version of Dashboard_Invoice_Line_$(v_start_year)";
+		//*****************************************************************
+		NoConcatenate
+		invoice_line_dev:
+		load 
+			* 
+		resident
+			invoice_line
+		where exists(ACCT_KEY_NUM_FILTER, ACCT_KEY_NUM)
+		;	
+
+		store invoice_line_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Dashboard_Invoice_Line_$(v_start_year).qvd';
+		//store invoice_line_dev into '$(vRootFileLocation)$(vQVDs)\Dev\old_Dashboard_Invoice_Line_$(v_start_year)_20201206.qvd';
+		drop table invoice_line_dev;
+	
+	endif;	 	
+	 	
+	 	let v_start_year = $(v_start_year) + 1;
+	 
+	 	drop table invoice_line;
+	 	
+	 loop
+	 
+else
+
+	/********************************************** 	
+	  Create the Dashboard_Invoice_Line_YYYY QVD for the current year
+	 **********************************************/
+	 
+	trace '******** Aggregate Data for Invoice Line $(v_curr_year) **********';	
+	
+	invoice_line:
+	load
+	 applymap('calendar_month_map', DTE_KEY_NUM) as SMRY_NUM
+	 ,DTE_KEY_NUM
+	 ,ACCT_KEY_NUM
+	 ,applymap('product_map', PROD_KEY_NUM) as [Product Fields Key]
+	 ,CORP_ACCT_KEY_NUM
+	 ,CNTRCT_GROUP_KEY_NUM// for Landing Dashboard 21May'19
+	 ,[Contract Flag]
+	 ,[SALES_RETURNS]
+	 ,sum([Ship Qty Amt]) as [Ship Qty Amt]
+	 ,sum([Order Qty]) as [Order Qty]
+	 ,sum([Purchase Dollars Amt]) as [Purchase Dollars Amt]
+	from  
+	 '$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line_$(v_curr_year)*.qvd' (qvd)
+		 
+	group by
+	  applymap('calendar_month_map', DTE_KEY_NUM)
+	  ,DTE_KEY_NUM
+	 ,ACCT_KEY_NUM
+	 ,applymap('product_map', PROD_KEY_NUM)
+	 ,CORP_ACCT_KEY_NUM
+	 ,CNTRCT_GROUP_KEY_NUM// for Landing Dashboard 21May'19
+	 ,[Contract Flag]
+	 ,[SALES_RETURNS]
+	;		
+		
+	trace '******* Store Dashboard_Invoice_Line_$(v_curr_year).qvd **************';
+	
+	store invoice_line into '$(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line_$(v_curr_year).qvd' (qvd);	
+	//store invoice_line into Dashboard_Invoice_Line_$(v_curr_year).qvd (qvd);
+
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		//*****************************************************************
+		trace "************************** DEV LOAD: Creating Dev version of Dashboard_Invoice_Line_$(v_curr_year)";
+		//*****************************************************************
+		NoConcatenate
+		invoice_line_dev:
+		load 
+			* 
+		resident
+			invoice_line
+		where exists(ACCT_KEY_NUM_FILTER, ACCT_KEY_NUM)
+		;	
+
+		store invoice_line_dev into '$(vRootFolderLocation)$(vQVDs)\Dev\Dashboard_Invoice_Line_$(v_curr_year).qvd';
+		//store invoice_line_dev into '$(vRootFolderLocation)$(vQVDs)\Dev\old_Dashboard_Invoice_Line_$(v_curr_year)_20201206.qvd';
+		drop table invoice_line_dev;
+	
+	endif;
+
+	drop table invoice_line;
+	
+endif;
+
+
+
+
+///$tab Create Dashboard_Invoice_Line QVD
+/******************************************************************************
+Overview:
+	Creates a QVD to be used within the Landing Page applciations. This QVD is pre-summed
+	over the following fields.
+	 SMRY_NUM
+	 ACCT_KEY_NUM
+	 [Product Fields Key]
+	 CORP_ACCT_KEY_NUM
+	 [Contract Flag]
+	 [SALES_RETURNS]
+	
+
+Changelog:
+  Removed if logic for aliasing [SALES_RETURNS], this is no longer needed as this logic
+  has been pushed upstream.
+
+- 8.1.2013 jeremy.fourman
+  Removed usage of inv_file variable, it is not needed.
+- 8.07.2013 warren.lea
+  Optimize load by reducing calendar_month_map size and replacing the PROD_KEY_NUM
+  with a generated key for the different Product field values. 
+ 8.29.2013 jeremy.fourman
+ Removed temp invoice_line table. We know do aggregation reading directly from QVD.
+ Renamed product_table to Product_Fields_tmp.
+ Added distinct to loading of Product_Fields_tmp.
+ Changed comments and removed no longer needed comments.
+- 9.20.2013 jeremy.fourman
+ Removed the field [Short Reason Code] CORP_ACCT_KEY_NUM was aliased to this.
+******************************************************************************/
+
+/*****************************************************************************
+07/14/2020--ARB-664 & INC4113570  By Vinil rao rangineni
+
+Modified the piece of logic by adding the last updated time stamp instead of vcurrent date 
+
+******************************************************************************/
+ 
+trace '******** Loading Invoice_Line **********';
+
+invoice_line_final:
+load
+ SMRY_NUM
+ ,DTE_KEY_NUM
+ ,ACCT_KEY_NUM
+ ,[Product Fields Key]
+ ,CORP_ACCT_KEY_NUM
+ ,CNTRCT_GROUP_KEY_NUM// for Landing Dashboard 21May'19
+ ,[Contract Flag]
+ ,[SALES_RETURNS]
+ ,[Ship Qty Amt]
+ ,[Order Qty]
+ ,[Purchase Dollars Amt]
+from  
+ '$(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line_*.qvd' (qvd)
+ 	 ;
+
+
+
+
+trace '******* Store Dashboard_Invoice_Line.qvd **************';
+
+store invoice_line_final into '$(vRootFileLocation)$(vQVDs)Dashboard_Invoice_Line.qvd' (qvd);
+//store invoice_line_final into Dashboard_Invoice_Line.qvd (qvd);
+
+
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		//*****************************************************************
+		trace "************************** DEV LOAD: Creating Dev version of Dashboard_Invoice_Line";
+		//*****************************************************************
+		NoConcatenate
+		invoice_line_final_dev:
+		load 
+			* 
+		resident
+			invoice_line_final
+		where exists(ACCT_KEY_NUM_FILTER, ACCT_KEY_NUM)
+		;	
+
+		store invoice_line_final_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Dashboard_Invoice_Line.qvd';
+		//store invoice_line_final_dev into '$(vRootFileLocation)$(vQVDs)\Dev\old_Dashboard_Invoice_Line.qvd';
+		drop table invoice_line_final_dev;
+	
+	endif;
+
+
+
+///$tab Create Dashboard_Ship_To_Account QVD
+/******************************************************************************
+Overview:
+	Creates the Dashboard_Ship_To_Account.qvd 
+	
+
+Changelog:
+ - 10.12.2013 warren.lea
+  Use the [Account Name Selector] for the [Account Name]. The ACCT_NAM value
+  changes with the versions and so multiple account names can appear for one
+  AccountSelector.
+******************************************************************************/
+/****************************************
+ * Get Distinct List of Accounts
+ ****************************************/  
+trace '****** Load Ship to Accounts that exist in Invoice Line ******* ';
+
+ship_to_account:
+load Distinct
+ ACCT_KEY_NUM
+ ,AccountSelector 
+ ,[Account Name Selector] as [Account Name] 
+ ,[Converted Customer]
+ ,SHIP_TO_LOCATION_NUM
+ ,SHIP_TO_CUSTOMER_NUM
+ ,SAP_CUSTOMER_NUM
+from
+  '$(vRootFileLocation)$(vQVDs)Ship_To_Account.qvd' (qvd)
+where
+	exists(ACCT_KEY_NUM)
+;
+
+Concatenate
+
+load Distinct
+  ACCT_KEY_NUM
+ ,AccountSelector
+ ,[Account Name] 
+ ,[Converted Customer]
+ ,SHIP_TO_LOCATION_NUM
+ ,SHIP_TO_CUSTOMER_NUM
+ ,SAP_CUSTOMER_NUM
+from
+  '$(vRootFileLocation)$(vQVDs)Dashboard_Ship_To_Account_SAP.qvd' (qvd)
+where
+	exists(ACCT_KEY_NUM)
+;
+
+
+
+/****************************************
+ * Store Ship_To_Account_Dashboard QVD
+ ****************************************/ 
+trace '***** Store Dashboard Ship To Accounts **********';
+//Commenting below as a part of ARB-781 for replacing Dashboard_Ship_To_Account_test.qvd with Dashboard_Ship_To_Account.qvd
+//store ship_to_account into '$(vRootFileLocation)$(vQVDs)Dashboard_Ship_To_Account_test.qvd' (qvd); 
+
+store ship_to_account into '$(vRootFileLocation)$(vQVDs)Dashboard_Ship_To_Account.qvd' (qvd);
+ 
+	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		//*****************************************************************
+		trace "************************** DEV LOAD: Creating Dev version of Dashboard_Ship_To_Account)";
+		//*****************************************************************
+		NoConcatenate
+		ship_to_account_dev:
+		load 
+			* 
+		resident
+			ship_to_account
+		where exists(ACCT_KEY_NUM_FILTER, ACCT_KEY_NUM)
+		;	
+
+		store ship_to_account_dev into '$(vRootFileLocation)$(vQVDs)\Dev\old_Dashboard_Ship_To_Account.qvd';
+		drop table ship_to_account_dev, Ship_To_Limiter;
+	
+	endif;
+
+drop table invoice_line_final, ship_to_account; 
+
+
+Exit script;
+
+
+//Till here is the process of way to get the Dashboard invoice line

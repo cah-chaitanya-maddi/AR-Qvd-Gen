@@ -1,0 +1,124 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for INVOICE_LINE information for Purchase Review GPO Users.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *  user_categories_PurchaseReviewGPO_1.qvd, Invoice_Line.qvd
+ *
+ * Outputs:
+ *   Invoice_Line_Purchases_GPO.qvd
+ ******************************************************************************
+ 
+ *
+ * 12/28/13 Dicky Mohanty
+ * Initial Creation
+ *
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vInvoiceLineRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvoiceLineRootFolderLocation');
+LET vInvLineSegRootFolderLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'InvLineSegRootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+
+
+user_categories_acct:
+load distinct
+      AccountSelector
+     ,ACCT_KEY_NUM
+from
+'$(vRootFileLocation)$(vQVDs)user_categories_PR_GPO_1.qvd' (qvd)
+	;
+
+///$tab Invoice Line
+
+
+NoConcatenate
+
+Invoice_Line:
+
+LOAD CNTRCT_GROUP_KEY_NUM, 
+     FLG_KEY_NUM, 
+     [DEA Blank #], 
+     ACCT_KEY_NUM, 
+     SBST_OVRD_REASON_KEY_NUM, 
+     PRICE_SGMNT_KEY_NUM, 
+     RPT_LINE_SHRT_REASON_KEY_NUM, 
+     RPT_SHRT_REASON_KEY_NUM, 
+     LINE_SHRT_REASON_KEY_NUM, 
+     OVRD_SHIP_QTY, 
+     CNTRCT_KEY_NUM, 
+     CARD_OVRD_RTRN_REASON_KEY_NUM, 
+     ORDER_DTE_KEY_NUM, 
+     ORIG_ORDER_QTY, 
+     CAC_KEY_NUM, 
+     CNTRCT_FIXED_SELL_DLR, 
+     ORDER_LINE_NUM, 
+     [Order #], 
+     ROW_UPDATE_STP, 
+     ROW_ADD_STP, 
+     [Qty Multiplier], 
+     [Order Qty], 
+     [Ship Qty Amt], 
+     [Unit Price DOD], 
+     [Unit Price], 
+     [Purchase Dollars DOD], 
+     [Purchase Dollars Amt], 
+     [NIFO Cost], 
+     [PO #], 
+     [Due Date], 
+     VENDOR_RFRNC_ID, 
+     CUSTOMER_DEPT_KEY_NUM, 
+     ORDER_ENTRY_MTHD_KEY_NUM, 
+     OVRD_TYPE_KEY_NUM, 
+     CNTRCT_TYPE_KEY_NUM, 
+     RTRN_REASON_KEY_NUM, 
+     SHRT_REASON_KEY_NUM, 
+     CORP_ACCT_KEY_NUM, 
+     TRNSCT_TYPE_KEY_NUM, 
+     PROG_KEY_NUM, 
+     [Invoice Line #], 
+     [Invoice #], 
+     DIST_CENTER_KEY_NUM, 
+     DTE_KEY_NUM, 
+     SMRY_DTE, 
+     PROD_KEY_NUM, 
+     SALES_RETURNS, 
+     Contract_Flag_Group, 
+     [Invoice Counter], 
+     [Customer Item Code], 
+     CIN, 
+     [DC #], 
+     [Account #], 
+     [Contract Flag], 
+     [Contract Name], 
+     [Contract #], 
+     CSN, 
+     PCA_KEY, 
+     AMU_KEY,
+     CREDIT_DETAIL_CMNT_TXT,      ////// ******************** Added by Dicky Mohanty on 02/22 for 02/26 Release
+     CREDIT_MEMO_NUM              ////// ******************** Added by Dicky Mohanty on 02/22 for 02/26 Release
+FROM                             
+'$(vInvoiceLineRootFolderLocation)$(vQVDs)Invoice_Line.qvd' (qvd)
+
+Where Exists (ACCT_KEY_NUM);
+
+STORE
+   Invoice_Line
+ INTO
+   '$(vRootFileLocation)$(vQVDs)Invoice_Line_Purchases_GPO.qvd' (qvd)
+;
+
+DROP Table user_categories_acct;
+DROP Table Invoice_Line;
+
+

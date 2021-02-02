@@ -1,0 +1,918 @@
+﻿<DocInternals>
+  <AlwaysLoose></AlwaysLoose>
+  <FieldSrcTables></FieldSrcTables>
+  <TableViewData>
+    <Pos></Pos>
+    <CtlInfo>
+      <InternalView>
+        <Tables>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>367</Left>
+              <Top>256</Top>
+              <Width>100</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>retail_accts</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>704</Left>
+              <Top>475</Top>
+              <Width>100</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>acute_accts_net</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>37</Left>
+              <Top>28</Top>
+              <Width>100</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>retail_accts-1</Caption>
+          </TableViewTableWinSaveInfo>
+          <TableViewTableWinSaveInfo>
+            <Pos>
+              <Left>704</Left>
+              <Top>28</Top>
+              <Width>100</Width>
+              <Height>46</Height>
+            </Pos>
+            <Caption>acute_accts_net-1</Caption>
+          </TableViewTableWinSaveInfo>
+        </Tables>
+        <BroomPoints></BroomPoints>
+        <ConnectionPoints></ConnectionPoints>
+        <ZoomFactor>3FF0000000000000</ZoomFactor>
+      </InternalView>
+      <SourceView></SourceView>
+    </CtlInfo>
+    <Mode>0</Mode>
+  </TableViewData>
+  <Bookmarks></Bookmarks>
+  <SavedByVersion>12.20.21000.0</SavedByVersion>
+  <ForceBackEndMacroExecution>false</ForceBackEndMacroExecution>
+  <FieldTags>
+    <ScriptBased>
+      <FieldTagData>
+        <Tag>$ascii</Tag>
+        <FieldNames>
+          <String>ROW_ADD_USER_ID</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$text</Tag>
+        <FieldNames>
+          <String>ROW_ADD_USER_ID</String>
+          <String>ROW_UPDATE_USER_ID</String>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$hidden</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$system</Tag>
+        <FieldNames>
+          <String>$Field</String>
+          <String>$Table</String>
+          <String>$Rows</String>
+          <String>$Fields</String>
+          <String>$FieldNo</String>
+          <String>$Info</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$key</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+          <String>INVOICE_DTE_KEY_NUM</String>
+          <String>INVOICE_NUM</String>
+          <String>MRA_DTE_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>RTRN_DSPTN_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>FLG_KEY_NUM</String>
+          <String>MRA_CREATE_BY_KEY_NUM</String>
+          <String>RTRN_PRCSR_ID_KEY_NUM</String>
+          <String>CUSTOMER_RTRN_GROUP_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORIG_INVOICE_NUM</String>
+          <String>ORIG_INVOICE_DTE_KEY_NUM</String>
+          <String>Return QTY</String>
+          <String>INVOICE_TO_MRA_ELPSD_DAY_QTY</String>
+          <String>MRA_TO_CREDIT_ELPSD_DAY_QTY</String>
+          <String>ORIG_UNIT_SELL_DLR</String>
+          <String>ORIG_UNIT_NIFO_DLR</String>
+          <String>UNIT_SELL_DLR</String>
+          <String>EXT_SELL_DLR</String>
+          <String>RESTOCK_FEE_DLR</String>
+          <String>RESTOCK_FEE_PCT</String>
+          <String>MFG_RTRN_FEE_DLR</String>
+          <String>MFG_RTRN_FEE_PCT</String>
+          <String>ROW_ADD_STP</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>CREDIT_SRC_PROG_KEY_NUM</String>
+          <String>CGBK_RVRSL_THRSH_DLR</String>
+          <String>CGBK_RVRSL_THRSH_START_DTE_KEY</String>
+          <String>CGBK_RVRSL_DLR</String>
+          <String>CGBK_NON_RVRSL_DLR</String>
+          <String>ORIG_ORDER_LINE_NUM</String>
+          <String>MRA_RCV_DTE_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+          <String>INVOICE_DTE_KEY_NUM</String>
+          <String>INVOICE_NUM</String>
+          <String>MRA_DTE_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>RTRN_DSPTN_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>FLG_KEY_NUM</String>
+          <String>MRA_CREATE_BY_KEY_NUM</String>
+          <String>RTRN_PRCSR_ID_KEY_NUM</String>
+          <String>CUSTOMER_RTRN_GROUP_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORIG_INVOICE_NUM</String>
+          <String>ORIG_INVOICE_DTE_KEY_NUM</String>
+          <String>Return QTY</String>
+          <String>INVOICE_TO_MRA_ELPSD_DAY_QTY</String>
+          <String>MRA_TO_CREDIT_ELPSD_DAY_QTY</String>
+          <String>MFG_RTRN_FEE_DLR</String>
+          <String>MFG_RTRN_FEE_PCT</String>
+          <String>CREDIT_SRC_PROG_KEY_NUM</String>
+          <String>CGBK_RVRSL_THRSH_DLR</String>
+          <String>CGBK_RVRSL_THRSH_START_DTE_KEY</String>
+          <String>ORIG_ORDER_LINE_NUM</String>
+          <String>MRA_RCV_DTE_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>ROW_ADD_STP</String>
+          <String>ROW_UPDATE_STP</String>
+        </FieldNames>
+      </FieldTagData>
+    </ScriptBased>
+    <Interactive>
+      <FieldTagData>
+        <Tag>$timestamp</Tag>
+        <FieldNames>
+          <String>DateStart</String>
+          <String>DateEnd</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>POS_RPT_START_DTE</String>
+          <String>VRSN_START_DTE</String>
+          <String>Due Date</String>
+          <String>FLG_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$numeric</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+          <String>ROW_UPDATE_STP</String>
+          <String>ROW_ADD_STP</String>
+          <String>PDAC_COMMON_SITE_LOCATION_NUM</String>
+          <String>PDAC_COMMON_SITE_CUSTOMER_NUM</String>
+          <String>PDAC_COMMON_OWNER_LOCATION_NUM</String>
+          <String>PDAC_COMMON_OWNER_CUSTOMER_NUM</String>
+          <String>POS_RX_SALE_PCT</String>
+          <String>POS_RPT_END_DTE</String>
+          <String>POS_RPT_START_DTE</String>
+          <String>NEW_ACCT_REASON_CDE</String>
+          <String>CURR_SR_LEVEL_NUM</String>
+          <String>CURR_SR_SVC_LOCATION_NUM</String>
+          <String>CURR_SR_END_DTE</String>
+          <String>CURR_SR_VOICE_MAIL_EXT_NUM</String>
+          <String>CURR_SR_VOICE_MAIL_NUM</String>
+          <String>CURR_SR_PAGER_NUM</String>
+          <String>CURR_SR_CELL_PHONE_NUM</String>
+          <String>CURR_SR_PHONE_NUM</String>
+          <String>CURR_SR_ZIP</String>
+          <String>CURR_SR_NUM</String>
+          <String>CURR_SR_KEY_NUM</String>
+          <String>SALE_REP_LEVEL_NUM</String>
+          <String>CUSTOMER_COST_BASE_CDE</String>
+          <String>CRM_BSNS_PRTNR_ID</String>
+          <String>SKILL_GRP_ID</String>
+          <String>SKILL_GRP_KEY_NUM</String>
+          <String>COMMON_LOCATION_CUSTOMER_NUM</String>
+          <String>COMMON_LOCATION_NUM</String>
+          <String>COMMON_OWNER_CUSTOMER_NUM</String>
+          <String>COMMON_OWNER_LOCATION_NUM</String>
+          <String>ENTPR_ACCT_NUM</String>
+          <String>CIM_SCRIPT_RANK_CDE</String>
+          <String>CIM_STORE_STAT_CDE</String>
+          <String>CIM_RORDR_THRSH_PCT</String>
+          <String>CIM_LAST_ORDER_DTE</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>TIM_ZONE_CDE</String>
+          <String>MKT_SGMNT_CLASS_CDE</String>
+          <String>DC_SQR_FTG_QTY</String>
+          <String>DC_TEMP_HOUR_RATE_DLR</String>
+          <String>DC_MZN_SQR_FTG_QTY</String>
+          <String>DC_MAIN_FLR_SQR_FTG_QTY</String>
+          <String>DC_SRC_SYSTEM_CDE</String>
+          <String>DC_SYSTEM_CDE</String>
+          <String>DC_HLTH_SCTR_CDE</String>
+          <String>DC_GROUP_CDE</String>
+          <String>DC_REGION_CDE</String>
+          <String>DC_BSNS_UNIT_CDE</String>
+          <String>DC_PHONE_NUM</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>PURCH_CUSTOMER_TYPE_CDE</String>
+          <String>SALE_REP_SVC_LOCATION_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>PRICE_PLAN_START_DTE</String>
+          <String>ORIGIN_CDE</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>VRSN_END_DTE</String>
+          <String>VRSN_START_DTE</String>
+          <String>PRIM_DCSN_MKR_NUM</String>
+          <String>DIST_CUSTOMER_NUM</String>
+          <String>MTRX_CDE</String>
+          <String>NABP_ID</String>
+          <String>ADMIN_FEE_REASON_CDE</String>
+          <String>PAY_TO_AFLTN_NUM</String>
+          <String>CLASS_CDE</String>
+          <String>CARRIER_CDE</String>
+          <String>NET_PRICE_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+          <String>EXT_DTE_ALLOW_CDE</String>
+          <String>Discount Paid Days</String>
+          <String>DISC_PCT</String>
+          <String>WEEK_PAY_DAY_OF_WEEK_CDE</String>
+          <String>NET_DUE_PAY_DAY_QTY</String>
+          <String>TERMS_BASE_FROM_CDE</String>
+          <String>COD Add on Amount</String>
+          <String>PRE_PAY_CDE</String>
+          <String>COD_CDE</String>
+          <String>Last Payment Amount</String>
+          <String>Last Payment Date</String>
+          <String>ADDL_TEMP_CREDIT_END_DTE</String>
+          <String>ADDL_TEMP_CREDIT_START_DTE</String>
+          <String>ADDL_TEMP_CREDIT_AVAIL_DLR</String>
+          <String>CREDIT_LMT_DLR</String>
+          <String>CURR_AR_BLNCE_DLR</String>
+          <String>CREDIT_LMT_EXCD_CDE</String>
+          <String>CONSIGN_END_DTE</String>
+          <String>CONSIGN_START_DTE</String>
+          <String>CONSIGN_TYPE_CDE</String>
+          <String>DPLCT_ORDER_CHK_CDE</String>
+          <String>AWP_BASE_CDE</String>
+          <String>SCTR_CDE</String>
+          <String>SALE_AGR_END_DTE</String>
+          <String>SALE_AGR_START_DTE</String>
+          <String>ACCT_MAINT_RESP_CDE</String>
+          <String>CUSTOMER_PURCH_PROG_CDE</String>
+          <String>SUPPLY_RLT_CDE</String>
+          <String>CRSPND_CUSTOMER_SHIP_TO_NUM</String>
+          <String>CRSPND_LOCATION_NUM</String>
+          <String>INVOICE_COPY_RQRD_QTY</String>
+          <String>BACK_ORDER_RLY_REQ_CDE</String>
+          <String>BACK_ORDER_ALLOW_CDE</String>
+          <String>WEEK_DLVRY_QTY</String>
+          <String>MIN_CHRG_DLR</String>
+          <String>MIN_ORDER_DLR</String>
+          <String>MIN_ORDER_CHK_TYPE_CDE</String>
+          <String>REG_DLVRY_FEE_DLR</String>
+          <String>QC_EXP_DTE</String>
+          <String>PROD_PRICE_CTLG_COPY_QTY</String>
+          <String>PROD_COST_CTLG_COPY_QTY</String>
+          <String>PROD_AWP_CTLG_COPY_QTY</String>
+          <String>PROCESS_TYPE_CDE</String>
+          <String>RESALE_ID_EXT_DTE</String>
+          <String>RESALE_ID_EXP_DTE</String>
+          <String>STATE_PHARM_RX_LIC_EXT_DTE</String>
+          <String>STATE_PHARM_RX_LIC_EXP_DTE</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>SVC_REP_SALE_REP_NUM</String>
+          <String>MKT_SGMNT_CDE</String>
+          <String>INVOICE_STORE_PLAN_MARKUP_PCT</String>
+          <String>CNTRCT_NONRX_PURCH_MARKUP_PCT</String>
+          <String>CNTRCT_RX_PURCH_MARKUP_PCT</String>
+          <String>ADMIN_UPCHG_PCT</String>
+          <String>PRICE_PLAN_END_DTE</String>
+          <String>Accounting Code</String>
+          <String>Store #</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>SALE_REP_END_DTE</String>
+          <String>SALE_REP_VOICE_MAIL_EXT_NUM</String>
+          <String>SALE_REP_VOICE_MAIL_NUM</String>
+          <String>SALE_REP_PAGER_NUM</String>
+          <String>SALE_REP_CELL_PHONE_NUM</String>
+          <String>SALE_REP_PHONE_NUM</String>
+          <String>SALE_REP_ZIP</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>ACCT_STAT_CDE</String>
+          <String>MSTR_CUSTOMER_NUM</String>
+          <String>MSTR_LOCATION_NUM</String>
+          <String>MSTR_INACT_DTE</String>
+          <String>MSTR_ACT_DTE</String>
+          <String>MSTR_SCNDRY_CNTCT_PHONE_NUM</String>
+          <String>MSTR_PRIM_CNTCT_PHONE_NUM</String>
+          <String>MSTR_FAX_NUM</String>
+          <String>MSTR_PHONE_NUM</String>
+          <String>MSTR_ZIP</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>BILL_TO_INACT_DTE</String>
+          <String>BILL_TO_ACT_DTE</String>
+          <String>BILL_TO_SCNDRY_CNTCT_PHONE_NUM</String>
+          <String>BILL_TO_PRIM_CNTCT_PHONE_NUM</String>
+          <String>BILL_TO_FAX_NUM</String>
+          <String>BILL_TO_PHONE_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>INACT_DTE</String>
+          <String>ACT_DTE</String>
+          <String>SCNDRY_CNTCT_PHONE_NUM</String>
+          <String>PRIM_CNTCT_PHONE_NUM</String>
+          <String>SHIP_TO_FAX_NUM</String>
+          <String>PHONE_NUM</String>
+          <String>Account Zip Code</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>FLG_KEY_NUM</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>RPT_LINE_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_SHRT_REASON_KEY_NUM</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORIG_ORDER_QTY</String>
+          <String>CAC_KEY_NUM</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>Qty Multiplier</String>
+          <String>Order Qty</String>
+          <String>Ship Qty Amt</String>
+          <String>Due Date</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>Invoice Line #</String>
+          <String>Invoice #</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>SALES_RETURNS</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>CIN</String>
+          <String>Contract #</String>
+          <String>CSN</String>
+          <String>MRCRY_USER_ID</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+          <String>Order #</String>
+          <String>Unit Price DOD</String>
+          <String>Unit Price</String>
+          <String>Purchase Dollars DOD</String>
+          <String>Purchase Dollars Amt</String>
+          <String>NIFO Cost</String>
+          <String>Segment #</String>
+          <String>PO #</String>
+          <String>VENDOR_RFRNC_ID</String>
+          <String>SMRY_DTE</String>
+          <String>Short Invoice Code</String>
+          <String>SMRY_NUM</String>
+          <String>YearMonthID</String>
+          <String>Order Date</String>
+          <String>line_short_id</String>
+          <String>short_id</String>
+          <String>RowNoCtr</String>
+          <String>Filled Line Count</String>
+          <String>UnFilled Line Count</String>
+          <String>Unadjusted Ship Qty</String>
+          <String>Filled Lines</String>
+          <String>Corporate Discontinued Lines</String>
+          <String>Corporate Discontinued Qty</String>
+          <String>DC Out Lines</String>
+          <String>DC Out Qty</String>
+          <String>Divisional Discontinued Lines</String>
+          <String>Divisional Discontinued Qty</String>
+          <String>Not Stocked Lines</String>
+          <String>Not Stocked Qty</String>
+          <String>Drop Ship Lines</String>
+          <String>Drop Ship Qty</String>
+          <String>Drug Recall Lines</String>
+          <String>Drug Recall Qty</String>
+          <String>Late Ship Lines</String>
+          <String>Late Ship Qty</String>
+          <String>Manufacturer Backorder Lines</String>
+          <String>Manufacturer Backorder Qty</String>
+          <String>Multiple Reorder Lines</String>
+          <String>Multiple Reorder Qty</String>
+          <String>Manufacturer Discontinued Lines</String>
+          <String>Manufacturer Discontinued Qty</String>
+          <String>Manufacturer Out Lines</String>
+          <String>Manufacturer Out Qty</String>
+          <String>Multiple Reorder Within 2 Business Days Lines</String>
+          <String>Multiple Reorder Within 2 Business Days Qty</String>
+          <String>Multiple Reorder Within 3 All Days Lines</String>
+          <String>Multiple Reorder Within 3 All Days Qty</String>
+          <String>Multiple Reorder Within 3 Business Days Lines</String>
+          <String>Multiple Reorder Within 3 Business Days Qty</String>
+          <String>Multiple Reorder Within 3 Weeks Lines</String>
+          <String>Multiple Reorder Within 3 Weeks Qty</String>
+          <String>Multiple Reorder Within 5 Business Days Lines</String>
+          <String>Multiple Reorder Within 5 Business Days Qty</String>
+          <String>N/A Lines</String>
+          <String>N/A Qty</String>
+          <String>New Item/Stock Unavailable Lines</String>
+          <String>New Item/Stock Unavailable Qty</String>
+          <String>No Usage Lines</String>
+          <String>No Usage Qty</String>
+          <String>Order Qty Exceeds Safety Stock Lines</String>
+          <String>Order Qty Exceeds Safety Stock Qty</String>
+          <String>Outs With Inventory Lines</String>
+          <String>Outs With Inventory Qty</String>
+          <String>Restricted Item Lines</String>
+          <String>Restricted Item Qty</String>
+          <String>Usage Exceeds 120% Of Past 1 Months Average Lines</String>
+          <String>Usage Exceeds 120% Of Past 1 Months Average Qty</String>
+          <String>Usage Exceeds 120% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 120% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 120% Of Past 3 Months Average Lines</String>
+          <String>Usage Exceeds 120% Of Past 3 Months Average Qty</String>
+          <String>Usage Exceeds 125% Of Past 1 Months Average Lines</String>
+          <String>Usage Exceeds 125% Of Past 1 Months Average Qty</String>
+          <String>Usage Exceeds 125% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 125% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 125% Of Past 6 Months Average Lines</String>
+          <String>Usage Exceeds 125% Of Past 6 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 1 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 1 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Avg Size&lt;1000 Lines</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Avg Size&lt;1000 Qty</String>
+          <String>Usage Exceeds 150% Of Past 3 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 3 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 6 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 6 Months Average Qty</String>
+          <String>Usage Exceeds 200% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 200% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 300% Of Past 60 Days Average Lines</String>
+          <String>Usage Exceeds 300% Of Past 60 Days Average Qty</String>
+          <String>Adjusted Ship Qty</String>
+          <String>Adjusted Ship Lines</String>
+          <String>Unadjusted Lines</String>
+          <String>Manufacturer Backorder Group Qty</String>
+          <String>Manufacturer Backorder Group Lines</String>
+          <String>Manufacturer Discontinued Group Qty</String>
+          <String>Manufacturer Discontinued Group Lines</String>
+          <String>Division Discontinued Group Qty</String>
+          <String>Division Discontinued Group Lines</String>
+          <String>Multiple Reorder Group Qty</String>
+          <String>Multiple Reorder Group Lines</String>
+          <String>Not Stocked Group Qty</String>
+          <String>Not Stocked Group Lines</String>
+          <String>No Usage Group Qty</String>
+          <String>No Usage Group Lines</String>
+          <String>DC Out Group Qty</String>
+          <String>DC Out Group Lines</String>
+          <String>Corporate Discontinued Group Qty</String>
+          <String>Corporate Discontinued Group Lines</String>
+          <String>Usage &gt; XX% Group Qty</String>
+          <String>Usage &gt; XX% Group Lines</String>
+          <String>Other Group Qty</String>
+          <String>Other Group Lines</String>
+          <String>INVOICE_DTE_KEY_NUM</String>
+          <String>INVOICE_NUM</String>
+          <String>MRA_DTE_KEY_NUM</String>
+          <String>RTRN_DSPTN_KEY_NUM</String>
+          <String>MRA_CREATE_BY_KEY_NUM</String>
+          <String>RTRN_PRCSR_ID_KEY_NUM</String>
+          <String>CUSTOMER_RTRN_GROUP_KEY_NUM</String>
+          <String>ORIG_INVOICE_NUM</String>
+          <String>ORIG_INVOICE_DTE_KEY_NUM</String>
+          <String>Return QTY</String>
+          <String>INVOICE_TO_MRA_ELPSD_DAY_QTY</String>
+          <String>MRA_TO_CREDIT_ELPSD_DAY_QTY</String>
+          <String>ORIG_UNIT_SELL_DLR</String>
+          <String>ORIG_UNIT_NIFO_DLR</String>
+          <String>UNIT_SELL_DLR</String>
+          <String>EXT_SELL_DLR</String>
+          <String>RESTOCK_FEE_DLR</String>
+          <String>RESTOCK_FEE_PCT</String>
+          <String>MFG_RTRN_FEE_DLR</String>
+          <String>MFG_RTRN_FEE_PCT</String>
+          <String>CREDIT_SRC_PROG_KEY_NUM</String>
+          <String>CGBK_RVRSL_THRSH_DLR</String>
+          <String>CGBK_RVRSL_THRSH_START_DTE_KEY</String>
+          <String>CGBK_RVRSL_DLR</String>
+          <String>CGBK_NON_RVRSL_DLR</String>
+          <String>ORIG_ORDER_LINE_NUM</String>
+          <String>MRA_RCV_DTE_KEY_NUM</String>
+          <String>USER_ID</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$integer</Tag>
+        <FieldNames>
+          <String>ACCT_KEY_NUM</String>
+          <String>PDAC_COMMON_SITE_LOCATION_NUM</String>
+          <String>PDAC_COMMON_SITE_CUSTOMER_NUM</String>
+          <String>PDAC_COMMON_OWNER_LOCATION_NUM</String>
+          <String>PDAC_COMMON_OWNER_CUSTOMER_NUM</String>
+          <String>POS_RX_SALE_PCT</String>
+          <String>POS_RPT_END_DTE</String>
+          <String>POS_RPT_START_DTE</String>
+          <String>NEW_ACCT_REASON_CDE</String>
+          <String>CURR_SR_LEVEL_NUM</String>
+          <String>CURR_SR_SVC_LOCATION_NUM</String>
+          <String>CURR_SR_END_DTE</String>
+          <String>CURR_SR_VOICE_MAIL_EXT_NUM</String>
+          <String>CURR_SR_VOICE_MAIL_NUM</String>
+          <String>CURR_SR_PAGER_NUM</String>
+          <String>CURR_SR_CELL_PHONE_NUM</String>
+          <String>CURR_SR_PHONE_NUM</String>
+          <String>CURR_SR_ZIP</String>
+          <String>CURR_SR_NUM</String>
+          <String>CURR_SR_KEY_NUM</String>
+          <String>SALE_REP_LEVEL_NUM</String>
+          <String>CUSTOMER_COST_BASE_CDE</String>
+          <String>CRM_BSNS_PRTNR_ID</String>
+          <String>SKILL_GRP_ID</String>
+          <String>SKILL_GRP_KEY_NUM</String>
+          <String>COMMON_LOCATION_CUSTOMER_NUM</String>
+          <String>COMMON_LOCATION_NUM</String>
+          <String>COMMON_OWNER_CUSTOMER_NUM</String>
+          <String>COMMON_OWNER_LOCATION_NUM</String>
+          <String>ENTPR_ACCT_NUM</String>
+          <String>CIM_SCRIPT_RANK_CDE</String>
+          <String>CIM_STORE_STAT_CDE</String>
+          <String>CIM_LAST_ORDER_DTE</String>
+          <String>CUSTOMER_TYPE_CDE</String>
+          <String>TIM_ZONE_CDE</String>
+          <String>MKT_SGMNT_CLASS_CDE</String>
+          <String>DC_SQR_FTG_QTY</String>
+          <String>DC_MZN_SQR_FTG_QTY</String>
+          <String>DC_MAIN_FLR_SQR_FTG_QTY</String>
+          <String>DC_SRC_SYSTEM_CDE</String>
+          <String>DC_SYSTEM_CDE</String>
+          <String>DC_HLTH_SCTR_CDE</String>
+          <String>DC_GROUP_CDE</String>
+          <String>DC_REGION_CDE</String>
+          <String>DC_BSNS_UNIT_CDE</String>
+          <String>DC_PHONE_NUM</String>
+          <String>DC_ZIP</String>
+          <String>CARD_ACCT_GROUP_NUM</String>
+          <String>PURCH_CUSTOMER_TYPE_CDE</String>
+          <String>SALE_REP_SVC_LOCATION_NUM</String>
+          <String>SALE_REP_NUM</String>
+          <String>PRICE_PLAN_START_DTE</String>
+          <String>ORIGIN_CDE</String>
+          <String>Account #</String>
+          <String>DC #</String>
+          <String>VRSN_END_DTE</String>
+          <String>VRSN_START_DTE</String>
+          <String>PRIM_DCSN_MKR_NUM</String>
+          <String>DIST_CUSTOMER_NUM</String>
+          <String>MTRX_CDE</String>
+          <String>NABP_ID</String>
+          <String>ADMIN_FEE_REASON_CDE</String>
+          <String>PAY_TO_AFLTN_NUM</String>
+          <String>CLASS_CDE</String>
+          <String>CARRIER_CDE</String>
+          <String>NET_PRICE_CDE</String>
+          <String>STMNT_FREQ_CDE</String>
+          <String>EXT_DTE_ALLOW_CDE</String>
+          <String>Discount Paid Days</String>
+          <String>DISC_PCT</String>
+          <String>WEEK_PAY_DAY_OF_WEEK_CDE</String>
+          <String>NET_DUE_PAY_DAY_QTY</String>
+          <String>TERMS_BASE_FROM_CDE</String>
+          <String>PRE_PAY_CDE</String>
+          <String>COD_CDE</String>
+          <String>Last Payment Date</String>
+          <String>ADDL_TEMP_CREDIT_END_DTE</String>
+          <String>ADDL_TEMP_CREDIT_START_DTE</String>
+          <String>ADDL_TEMP_CREDIT_AVAIL_DLR</String>
+          <String>CREDIT_LMT_EXCD_CDE</String>
+          <String>CONSIGN_END_DTE</String>
+          <String>CONSIGN_START_DTE</String>
+          <String>CONSIGN_TYPE_CDE</String>
+          <String>DPLCT_ORDER_CHK_CDE</String>
+          <String>AWP_BASE_CDE</String>
+          <String>SCTR_CDE</String>
+          <String>SALE_AGR_END_DTE</String>
+          <String>SALE_AGR_START_DTE</String>
+          <String>ACCT_MAINT_RESP_CDE</String>
+          <String>CUSTOMER_PURCH_PROG_CDE</String>
+          <String>SUPPLY_RLT_CDE</String>
+          <String>CRSPND_CUSTOMER_SHIP_TO_NUM</String>
+          <String>CRSPND_LOCATION_NUM</String>
+          <String>INVOICE_COPY_RQRD_QTY</String>
+          <String>BACK_ORDER_RLY_REQ_CDE</String>
+          <String>BACK_ORDER_ALLOW_CDE</String>
+          <String>WEEK_DLVRY_QTY</String>
+          <String>MIN_ORDER_CHK_TYPE_CDE</String>
+          <String>QC_EXP_DTE</String>
+          <String>PROD_PRICE_CTLG_COPY_QTY</String>
+          <String>PROD_COST_CTLG_COPY_QTY</String>
+          <String>PROD_AWP_CTLG_COPY_QTY</String>
+          <String>PROCESS_TYPE_CDE</String>
+          <String>RESALE_ID_EXT_DTE</String>
+          <String>RESALE_ID_EXP_DTE</String>
+          <String>STATE_PHARM_RX_LIC_EXT_DTE</String>
+          <String>STATE_PHARM_RX_LIC_EXP_DTE</String>
+          <String>STATE_PHARM_EXT_DTE</String>
+          <String>STATE_PHARM_LIC_EXP_DTE</String>
+          <String>SVC_REP_SALE_REP_NUM</String>
+          <String>MKT_SGMNT_CDE</String>
+          <String>INVOICE_STORE_PLAN_MARKUP_PCT</String>
+          <String>CNTRCT_NONRX_PURCH_MARKUP_PCT</String>
+          <String>ADMIN_UPCHG_PCT</String>
+          <String>PRICE_PLAN_END_DTE</String>
+          <String>Accounting Code</String>
+          <String>Store #</String>
+          <String>Account DEA Extension Date</String>
+          <String>Account DEA Expiration Date</String>
+          <String>SALE_REP_END_DTE</String>
+          <String>SALE_REP_VOICE_MAIL_EXT_NUM</String>
+          <String>SALE_REP_VOICE_MAIL_NUM</String>
+          <String>SALE_REP_PAGER_NUM</String>
+          <String>SALE_REP_CELL_PHONE_NUM</String>
+          <String>SALE_REP_PHONE_NUM</String>
+          <String>SALE_REP_ZIP</String>
+          <String>SALE_REP_KEY_NUM</String>
+          <String>ACCT_STAT_CDE</String>
+          <String>MSTR_CUSTOMER_NUM</String>
+          <String>MSTR_LOCATION_NUM</String>
+          <String>MSTR_INACT_DTE</String>
+          <String>MSTR_ACT_DTE</String>
+          <String>MSTR_SCNDRY_CNTCT_PHONE_NUM</String>
+          <String>MSTR_PRIM_CNTCT_PHONE_NUM</String>
+          <String>MSTR_FAX_NUM</String>
+          <String>MSTR_PHONE_NUM</String>
+          <String>MSTR_ZIP</String>
+          <String>BILL_TO_CUSTOMER_NUM</String>
+          <String>BILL_TO_LOCATION_NUM</String>
+          <String>BILL_TO_INACT_DTE</String>
+          <String>BILL_TO_ACT_DTE</String>
+          <String>BILL_TO_SCNDRY_CNTCT_PHONE_NUM</String>
+          <String>BILL_TO_PRIM_CNTCT_PHONE_NUM</String>
+          <String>BILL_TO_FAX_NUM</String>
+          <String>BILL_TO_PHONE_NUM</String>
+          <String>Bill-to Zip Code</String>
+          <String>SHIP_TO_CUSTOMER_NUM</String>
+          <String>SHIP_TO_LOCATION_NUM</String>
+          <String>INACT_DTE</String>
+          <String>ACT_DTE</String>
+          <String>SCNDRY_CNTCT_PHONE_NUM</String>
+          <String>PRIM_CNTCT_PHONE_NUM</String>
+          <String>SHIP_TO_FAX_NUM</String>
+          <String>PHONE_NUM</String>
+          <String>Account Zip Code</String>
+          <String>CNTRCT_TYPE_KEY_NUM</String>
+          <String>CNTRCT_GROUP_KEY_NUM</String>
+          <String>FLG_KEY_NUM</String>
+          <String>SBST_OVRD_REASON_KEY_NUM</String>
+          <String>PRICE_SGMNT_KEY_NUM</String>
+          <String>RPT_LINE_SHRT_REASON_KEY_NUM</String>
+          <String>RPT_SHRT_REASON_KEY_NUM</String>
+          <String>LINE_SHRT_REASON_KEY_NUM</String>
+          <String>OVRD_SHIP_QTY</String>
+          <String>CNTRCT_KEY_NUM</String>
+          <String>CARD_OVRD_RTRN_REASON_KEY_NUM</String>
+          <String>ORDER_DTE_KEY_NUM</String>
+          <String>ORIG_ORDER_QTY</String>
+          <String>CAC_KEY_NUM</String>
+          <String>ORDER_LINE_NUM</String>
+          <String>ORDER_NUM</String>
+          <String>Qty Multiplier</String>
+          <String>Order Qty</String>
+          <String>Ship Qty Amt</String>
+          <String>Due Date</String>
+          <String>CUSTOMER_DEPT_KEY_NUM</String>
+          <String>ORDER_ENTRY_MTHD_KEY_NUM</String>
+          <String>OVRD_TYPE_KEY_NUM</String>
+          <String>RTRN_REASON_KEY_NUM</String>
+          <String>SHRT_REASON_KEY_NUM</String>
+          <String>CORP_ACCT_KEY_NUM</String>
+          <String>TRNSCT_TYPE_KEY_NUM</String>
+          <String>PROG_KEY_NUM</String>
+          <String>Invoice Line #</String>
+          <String>Invoice #</String>
+          <String>DIST_CENTER_KEY_NUM</String>
+          <String>DTE_KEY_NUM</String>
+          <String>PROD_KEY_NUM</String>
+          <String>SALES_RETURNS</String>
+          <String>Contract_Flag_Group</String>
+          <String>Invoice Counter</String>
+          <String>CIN</String>
+          <String>Contract #</String>
+          <String>CSN</String>
+          <String>MRCRY_USER_ID</String>
+          <String>Order #</String>
+          <String>Segment #</String>
+          <String>CNTRCT_FIXED_SELL_DLR</String>
+          <String>PO #</String>
+          <String>VENDOR_RFRNC_ID</String>
+          <String>SMRY_DTE</String>
+          <String>Short Invoice Code</String>
+          <String>SMRY_NUM</String>
+          <String>YearMonthID</String>
+          <String>Order Date</String>
+          <String>line_short_id</String>
+          <String>short_id</String>
+          <String>RowNoCtr</String>
+          <String>Filled Line Count</String>
+          <String>UnFilled Line Count</String>
+          <String>Unadjusted Ship Qty</String>
+          <String>Filled Lines</String>
+          <String>Corporate Discontinued Lines</String>
+          <String>Corporate Discontinued Qty</String>
+          <String>DC Out Lines</String>
+          <String>DC Out Qty</String>
+          <String>Divisional Discontinued Lines</String>
+          <String>Divisional Discontinued Qty</String>
+          <String>Not Stocked Lines</String>
+          <String>Not Stocked Qty</String>
+          <String>Drop Ship Lines</String>
+          <String>Drop Ship Qty</String>
+          <String>Drug Recall Lines</String>
+          <String>Drug Recall Qty</String>
+          <String>Late Ship Lines</String>
+          <String>Late Ship Qty</String>
+          <String>Manufacturer Backorder Lines</String>
+          <String>Manufacturer Backorder Qty</String>
+          <String>Multiple Reorder Lines</String>
+          <String>Multiple Reorder Qty</String>
+          <String>Manufacturer Discontinued Lines</String>
+          <String>Manufacturer Discontinued Qty</String>
+          <String>Manufacturer Out Lines</String>
+          <String>Manufacturer Out Qty</String>
+          <String>Multiple Reorder Within 2 Business Days Lines</String>
+          <String>Multiple Reorder Within 2 Business Days Qty</String>
+          <String>Multiple Reorder Within 3 All Days Lines</String>
+          <String>Multiple Reorder Within 3 All Days Qty</String>
+          <String>Multiple Reorder Within 3 Business Days Lines</String>
+          <String>Multiple Reorder Within 3 Business Days Qty</String>
+          <String>Multiple Reorder Within 3 Weeks Lines</String>
+          <String>Multiple Reorder Within 3 Weeks Qty</String>
+          <String>Multiple Reorder Within 5 Business Days Lines</String>
+          <String>Multiple Reorder Within 5 Business Days Qty</String>
+          <String>N/A Lines</String>
+          <String>N/A Qty</String>
+          <String>New Item/Stock Unavailable Lines</String>
+          <String>New Item/Stock Unavailable Qty</String>
+          <String>No Usage Lines</String>
+          <String>No Usage Qty</String>
+          <String>Order Qty Exceeds Safety Stock Lines</String>
+          <String>Order Qty Exceeds Safety Stock Qty</String>
+          <String>Outs With Inventory Lines</String>
+          <String>Outs With Inventory Qty</String>
+          <String>Restricted Item Lines</String>
+          <String>Restricted Item Qty</String>
+          <String>Usage Exceeds 120% Of Past 1 Months Average Lines</String>
+          <String>Usage Exceeds 120% Of Past 1 Months Average Qty</String>
+          <String>Usage Exceeds 120% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 120% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 120% Of Past 3 Months Average Lines</String>
+          <String>Usage Exceeds 120% Of Past 3 Months Average Qty</String>
+          <String>Usage Exceeds 125% Of Past 1 Months Average Lines</String>
+          <String>Usage Exceeds 125% Of Past 1 Months Average Qty</String>
+          <String>Usage Exceeds 125% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 125% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 125% Of Past 6 Months Average Lines</String>
+          <String>Usage Exceeds 125% Of Past 6 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 1 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 1 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Avg Size&lt;1000 Lines</String>
+          <String>Usage Exceeds 150% Of Past 2 Months Avg Size&lt;1000 Qty</String>
+          <String>Usage Exceeds 150% Of Past 3 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 3 Months Average Qty</String>
+          <String>Usage Exceeds 150% Of Past 6 Months Average Lines</String>
+          <String>Usage Exceeds 150% Of Past 6 Months Average Qty</String>
+          <String>Usage Exceeds 200% Of Past 2 Months Average Lines</String>
+          <String>Usage Exceeds 200% Of Past 2 Months Average Qty</String>
+          <String>Usage Exceeds 300% Of Past 60 Days Average Lines</String>
+          <String>Usage Exceeds 300% Of Past 60 Days Average Qty</String>
+          <String>Adjusted Ship Qty</String>
+          <String>Adjusted Ship Lines</String>
+          <String>Unadjusted Lines</String>
+          <String>Manufacturer Backorder Group Qty</String>
+          <String>Manufacturer Backorder Group Lines</String>
+          <String>Manufacturer Discontinued Group Qty</String>
+          <String>Manufacturer Discontinued Group Lines</String>
+          <String>Division Discontinued Group Qty</String>
+          <String>Division Discontinued Group Lines</String>
+          <String>Multiple Reorder Group Qty</String>
+          <String>Multiple Reorder Group Lines</String>
+          <String>Not Stocked Group Qty</String>
+          <String>Not Stocked Group Lines</String>
+          <String>No Usage Group Qty</String>
+          <String>No Usage Group Lines</String>
+          <String>DC Out Group Qty</String>
+          <String>DC Out Group Lines</String>
+          <String>Corporate Discontinued Group Qty</String>
+          <String>Corporate Discontinued Group Lines</String>
+          <String>Usage &gt; XX% Group Qty</String>
+          <String>Usage &gt; XX% Group Lines</String>
+          <String>Other Group Qty</String>
+          <String>Other Group Lines</String>
+          <String>INVOICE_DTE_KEY_NUM</String>
+          <String>INVOICE_NUM</String>
+          <String>MRA_DTE_KEY_NUM</String>
+          <String>RTRN_DSPTN_KEY_NUM</String>
+          <String>MRA_CREATE_BY_KEY_NUM</String>
+          <String>RTRN_PRCSR_ID_KEY_NUM</String>
+          <String>CUSTOMER_RTRN_GROUP_KEY_NUM</String>
+          <String>ORIG_INVOICE_NUM</String>
+          <String>ORIG_INVOICE_DTE_KEY_NUM</String>
+          <String>Return QTY</String>
+          <String>INVOICE_TO_MRA_ELPSD_DAY_QTY</String>
+          <String>MRA_TO_CREDIT_ELPSD_DAY_QTY</String>
+          <String>CREDIT_SRC_PROG_KEY_NUM</String>
+          <String>CGBK_RVRSL_THRSH_DLR</String>
+          <String>CGBK_RVRSL_THRSH_START_DTE_KEY</String>
+          <String>ORIG_ORDER_LINE_NUM</String>
+          <String>MRA_RCV_DTE_KEY_NUM</String>
+          <String>USER_ID</String>
+        </FieldNames>
+      </FieldTagData>
+      <FieldTagData>
+        <Tag>$date</Tag>
+        <FieldNames>
+          <String>POS_RPT_START_DTE</String>
+          <String>VRSN_START_DTE</String>
+          <String>Due Date</String>
+          <String>FLG_KEY_NUM</String>
+        </FieldNames>
+      </FieldTagData>
+    </Interactive>
+  </FieldTags>
+  <FieldComments></FieldComments>
+  <TableComments></TableComments>
+  <CreatePrjFolder>false</CreatePrjFolder>
+  <LinkedTables></LinkedTables>
+  <AppObjectEntries></AppObjectEntries>
+  <GenericDimensions></GenericDimensions>
+  <GenericMeasures></GenericMeasures>
+  <GenericBookmarks></GenericBookmarks>
+  <ConnectionInfo></ConnectionInfo>
+  <GenericDerivedDefinitions></GenericDerivedDefinitions>
+  <GenericDerivedFields></GenericDerivedFields>
+  <BnfOff>false</BnfOff>
+  <CreatedAfterSingleQuoteExactSearch>false</CreatedAfterSingleQuoteExactSearch>
+</DocInternals>

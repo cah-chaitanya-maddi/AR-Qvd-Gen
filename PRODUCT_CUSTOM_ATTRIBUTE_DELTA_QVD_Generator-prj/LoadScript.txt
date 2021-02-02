@@ -1,0 +1,218 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for PRODUCT_CUSTOM_ATTRIBUTE Delta information.
+ * 
+ * Sources:
+ *   Views.PRODUCT_CUSTOM_ATTRIBUTE from Teradata
+ *
+ * Outputs:
+ *   PRODUCT_CUSTOM_ATTRIBUTE.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 10/13/15 Andrew Motchakan
+ * 
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Wait_Until_Writable.qvs);
+$(Must_Include=$(vRootFileLocation)\$(vScriptDir)\Util.qvs);
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+//ODBC CONNECT TO PD_SDW_Stg;
+//VIEWST Changes by Sumit 11/06/2020 ARR 262-283
+///$tab PRODUCT_CUSTOM_ATTRIBUTE
+///********************************************
+// * Set Statistics Variables
+// ********************************************/
+//LET vTimeStamp = Now();
+//LET vStart = Now();
+//SET vTableName = 'PRODUCT_CUSTOM_ATTRIBUTE';
+//set vQvdFile = '$(vRootFileLocation)$(vQVDs)$(vTableName).qvd';
+//
+///********************************************
+// * Get Last Time QVD was Generated and Current Time
+// ********************************************/
+//LET vThisExecTime = date(Now(),'YYYY-MM-DD hh:mm:ss'); 
+//
+///********************************************
+// * Get List of Dates
+// ********************************************/
+//temp:
+//LOAD
+//  ROW_UPDATE_STP as Date
+//FROM
+//  '$(vQvdFile)'
+//(qvd);
+//
+///********************************************
+// * Get Max Date
+// ********************************************/
+//Max_Date:
+//Load
+//  min(Date) as min_date,
+//  max(Date) as max_date;
+//Load
+//  FieldValue('Date',IterNo()) as Date
+//autogenerate(1)
+//while not IsNull(FieldValue('Date',Iterno()));
+//
+///********************************************
+// * Drop Table
+// ********************************************/
+//Drop Table temp;
+//
+///********************************************
+// * Set vLastExecTime
+// ********************************************/
+//LET vLastExecTime = date(Peek('max_date',0,'Max_Date'),'YYYY-MM-DD hh:mm:ss');
+//
+///********************************************
+// * Drop Table
+// ********************************************/
+//DROP TABLE Max_Date; 
+//
+///********************************************
+// * Get Changed/Updated Records
+// ********************************************/
+ 
+PRODUCT_CUSTOM_ATTRIBUTE:
+LOAD
+//	  SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM&'|'&CORP_ITEM_NUM&'|'&NON_CARD_PROD_NUM         as [Primary Key]
+	  SHIP_TO_CUSTOMER_NUM																			as [Account #]
+	, SHIP_TO_LOCATION_NUM																			as [DC #]
+	, CORP_ITEM_NUM																					as [CIN]
+	, NON_CARD_PROD_NUM																				as [NON_CARD_PROD_NUM]
+	, CTGRY_1_CDE																					as [CTGRY_1_DESC]
+	, CTGRY_1_DESC																					as [Category Code 1]
+	, USER_DFN_FIELD_1_LABEL_NAM																	as [USER_DFN_FIELD_1_TXT]
+	, USER_DFN_FIELD_1_TXT																			as [UDF1]
+	, USER_DFN_FIELD_2_LABEL_NAM																	as [USER_DFN_FIELD_2_TXT]
+	, USER_DFN_FIELD_2_TXT																			as [UDF2]
+	, FRMLRY_FLG																					as [On Formulary]
+	, DO_NOT_SUB_FLG																				as [Never Sub]
+	, MSG_TXT																						as [Message Text]
+	, MIN_SUPPLY_QTY																				as [MIN_SUPPLY_QTY]
+	, MAX_SUPPLY_QTY																				as [MAX_SUPPLY_QTY]
+	, PRJCT_MTHLY_USAGE_QTY																			as [Projected Monthly Usage]
+	, PRJCT_USAGE_EXP_DTE																			as [PRJCT_USAGE_EXP_DTE]
+	, UOIF_NUM																						as [UOI Factor]
+	, CARD_PROD_FLG																					as [CARD_PROD_FLG]
+	, ROW_ADD_STP																					as [ROW_ADD_STP]
+	, ROW_ADD_USER_ID																				as [ROW_ADD_USER_ID]
+	, ROW_UPDATE_STP																				as [ROW_UPDATE_STP]
+	, ROW_UPDATE_USER_ID																			as [ROW_UPDATE_USER_ID]
+	,CTGRY_2_CDE 																					as [CTGRY_2_CDE] //added 4 new columns for non-cardianl report on 25 April'19
+	,CUSTOM_STOCK_ID 																				as [CUSTOM_STOCK_ID]
+	,DLVRY_PREFER_CDE 																				as [DLVRY_PREFER_CDE]
+	,CTLG_EXCLN_FLG 																				as [CTLG_EXCLN_FLG]
+
+;
+
+SQL
+
+SELECT
+	 "SHIP_TO_CUSTOMER_NUM"
+	,"SHIP_TO_LOCATION_NUM"
+	,"CORP_ITEM_NUM"
+	,"NON_CARD_PROD_NUM"
+	,"CTGRY_1_CDE"
+	,"CTGRY_1_DESC"
+	,"USER_DFN_FIELD_1_LABEL_NAM"
+	,"USER_DFN_FIELD_1_TXT"
+	,"USER_DFN_FIELD_2_LABEL_NAM"
+	,"USER_DFN_FIELD_2_TXT"
+	,"FRMLRY_FLG"
+	,"DO_NOT_SUB_FLG"
+	,"MSG_TXT"
+	,"MIN_SUPPLY_QTY"
+	,"MAX_SUPPLY_QTY"
+	,"PRJCT_MTHLY_USAGE_QTY"
+	,"PRJCT_USAGE_EXP_DTE"
+	,"UOIF_NUM"
+	,"CARD_PROD_FLG"
+	,"ROW_ADD_STP"
+	,"ROW_ADD_USER_ID"
+	,"ROW_UPDATE_STP"
+	,"ROW_UPDATE_USER_ID"
+	,"CTGRY_2_CDE"//added 4 new columns for non-cardianl report on 25 April'19
+	,"CUSTOM_STOCK_ID"
+	,"DLVRY_PREFER_CDE"
+	,"CTLG_EXCLN_FLG"
+FROM 
+//		VIEWST."PRODUCT_CUSTOM_ATTRIBUTE" ARR 315
+		VIEWS."PRODUCT_CUSTOM_ATTRIBUTE"
+//WHERE  
+//  (ROW_UPDATE_STP > cast('$(vLastExecTime)' as timestamp))
+;
+
+/********************************************
+ * Check to see if any new records exists
+ * otherwise do not concatenate
+ ********************************************/
+//LET vDeltaRecords = NoOfRows('$(vTableName)');
+//
+//IF $(vDeltaRecords) <> 0 THEN
+//  /********************************************
+//   * Concatenate Records where not exists in
+//   * the query above
+//   ********************************************/
+//  CONCATENATE
+//  LOAD
+//	 [Account #]
+//	,[DC #]
+//	,CIN
+//	,[DC #]&'|'&[Account #]&'|'&CIN&'|'&NON_CARD_PROD_NUM as [Primary Key]
+//	,NON_CARD_PROD_NUM
+//	,[Category Code 1]
+//	,CTGRY_1_DESC
+//	,UDF1
+//	,USER_DFN_FIELD_1_TXT
+//	,UDF2
+//	,USER_DFN_FIELD_2_TXT
+//	,[On Formulary]
+//	,[Never Sub]
+//	,[Message Text]
+//	,MIN_SUPPLY_QTY
+//	,MAX_SUPPLY_QTY
+//	,[Projected Monthly Usage]
+//	,PRJCT_USAGE_EXP_DTE
+//	,[UOI Factor]
+//	,CARD_PROD_FLG
+//	,ROW_ADD_STP
+//	,ROW_ADD_USER_ID
+//	,ROW_UPDATE_STP
+//	,ROW_UPDATE_USER_ID
+//	
+//  FROM
+//   '$(vQvdFile)' (qvd)
+//  WHERE
+//    NOT EXISTS([Primary Key], [DC #]&'|'&[Account #]&'|'&CIN&'|'&NON_CARD_PROD_NUM)
+//      ;
+//  
+//  drop Field [Primary Key];
+
+  /********************************************
+   * Store New QVD, if no errors
+   ********************************************/ 
+	store PRODUCT_CUSTOM_ATTRIBUTE into '$(vRootFileLocation)$(vQVDs)\PRODUCT_CUSTOM_ATTRIBUTE.qvd'(qvd);
+//    LET vLastExecTime = '$(vThisExecTime)';
+//
+//END IF
+
+/********************************************
+ * Drop table out of memory
+ ********************************************/ 
+
+DROP Table PRODUCT_CUSTOM_ATTRIBUTE;

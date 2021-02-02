@@ -1,0 +1,222 @@
+﻿///$tab Setup
+SET ThousandSep=',';
+SET DecimalSep='.';
+SET MoneyThousandSep=',';
+SET MoneyDecimalSep='.';
+SET MoneyFormat='$#,##0.00;($#,##0.00)';
+SET TimeFormat='h:mm:ss TT';
+SET DateFormat='M/D/YYYY';
+SET TimestampFormat='M/D/YYYY h:mm:ss[.fff] TT';
+SET MonthNames='Jan;Feb;Mar;Apr;May;Jun;Jul;Aug;Sep;Oct;Nov;Dec';
+SET DayNames='Mon;Tue;Wed;Thu;Fri;Sat;Sun';
+
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+LET vQVDs = '\QVDs\';
+///$tab Mapping Load
+//DepNamLoad:
+//Mapping LOAD
+//     [CUST_ID_DEPT_NUM] as [Department Code],
+//     [Department Name] 
+//     
+//FROM
+//  '$(vRootFileLocation)$(vQVDs)Customer_Department.qvd' (qvd)
+//Where
+//  OE_DEPT_FLG='Y'
+//and
+//  CURR_VRSN_FLG='Y'
+//;
+//  
+//AcntCodeLoad:
+//Mapping LOAD
+//     [CUST_ID_DEPT_NUM] as [Department Code],
+//     [BUDGET_ID]
+//     
+//FROM
+//  '$(vRootFileLocation)$(vQVDs)Customer_Department.qvd' (qvd)
+//Where
+//  OE_DEPT_FLG='Y'
+//and
+//  CURR_VRSN_FLG='Y'
+//;
+//
+//AcntStatLoad:
+//Mapping LOAD
+//     [CUST_ID_DEPT_NUM] as [Department Code],
+//     ACT_STAT_FLG
+//     
+//FROM
+//  '$(vRootFileLocation)$(vQVDs)Customer_Department.qvd' (qvd)
+//Where
+//  OE_DEPT_FLG='Y'
+//and
+//  CURR_VRSN_FLG='Y'
+//;
+//
+//KeyNumLoad:
+//Mapping LOAD
+//     [CUST_ID_DEPT_NUM] as [Department Code],
+//     [CUSTOMER_DEPT_KEY_NUM]
+//     
+//FROM
+//  '$(vRootFileLocation)$(vQVDs)Customer_Department.qvd' (qvd)
+//Where
+//  OE_DEPT_FLG='Y'
+//and
+//  CURR_VRSN_FLG='Y'
+//;
+///$tab Main
+//
+//
+//trace ----------------cust_dept create;
+//
+//
+///* Getting the OE Departments from CUSTOMER_DEPARTMENT_RLT table and matching fields with DotCom data */
+//cust_dept:
+//LOAD text(CUSTOMER_DEPT_ID)&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM as DEPT_KEY
+//	 ,ApplyMap('KeyNumLoad',text(CUSTOMER_DEPT_ID),'') as [CUSTOMER_DEPT_KEY_NUM]
+//	 ,ApplyMap('DepNamLoad',text(CUSTOMER_DEPT_ID),'') as [Department Name]
+//	 ,text(CUSTOMER_DEPT_ID) as [Department Code]
+//	 ,ApplyMap('AcntStatLoad',text(CUSTOMER_DEPT_ID),'') as [Department Status]
+//	 ,ApplyMap('AcntCodeLoad',text(CUSTOMER_DEPT_ID),'') as [BUDGET_ID]
+//	 ,'Y' as CURR_VRSN_FLG
+//	 ,'Y' as OE_DEPT_FLG
+//FROM
+// '$(vRootFileLocation)$(vQVDs)Customer_Department_Rlt.qvd'
+//(qvd);
+//
+/////* Getting the OE Departments from CUSTOMER_DEPARTMENT table for Migrated Account */
+////Concatenate
+////LOAD [Department Code]&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM as DEPT_KEY
+////	 ,[CUSTOMER_DEPT_KEY_NUM]
+////     ,[Department Name]
+////     ,[Department Code]
+////     ,ACT_STAT_FLG as [Department Status]
+////     ,[BUDGET_ID]
+////     ,CURR_VRSN_FLG
+////     ,OE_DEPT_FLG
+////FROM
+////  '$(vRootFileLocation)$(vQVDs)Customer_Department.qvd' (qvd)
+////Where not Exists (DEPT_KEY, [Department Code]&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM)
+////and
+////  OE_DEPT_FLG='Y'
+////and
+////  CURR_VRSN_FLG='Y'
+////;
+//
+///* Getting the DotCom Departments from CUSTOMER_DEPARTMENT table */
+//Concatenate
+//LOAD [CUST_ID_DEPT_NUM]&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM as DEPT_KEY
+//	 ,[CUSTOMER_DEPT_KEY_NUM]
+//     ,[Department Name]
+//     ,[CUST_ID_DEPT_NUM] as [Department Code]
+//     ,ACT_STAT_FLG as [Department Status]
+//     ,[BUDGET_ID]
+//     ,CURR_VRSN_FLG
+//     ,OE_DEPT_FLG
+//FROM
+//  '$(vRootFileLocation)$(vQVDs)Customer_Department.qvd' (qvd)
+//Where
+//  OE_DEPT_FLG='N'
+//and
+//  CURR_VRSN_FLG='Y'
+//;
+//
+//STORE cust_dept into '$(vRootFileLocation)$(vQVDs)tier_2_customer_department.qvd';
+//
+//drop Table cust_dept;
+///$tab IDB_Entry
+
+dept1:/* ------------------------------#ARB-703 Start (Nikita Brijwasi)------------------------
+Changing Dept_Key value, removing CUSTOMER_DEPT_ID as a part of JIRA Defect #ARB-703 fix
+LOAD distinct CUSTOMER_DEPT_ID&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM as DEPT_KEY,
+*/
+LOAD distinct Text(Trim(DEPT_NUM))&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM as DEPT_KEY,
+     // Nik CUSTOMER_DEPT_ID as lookup_key, 
+     Text(Trim(DEPT_NUM)) as lookup_key, 
+     //Text(Trim(DEPT_NUM)) as  DEPT_NUM,
+     SHIP_TO_CUSTOMER_NUM as cust, 
+     SHIP_TO_LOCATION_NUM as loc,
+     text(trim(CUSTOMER_DEPT_ID)) as dept
+FROM
+'$(vRootFileLocation)$(vQVDs)Idb_Entry.qvd'
+(qvd)
+where
+text(trim(DEPT_NUM)) <> ''
+;
+//
+////exit script;
+//
+left join (dept1)
+//dept2:
+LOAD //[Department Code]&'|'&text(trim(DEPT_NUM)) as  lookup_key1,
+	 // Nik [CUST_ID_DEPT_NUM]&'|'&text(trim(DEPT_NUM)) as  lookup_key,
+	Text(Trim(DEPT_NUM))as  lookup_key,
+	SHIP_TO_CUSTOMER_NUM, 
+     SHIP_TO_LOCATION_NUM,
+     CUSTOMER_DEPT_KEY_NUM, 
+     [Department Name], 
+     [Department Code], 
+     ACT_STAT_FLG as [Department Status],
+     BUDGET_ID, 
+     CURR_VRSN_FLG, 
+     OE_DEPT_FLG,
+     DEPT_NUM
+FROM
+'$(vRootFileLocation)$(vQVDs)Customer_Department.qvd'
+(qvd)
+where
+OE_DEPT_FLG = 'Y'
+and
+CURR_VRSN_FLG='Y'
+;
+
+/* -----------------------------------#ARB-728 Start(Nikita Brijwasi) ---------------------------------
+Removing sources other than OE, commenting Concatenate (dept1) code
+*/
+/*
+Concatenate (dept1)
+----------------------------------------#ARB-703 End ----------------------------
+Changing Dept_Key value, removing CUSTOMER_DEPT_ID as a part of JIRA Defect #ARB-703 fix
+LOAD distinct Text(Trim(CUST_ID_DEPT_NUM))&'|'&Text(Trim(DEPT_NUM))&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM as DEPT_KEY,
+--
+
+LOAD distinct Text(Trim(DEPT_NUM))&'|'&SHIP_TO_LOCATION_NUM&'|'&SHIP_TO_CUSTOMER_NUM as DEPT_KEY,
+	 trim(text(DEPT_NUM)) as  DEPT_NUM,
+	 CUST_ID_DEPT_NUM,
+	 SHIP_TO_CUSTOMER_NUM, 
+     SHIP_TO_LOCATION_NUM,
+     CUSTOMER_DEPT_KEY_NUM, 
+     [Department Name], 
+     [Department Code], 
+     ACT_STAT_FLG as [Department Status],
+     BUDGET_ID, 
+     CURR_VRSN_FLG, 
+     OE_DEPT_FLG
+FROM
+'$(vRootFileLocation)$(vQVDs)Customer_Department.qvd'
+(qvd)
+where
+OE_DEPT_FLG = 'N'
+and
+CURR_VRSN_FLG='Y'
+;
+
+----------------#ARB-728 End---------------------
+
+*/
+
+NoConcatenate
+dept:
+LOAD * Resident dept1
+where
+isnull(CUSTOMER_DEPT_KEY_NUM)<>-1
+;
+drop Table dept1;
+
+
+
+STORE dept into '$(vRootFileLocation)$(vQVDs)tier_2_customer_department.qvd';
+
+drop Table dept;

@@ -1,0 +1,129 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for ASRX_INVOICE_001 information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Asrx_Invoice_001.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+///$tab Ship_to_Limiter
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+       //*****************************************************************
+       trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+       //*****************************************************************
+       Ship_To_Limiter:
+       load
+              ACCT_KEY_NUM as ACCT_KEY_NUM_FILTER
+       from
+              '$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'
+              (qvd)
+       ;
+
+endif;
+///$tab Asrx_Invoice_001
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Asrx_Invoice_001';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Asrx_Invoice_001:
+LOAD
+  DTE_KEY_NUM
+ ,ACCT_KEY_NUM
+ ,SMRY_KEY_NUM
+ ,INVOICE_KEY_NUM
+ ,DIST_CENTER_KEY_NUM
+ ,TRNSCT_CTGRY_CDE
+ ,CORP_ACCT_KEY_NUM
+ ,EXT_SELL_DLR
+ ,EXT_SALE_COST_DLR
+ ,EXT_NIFO_DLR
+ ,EXT_ITEM_SELL_DLR
+ ,TOTAL_EXT_ADDL_CHRG_DLR
+ ,EXT_INVOICE_DLR
+ ,EXT_BASE_PRICE_DLR
+ ,ORIG_EXT_SELL_DLR
+ ,SHIP_QTY
+ ,ORDER_QTY
+ ,ORIG_ORDER_QTY
+ ,INVOICE_LINE_QTY
+ ,ROW_ADD_STP
+ ,ROW_ADD_USER_ID
+ ,ROW_UPDATE_STP
+ ,ROW_UPDATE_USER_ID
+FROM
+  '$(vExtractFileLocation)ASRX_INVOICE_001-Caret.txt'
+  (txt, codepage is 1252, embedded labels, delimiter is '^', no quotes, no eof)
+;
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE
+  Asrx_Invoice_001
+INTO
+  '$(vRootFileLocation)$(vQVDs)Asrx_Invoice_001.qvd' (qvd)
+;
+
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	//*****************************************************************
+	trace "************************** DEV LOAD: Creating Dev version of Asrx_Invoice_001";
+	//*****************************************************************
+	NoConcatenate
+	Asrx_Invoice_001_dev:
+	load 
+		* 
+	resident
+		Asrx_Invoice_001
+	where exists(ACCT_KEY_NUM_FILTER, ACCT_KEY_NUM)
+	;
+
+	store Asrx_Invoice_001_dev into '$(vRootFileLocation)$(vQVDs)\Dev\Asrx_Invoice_001.qvd';
+	drop table Asrx_Invoice_001_dev;
+	
+endif;
+
+Drop Table Asrx_Invoice_001;

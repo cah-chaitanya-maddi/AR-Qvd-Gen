@@ -1,0 +1,69 @@
+﻿///$tab Main
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vDocName = replace(DocumentName(),'.qvw','');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+///$tab Map Load
+/**********************************************************
+*
+* Create Map load for the availability alert
+* PROD_KEY_NUM can change. If that happens, there 
+* could potentially be multiple rows for the availability
+* which is not desirable.
+*
+**********************************************************/
+
+CIN_Map:
+Mapping
+LOAD Distinct 
+     PROD_KEY_NUM, 
+     CIN
+FROM
+	'$(vRootFileLocation)$(vQVDs)Product_All.qvd' (qvd)
+;
+///$tab Sort Availability Alert
+/**********************************************************
+*
+* Sort the availability alert for each CIN based on 
+* DTE_KEY_NUM to get the latest data for that account. 
+*
+**********************************************************/
+
+avail_alert_detail_tmp:
+LOAD DTE_KEY_NUM, 
+ApplyMap('CIN_Map',PROD_KEY_NUM) as CIN, 
+     AVAIL_ALERT_CDE, 
+//     EXPDT_CDE, 
+     EXTRNL_MSG_TXT 
+//     EXPCT_DLVRY_DTE, 
+//     INTRNL_MSG_TXT, 
+//     CHG_DTE, 
+//     CHG_TIM, 
+//     ORIGIN_DTE,
+//     EXTRNL_CMNT_TXT, 
+//     SUPPLIER_DTE_TXT, 
+//     EXPCT_DLVRY_DTE_TXT
+FROM
+	'$(vRootFileLocation)$(vQVDs)Availability_Alert_Detail.qvd'
+(qvd);
+
+
+NoConcatenate
+avail_alert_detail:
+load CIN as Alternate_CIN,
+		FirstSortedValue(AVAIL_ALERT_CDE,-DTE_KEY_NUM) as AVAIL_ALERT_CDE,
+		FirstSortedValue(EXTRNL_MSG_TXT,-DTE_KEY_NUM) as EXTRNL_MSG_TXT
+Resident
+	avail_alert_detail_tmp
+Group By
+	CIN
+;
+
+DROP Table avail_alert_detail_tmp;
+
+store avail_alert_detail into '$(vRootFileLocation)$(vQVDs)alternate_availability.qvd';
+
+DROP Table avail_alert_detail;

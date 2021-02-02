@@ -1,0 +1,84 @@
+﻿///$tab Doc
+/*
+ ******************************************************************************
+ * Overview:
+ *   This is a QVD generator for CARDINAL_ACCOUNT_GROUP information.
+ *   Put some usefull description here. 
+ * 
+ * Sources:
+ *   Teradata
+ *
+ * Outputs:
+ *   Cardinal_Account_Group.qvd
+ ******************************************************************************
+ *
+ * Revision History:
+ * 
+ * 03/03/13 Dennis Duncan
+ * Added registry lookup for root folder
+ * Changed QVD paths to use vQVDs variable
+ * Changed ODBC connection to use vSalesDataWarehouseConnection variable
+ * Added meta-data for QlikView names
+ * 
+ * 03/02/13 Dennis Duncan
+ * Added the Doc tab
+ * Added the Setup tab
+ * Added the include for Defaults.txt script
+ * Added the include for File_Locations.txt script
+ * Added the include for DB_Connections.txt script
+ *
+ * 02/27/13 Aaron Zechman
+ * Initial Creation
+ */
+///$tab Setup
+LET vRootFileLocation    = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+
+
+ODBC CONNECT TO '$(vSalesDataWarehouseConnection)';
+///$tab Cardinal_Account_Group_Hier
+/********************************************
+ * Set Statistics Variables
+ ********************************************/
+LET vTimeStamp = Now();
+LET vStart = Now();
+SET vTableName = 'Cardinal_Account_Group_Hier';
+
+/********************************************
+ * Load Table into Memory
+ ********************************************/
+Cardinal_Account_Group_Hier:
+
+SELECT	CARD_ACCT_GROUP_NUM, RLT_CARD_ACCT_GROUP_NUM, LEVEL_NUM,
+		TOP_FLG, BTM_FLG, ROW_ADD_STP, ROW_ADD_USER_ID, ROW_UPDATE_STP,
+		ROW_UPDATE_USER_ID
+FROM VIEWS.CARDINAL_ACCOUNT_GROUP_HIER
+;
+
+
+
+
+/********************************************
+ * Store In-Memory Table into QVD
+ ********************************************/
+STORE
+  Cardinal_Account_Group_Hier
+INTO
+  '$(vRootFileLocation)$(vQVDs)Cardinal_Account_Group_Hier.qvd' (qvd)
+;
+
+
+/********************************************
+ * Free up memory
+ ********************************************/
+DROP TABLE
+  Cardinal_Account_Group_Hier
+;
+
+
