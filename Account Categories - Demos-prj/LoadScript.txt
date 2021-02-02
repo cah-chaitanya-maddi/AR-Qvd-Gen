@@ -1,0 +1,542 @@
+﻿///$tab Document
+/*
+ ******************************************************************************
+ * Overview:
+ * This QVW is being rewritten to not use the Invoice_Line count method of 
+ * assigning categories. Instead, the Hadoop user- segment # assignments will be 
+ * used to group the users into user documents. The user-account assignments will 
+ * continue to come from QVDs, not from Hadoop.  
+ * The QVW will load user information based on the 4 requirements above. This is 
+ * currently being done in QV. Reports will only be loaded for users that are in 
+ * both the Hadoop file and Account Categories – Loop.qvw. No provision is being 
+ * made to add new users into some designated segment. This is why the two systems 
+ * need to be in sync with SDW updates. 
+ * It may be needed to create a larger number of segments. This QVW should be able 
+ * to create user_categories QVDs even when there are no users for the segment or report. 
+ * This QVW builds user_categories QVDs for:
+	•	Invoice_Line segments
+	•	Assigned documents – PurchasesReview, InvoiceReview, ContractsReview, etc.
+	•	Acute Landing Page
+	•	Retail Landing Page 
+	•	Demo documents
+
+ ******************************************************************************
+ *
+ * Revision History:
+ *
+ * 10.01.2014 Warren Lea
+ * Initial Creation
+ *
+ * 4.11.2016 Rajdeep Biswas
+ * this will not run if any segment has more than 1500 users
+ *
+ *
+ */
+///$tab Defaults
+LET vRootFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'RootFolderLocation');
+LET vEnvironment = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView', 'Environment');
+LET vExtractFileLocation = GetRegistryString('HKEY_LOCAL_MACHINE\SOFTWARE\Cardinal Health\QlikView\Extract_Files', 'RootFolderLocation');
+
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Defaults.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\File_Locations.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\DB_Connections.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Meta_Data.qvs);
+$(Must_Include=$(vRootFileLocation)Config\$(vEnvironment)\Web.qvs);
+$(Must_Include=$(vRootFileLocation)Scripts\Util.qvs);
+///$tab Setup
+
+
+let v_today = date(floor(today()),'MM/DD/YYYY');
+
+Let v_total_segments = 16; 
+Let v_SuperUser_segments = 34;
+///$tab Ship To Limiter
+/**********************************************************
+Load a limited Ship To table. This table is limited to DEV
+accounts (those used for development).
+We only load this table if this script is exec on DEV.
+
+Changelog:
+- 1.28.2014 jeremy.fourman
+- 4.30.2014 jeremy.fourman
+  Added distinct to load statement  
+**********************************************************/
+
+//*****************************************************************
+trace "************************** Checking Environment setting";
+//*****************************************************************
+if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+	//*****************************************************************
+	trace "************************** DEV LOAD: Loading Ship_To_Limiter table";
+	//*****************************************************************
+	Ship_To_Limiter:
+	load distinct
+		ACCT_KEY_NUM as ACCT_KEY_NUM_FILTER 
+	from
+		'$(vRootFileLocation)$(vQVDs)\Dev\Ship_To_Account.qvd'	(qvd)
+	;
+
+endif;
+///$tab Super User Categories
+/**********************************************************
+Creating user_categories QVDs for each Adv Report.
+The Resident table user_categories was created in the previous tab and 
+is kept open for this tab. 
+
+Changelog:
+10.01.2015 rajdeep.biswas 
+creating the super user segments
+Using the same WildMatches that were used before. 
+These can be combined into one WildMatch()
+**********************************************************/
+
+// (Acute) Executive Dashboard document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	acute_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From
+		'$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+    Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Executive*')
+	    and WildMatch([Report Name], '*Retail*')
+	;
+	
+	Store acute_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_retail_$(q).qvd';
+	Drop Table acute_$(q);
+Next
+
+// Retail Executive Dashboard document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	retail_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Executive*')
+	and not WildMatch([Report Name], '*Retail*')	
+	;
+	
+	Store retail_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_acute_$(q).qvd';
+	Drop Table retail_$(q);
+Next
+
+// Contract Opps document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	contract_opps_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+    '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*contract*avail*') 
+	;
+	
+	Store contract_opps_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_contracts_opps_$(q).qvd';
+	Drop Table contract_opps_$(q);
+Next
+
+// Contracts Review document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	contracts_rev_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and  WildMatch([Report Name], '*contract*')
+	    and WildMatch([Report Name], '*Review*')
+	;
+	
+	Store contracts_rev_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_contracts_review_$(q).qvd';
+	Drop Table contracts_rev_$(q);
+Next
+
+// Department Billing document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	department_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Department*') 
+	;
+	
+	Store department_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_department_$(q).qvd';
+	Drop Table department_$(q);
+Next
+
+// InvoiceReview document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	invoices_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector,
+	     '1' as invoice_user 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Invoice*')
+	;
+	
+	Store invoices_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_invoices_$(q).qvd';
+	Drop Table invoices_$(q);
+Next
+ 
+// InvoiceReview document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	invoices_approval$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector,
+	     '1' as invoice_user 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Invoice*')
+	    and WildMatch([Report Name], '*Approval*')
+	;
+	
+	Store invoices_approval$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_invoice_approval_$(q).qvd';
+	Drop Table invoices_approval$(q);
+Next
+
+// Purchases document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	purchases_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and  WildMatch([Report Name], '*Purchase*')
+	    and WildMatch([Report Name], '*Review*')
+	;
+	
+	Store purchases_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_purchases_$(q).qvd';
+	Drop Table purchases_$(q);
+Next
+ 
+// ServiceLevel document; using the same WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	service_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Service*') 
+	    and WildMatch([Report Name], '*Level*')
+	;
+	
+	Store service_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_service_$(q).qvd';
+	Drop Table service_$(q);
+Next
+
+ // Separation Of Duties document; using its WildMatch() search
+For q = 31 to $(v_SuperUser_segments)
+	separation_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+    From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Separation*Duties*') 
+	;
+	
+	Store separation_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_separation_$(q).qvd';
+	Drop Table separation_$(q);
+Next
+
+// Purchases-ProductGroups document.
+// This app is a copy of Purchases to test its performance compared to Purchases Review
+For q = 31 to $(v_SuperUser_segments)
+	purchases_prodgroups_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*Purchases*Prod*Group*') 
+	;
+	
+	Store purchases_prodgroups_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_purchases_prodgroups_$(q).qvd';
+	Drop Table purchases_prodgroups_$(q);
+Next
+
+// QBR document.
+For q = 31 to $(v_SuperUser_segments)
+	qbr_$(q):
+	Load
+	     ACCT_KEY_NUM, 
+	     MRCRY_USER_ID, 
+	     USER_ID, 
+	     USER_NAME, 
+	     [Segment #],
+	     [Account #], 
+	     [DC #], 
+	     AccountSelector 
+   From  		
+   '$(vRootFileLocation)$(vQVDs)user_categories.qvd' (qvd)
+
+	Where  [Segment #] = $(q)
+	    and WildMatch([Report Name], '*qbr*') 
+	;
+	
+	Store qbr_$(q) into '$(vRootFileLocation)$(vQVDs)user_categories_qbr_$(q).qvd';
+	Drop Table qbr_$(q);
+Next
+///$tab Demo Documents
+/**********************************
+Create user categories for the demo documents. This QVD will contain
+all accounts used during trainng and during demos of these applications.
+
+Changelog:
+- 3.4.2014 jeremy.fourman
+  Add tab
+- 4.02.2014 joe.fusco
+  added acute/ri demo qvds
+- 4.23.2014 jeremy.fourman
+  Added creation of user_categories_contracts_opps_demo.qvd
+- 4.30.2014 jeremy.fourman
+  Added distinct to multiple load statements
+- 7.21.2014 warren.lea
+  Still using Brian's 2 user_ids for the account list, but read in
+  additional user_ids who will get the demo documents and assign 
+  them the list of demo accounts.  
+- 10.09.2014 warren.lea
+  Copy the regular demo documents into the Dev folder. The demo documents are
+  reduced for just 2 users. Matching Brian's demo accounts with our selected demo
+  accounts may result in little data in the Dev demo documents.
+**********************************/
+Trace Build Demo user_categories qvds;
+
+user_categories_demo_temp:
+noconcatenate load distinct
+	 ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     'demo' as [Segment #], 
+     [Account #], 
+     [DC #], 
+     AccountSelector
+From 
+	$(vRootFileLocation)$(vQVDs)user_categories.qvd (qvd)
+where 
+	wildmatch(USER_ID, 'ac.a.bblackburn1')
+;
+
+concatenate (user_categories_demo_temp)
+load distinct
+	 ACCT_KEY_NUM, 
+     MRCRY_USER_ID, 
+     USER_ID, 
+     USER_NAME, 
+     'demo' as [Segment #], 
+     [Account #], 
+     [DC #], 
+     AccountSelector
+From 
+	$(vRootFileLocation)$(vQVDs)user_categories.qvd (qvd)
+where 
+	wildmatch(USER_ID, 'brian_ri')
+;
+
+// Copying the accounts for these two users to the 
+// list of users in the DemoUsers.xlsx.
+demo_users_accounts:
+LOAD USER_ID
+FROM
+	'$(vRootFileLocation)$(vQVDs)DemoUsers.xlsx' 
+(ooxml, embedded labels, table is Sheet1);
+
+// Get mrcry_user_id and user_name for the demo users
+Inner Join (demo_users_accounts)
+
+LOAD MRCRY_USER_ID, 
+     MRCRY_USER_NAM as USER_NAME, 
+     USER_ID
+FROM
+	'$(vRootFileLocation)$(vQVDs)MERCURY_USER.qvd'
+(qvd)
+;
+
+Join (demo_users_accounts)
+// Both Acute and Retail accounts have been brought into user_categories_demo
+// This joins on every combination of USER_ID and ACCT_KEY_NUM. 
+//demo_accounts:
+Load Distinct
+	 ACCT_KEY_NUM, 
+	 [Account #], 
+     [DC #], 
+     AccountSelector
+resident
+	user_categories_demo_temp
+;
+
+user_categories_demo:
+NoConcatenate
+Load *
+Resident
+	user_categories_demo_temp
+;
+Drop Table user_categories_demo_temp;
+
+Concatenate (user_categories_demo)
+Load *
+Resident
+	demo_users_accounts
+;
+Drop Table demo_users_accounts;
+
+
+//*****************************************
+trace "************** Create user_categories_demo.qvd";
+//*****************************************
+if $(f_does_table_exist('user_categories_demo')) = 'Y' then 	
+	//*****************************************
+	trace "************** Storing user_categories_demo.qvd";
+	//*****************************************
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_segment_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_acute_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_retail_demo.qvd';	
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_contracts_review_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_contracts_opps_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_department_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_invoices_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_purchases_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_invoice_approval_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_service_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_estimator_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_source_estimator_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_separation_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_purchases_prodgroups_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_marketshare_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_qbr_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_PricingConfirmationReport_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_aap_estimator_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_acute_estimator_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_SOURCE_opps_demo.qvd';
+ 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_OpentoBuy_demo.qvd';
+ 	
+ 	if(wildmatch('$(vEnvironment)','*DEV*')) > 0 then
+
+		//*****************************************
+		trace "************** DEV LOAD: Creating Dev version of user_categories_demo";
+		//*****************************************
+	
+		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_segment_demo.qvd';
+		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_acute_demo.qvd';
+	 	store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_retail_demo.qvd';
+		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_contracts_demo.qvd';
+		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_contracts_opps_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_department_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_estimator_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_invoices_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_purchases_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_invoice_approval_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)Dev\user_categories_service_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_separation_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_marketshare_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_qbr_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_PricingConfirmationReport_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_aap_estimator_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_acute_estimator_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_SOURCE_opps_demo.qvd';
+ 		store user_categories_demo into '$(vRootFileLocation)$(vQVDs)user_categories_BackOrderReport_demo.qvd';
+ 		 	
+		//drop table user_categories_demo_dev;	
+	endif;
+	
+   Drop Table user_categories_demo; 
+else 
+ 	//*****************************************
+	trace "************** No demo documents to store in the Dev folder";
+	//*****************************************
+endif;
